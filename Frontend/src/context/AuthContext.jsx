@@ -1,0 +1,169 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { authService } from '../services/api';
+
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const token = localStorage.getItem('healance_token');
+    const storedUser = localStorage.getItem('healance_user');
+    
+    if (token && storedUser) {
+      try {
+        // Verify token is still valid by fetching user data
+        const data = await authService.getMe();
+        setUser(data.user);
+      } catch (error) {
+        // Token invalid, clear storage
+        localStorage.removeItem('healance_token');
+        localStorage.removeItem('healance_user');
+        setUser(null);
+      }
+    }
+    setLoading(false);
+  };
+
+  const register = async (userData) => {
+    try {
+      setError(null);
+      const data = await authService.register(userData);
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      setError(null);
+      const data = await authService.login({ email, password });
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      navigate('/');
+    }
+  };
+
+  const forgotPassword = async (email) => {
+    try {
+      setError(null);
+      const data = await authService.forgotPassword(email);
+      return { success: true, message: data.message };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to send reset email.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const resetPassword = async (resetToken, password) => {
+    try {
+      setError(null);
+      const data = await authService.resetPassword(resetToken, password);
+      setUser(data.user);
+      navigate('/dashboard');
+      return { success: true, message: 'Password reset successful!' };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Password reset failed.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const updatePassword = async (currentPassword, newPassword) => {
+    try {
+      setError(null);
+      await authService.updatePassword(currentPassword, newPassword);
+      return { success: true, message: 'Password updated successfully!' };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Password update failed.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const socialLogin = async (provider, userData) => {
+    try {
+      setError(null);
+      const data = await authService.socialLogin(userData);
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Social login failed.';
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('healance_user', JSON.stringify(updatedUser));
+  };
+
+  const openAuthModal = () => setIsAuthModalOpen(true);
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setError(null);
+  };
+  const clearError = () => setError(null);
+
+  return (
+    <AuthContext.Provider value={{ 
+      user, 
+      register,
+      login, 
+      logout,
+      forgotPassword,
+      resetPassword,
+      updatePassword,
+      socialLogin,
+      updateUser,
+      isAuthModalOpen, 
+      openAuthModal, 
+      closeAuthModal,
+      isAuthenticated: !!user,
+      loading,
+      error,
+      clearError,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
