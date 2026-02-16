@@ -21,14 +21,14 @@ const RiskPrediction = () => {
   const [showResults, setShowResults] = useState(false);
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900">AI Health Risk Prediction</h2>
-          <p className="text-slate-600">Enter your vitals to get a comprehensive health analysis.</p>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="bg-white p-4 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">AI Health Risk Prediction</h2>
+          <p className="text-sm sm:text-base text-slate-600">Enter your vitals to get a comprehensive health analysis.</p>
         </div>
 
-        <form className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <form className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Age</label>
             <input type="number" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none" placeholder="25" />
@@ -61,43 +61,43 @@ const RiskPrediction = () => {
       </div>
 
       {showResults && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           {/* Results Summary */}
-          <div className="bg-green-50 border border-green-100 p-6 rounded-2xl flex items-center gap-4">
-            <div className="bg-green-100 p-3 rounded-full text-green-600">
-              <CheckCircle size={32} />
+          <div className="bg-green-50 border border-green-100 p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="bg-green-100 p-2 sm:p-3 rounded-full text-green-600">
+              <CheckCircle size={24} className="sm:w-8 sm:h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-green-800">Low Risk Detected</h3>
-              <p className="text-green-700">Your vitals are within the healthy range. Keep up the good work!</p>
+              <h3 className="text-base sm:text-lg font-bold text-green-800">Low Risk Detected</h3>
+              <p className="text-sm sm:text-base text-green-700">Your vitals are within the healthy range. Keep up the good work!</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Recommendations */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-slate-900">Recommended Doctors</h3>
+            <div className="space-y-4 sm:space-y-6">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Recommended Doctors</h3>
               <DoctorCard 
                 name="Dr. Emily White" 
                 specialty="Cardiologist" 
                 distance="2.5 km" 
                 rating="4.9" 
-                image="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                image="https://images.pexels.com/photos/5215024/pexels-photo-5215024.jpeg?auto=compress&cs=tinysrgb&w=200"
               />
               <DoctorCard 
                 name="Dr. Raj Patel" 
                 specialty="General Physician" 
                 distance="4.1 km" 
                 rating="4.7" 
-                image="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80"
+                image="https://images.pexels.com/photos/5452293/pexels-photo-5452293.jpeg?auto=compress&cs=tinysrgb&w=200"
               />
             </div>
 
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-slate-900">Personalized Plans</h3>
+            <div className="space-y-4 sm:space-y-6">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Personalized Plans</h3>
               
               {/* Diet Plan */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Utensils size={20} className="text-orange-500" />
                   <h4 className="font-bold text-slate-800">Indian Diet Plan</h4>
@@ -119,7 +119,7 @@ const RiskPrediction = () => {
               </div>
 
               {/* Workout Plan */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Dumbbell size={20} className="text-blue-500" />
                   <h4 className="font-bold text-slate-800">Weekly Workout</h4>

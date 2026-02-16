@@ -30,16 +30,16 @@ const FAQItem = ({ question, answer }) => {
   return (
     <div className="border-b border-slate-200 last:border-0">
       <button 
-        className="w-full py-6 flex justify-between items-center text-left focus:outline-none"
+        className="w-full py-4 sm:py-6 flex justify-between items-center text-left focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="text-lg font-semibold text-slate-900 pr-8">{question}</span>
-        {isOpen ? <ChevronUp className="text-primary-500 flex-shrink-0" /> : <ChevronDown className="text-slate-400 flex-shrink-0" />}
+        <span className="text-sm sm:text-lg font-semibold text-slate-900 pr-4 sm:pr-8">{question}</span>
+        {isOpen ? <ChevronUp className="text-primary-500 flex-shrink-0 w-5 h-5" /> : <ChevronDown className="text-slate-400 flex-shrink-0 w-5 h-5" />}
       </button>
       <div 
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'}`}
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-96 opacity-100 pb-4 sm:pb-6' : 'max-h-0 opacity-0'}`}
       >
-        <p className="text-slate-600 leading-relaxed">{answer}</p>
+        <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{answer}</p>
       </div>
     </div>
   );
@@ -48,15 +48,15 @@ const FAQItem = ({ question, answer }) => {
 const FAQ = () => {
   return (
     <div className="pt-20 min-h-screen bg-slate-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h1>
-          <p className="text-slate-600">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-4xl font-bold text-slate-900 mb-3 sm:mb-4">Frequently Asked Questions</h1>
+          <p className="text-sm sm:text-base text-slate-600">
             Everything you need to know about Healance and how we protect your health data.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 px-8 py-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 px-4 sm:px-8 py-2 sm:py-4">
           {faqs.map((faq, index) => (
             <FAQItem key={index} {...faq} />
           ))}

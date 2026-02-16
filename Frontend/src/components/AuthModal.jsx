@@ -152,10 +152,10 @@ const AuthModal = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-secondary-500" />
+          <div className="sticky top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-secondary-500 z-20" />
           <button 
             onClick={closeAuthModal}
             className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 transition-colors z-10"
@@ -163,7 +163,7 @@ const AuthModal = () => {
             <X size={20} />
           </button>
 
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-slate-800 mb-2">
                 {getTitle()}

@@ -1,5 +1,6 @@
 import { Contact, SupportTicket } from '../models/Contact.js';
 import Notification from '../models/Notification.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // @desc    Submit public contact form
 // @route   POST /api/contact
@@ -17,7 +18,53 @@ export const submitContactForm = async (req, res) => {
 
     const contact = await Contact.create({ firstName, lastName, email, message });
 
-    // TODO: Send email notification to admin (via nodemailer)
+    // Send confirmation email to user
+    try {
+      const userHtml = `
+        <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #0ea5e9, #14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">Message Received! ✉️</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
+            <p>Hi <strong>${firstName}</strong>,</p>
+            <p>Thank you for contacting Healance AI. We have received your message and will get back to you within 24 hours.</p>
+            <p><strong>Your message:</strong></p>
+            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #0ea5e9; margin: 15px 0;">
+              ${message}
+            </div>
+            <p>Best regards,<br><strong>The Healance Team</strong></p>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 30px;">
+              © ${new Date().getFullYear()} Healance AI. BKC, Bandra East, Mumbai, Maharashtra
+            </p>
+          </div>
+        </div>
+      `;
+      await sendEmail({ to: email, subject: 'We received your message - Healance AI', html: userHtml });
+
+      // Send notification to admin
+      const adminHtml = `
+        <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #1e293b; padding: 20px; border-radius: 16px 16px 0 0;">
+            <h2 style="color: white; margin: 0;">📬 New Contact Form Submission</h2>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
+            <p><strong>From:</strong> ${firstName} ${lastName}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              ${message}
+            </div>
+            <p style="margin-top: 20px; color: #64748b; font-size: 12px;">
+              Submitted on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </p>
+          </div>
+        </div>
+      `;
+      await sendEmail({ to: process.env.ADMIN_EMAIL || 'agroreach01@gmail.com', subject: `New Contact: ${firstName} ${lastName}`, html: adminHtml });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError.message);
+      // Don't fail the request if email fails
+    }
 
     res.status(201).json({
       success: true,
@@ -36,11 +83,18 @@ export const submitSupportTicket = async (req, res) => {
   try {
     const { fullName, email, subject, message } = req.body;
 
+    if (!fullName || !email || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name, email, and message are required',
+      });
+    }
+
     const ticketData = {
       user: req.user._id,
       fullName,
       email,
-      subject,
+      subject: subject || 'General Inquiry',
       message,
     };
 
@@ -54,18 +108,81 @@ export const submitSupportTicket = async (req, res) => {
     }
 
     const ticket = await SupportTicket.create(ticketData);
+    const ticketId = ticket._id.toString().slice(-6).toUpperCase();
 
-    // Send notification
+    // Send notification in-app
     await Notification.create({
       user: req.user._id,
       title: 'Support Ticket Created',
-      message: `Your ticket #${ticket._id.toString().slice(-6)} has been submitted.`,
+      message: `Your ticket #${ticketId} has been submitted. We'll respond within 24 hours.`,
       type: 'system',
     });
 
+    // Send confirmation email to user
+    try {
+      const userHtml = `
+        <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #0ea5e9, #14b8a6); padding: 30px; border-radius: 16px 16px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">Ticket Submitted! 🎫</h1>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
+            <p>Hi <strong>${fullName}</strong>,</p>
+            <p>Your support ticket has been successfully submitted. Here are the details:</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin: 20px 0;">
+              <p style="margin: 0 0 10px 0;"><strong>Ticket ID:</strong> #${ticketId}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Status:</strong> <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 12px;">Open</span></p>
+              <p style="margin: 0;"><strong>Message:</strong></p>
+              <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-top: 10px; color: #475569;">
+                ${message}
+              </div>
+            </div>
+
+            <p>Our support team will review your request and respond within 24 hours. You can track the status in your dashboard.</p>
+            
+            <p>Best regards,<br><strong>Healance Support Team</strong></p>
+            
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <p style="color: #94a3b8; font-size: 12px;">
+              📧 support@healance.ai | 📞 +91 22 1234 5678<br>
+              © ${new Date().getFullYear()} Healance AI. BKC, Bandra East, Mumbai, Maharashtra
+            </p>
+          </div>
+        </div>
+      `;
+      await sendEmail({ to: email, subject: `Support Ticket #${ticketId} Received - Healance`, html: userHtml });
+
+      // Send notification to admin/support team
+      const adminHtml = `
+        <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: #dc2626; padding: 20px; border-radius: 16px 16px 0 0;">
+            <h2 style="color: white; margin: 0;">🎫 New Support Ticket #${ticketId}</h2>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
+            <p><strong>From:</strong> ${fullName}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject || 'General Inquiry'}</p>
+            <p><strong>Message:</strong></p>
+            <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+              ${message}
+            </div>
+            ${ticketData.attachments ? `<p><strong>Attachments:</strong> ${ticketData.attachments.length} file(s)</p>` : ''}
+            <p style="margin-top: 20px; color: #64748b; font-size: 12px;">
+              Submitted on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </p>
+          </div>
+        </div>
+      `;
+      await sendEmail({ to: process.env.ADMIN_EMAIL || 'agroreach01@gmail.com', subject: `[TICKET] #${ticketId} - ${subject || 'General Inquiry'}`, html: adminHtml });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError.message);
+      // Don't fail the request if email fails
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Support ticket submitted successfully!',
+      message: `Support ticket #${ticketId} submitted successfully! Check your email for confirmation.`,
       ticket,
     });
   } catch (error) {

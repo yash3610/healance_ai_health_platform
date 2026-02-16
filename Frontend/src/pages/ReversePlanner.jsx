@@ -14,28 +14,28 @@ const weeklyData = [
 ];
 
 const GoalCard = ({ icon: Icon, title, current, target, unit, color, progress }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
-        <Icon size={24} />
+  <div className="bg-white p-3 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="flex justify-between items-start mb-2 sm:mb-4">
+      <div className={`p-2 sm:p-3 rounded-xl ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
+        <Icon size={18} className="sm:w-6 sm:h-6" />
       </div>
-      <span className="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded-lg">
+      <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-600 rounded-lg">
         {Math.round(progress)}%
       </span>
     </div>
-    <h3 className="font-bold text-slate-800 mb-1">{title}</h3>
-    <div className="flex items-end gap-1 mb-3">
-      <span className="text-2xl font-bold text-slate-900">{current}</span>
-      <span className="text-sm text-slate-500 mb-1">/ {target} {unit}</span>
+    <h3 className="font-bold text-sm sm:text-base text-slate-800 mb-1">{title}</h3>
+    <div className="flex items-end gap-1 mb-2 sm:mb-3">
+      <span className="text-lg sm:text-2xl font-bold text-slate-900">{current}</span>
+      <span className="text-[10px] sm:text-sm text-slate-500 mb-0.5 sm:mb-1">/ {target} {unit}</span>
     </div>
-    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+    <div className="w-full bg-slate-100 h-1.5 sm:h-2 rounded-full overflow-hidden">
       <div 
         className={`h-full rounded-full ${color.replace('text', 'bg').replace('bg-opacity-10', '')}`} 
         style={{ width: `${progress}%` }}
       />
     </div>
-    <p className="text-xs text-slate-500 mt-3 flex items-center">
-      <Target size={12} className="mr-1" /> Daily target needed: {Math.round((target - current) / 7)} {unit}/day
+    <p className="text-[8px] sm:text-xs text-slate-500 mt-2 sm:mt-3 flex items-center">
+      <Target size={10} className="mr-1 flex-shrink-0 sm:w-3 sm:h-3" /> <span className="hidden sm:inline">Daily target needed: </span>{Math.round((target - current) / 7)} {unit}/day
     </p>
   </div>
 );
@@ -49,18 +49,18 @@ const ReversePlanner = () => {
   });
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Reverse Health Planner</h2>
-          <p className="text-slate-600">Set your goals and let AI guide you backwards to achieve them.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Reverse Health Planner</h2>
+          <p className="text-sm sm:text-base text-slate-600">Set your goals and let AI guide you backwards to achieve them.</p>
         </div>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Target size={18} className="mr-2" /> Update Goals
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <GoalCard 
           icon={Footprints} 
           title="Daily Steps" 
@@ -99,10 +99,10 @@ const ReversePlanner = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-bold text-slate-800 mb-6">Weekly Goal Completion</h3>
-          <div className="h-64">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-sm sm:text-base text-slate-800 mb-4 sm:mb-6">Weekly Goal Completion</h3>
+          <div className="h-48 sm:h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -118,9 +118,9 @@ const ReversePlanner = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-bold text-slate-800 mb-4">AI Suggestions</h3>
-          <div className="space-y-4">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-sm sm:text-base text-slate-800 mb-4">AI Suggestions</h3>
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex gap-3">
               <div className="mt-1">
                 <CheckCircle size={18} className="text-green-500" />

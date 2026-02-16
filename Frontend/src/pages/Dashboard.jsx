@@ -18,24 +18,24 @@ const data = [
 ];
 
 const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-full">
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        <h3 className="text-2xl font-bold text-slate-900 mt-1">
-          {value} <span className="text-sm font-normal text-slate-400">{unit}</span>
+  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 h-full">
+    <div className="flex justify-between items-start mb-3 sm:mb-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs sm:text-sm font-medium text-slate-500 truncate">{title}</p>
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+          {value} <span className="text-xs sm:text-sm font-normal text-slate-400">{unit}</span>
         </h3>
       </div>
-      <div className={`p-3 rounded-xl ${color}`}>
-        <Icon size={20} className="text-white" />
+      <div className={`p-2 sm:p-3 rounded-xl ${color} flex-shrink-0`}>
+        <Icon size={18} className="text-white sm:w-5 sm:h-5" />
       </div>
     </div>
     {subtext ? (
-      <div className="text-sm text-slate-500">
+      <div className="text-xs sm:text-sm text-slate-500">
         {subtext}
       </div>
     ) : (
-      <div className="flex items-center text-sm">
+      <div className="flex items-center text-xs sm:text-sm">
         <span className="text-green-500 font-medium flex items-center">
           <TrendingUp size={14} className="mr-1" /> {change}
         </span>
@@ -47,9 +47,9 @@ const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext }) =>
 
 const Dashboard = () => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
           title="Daily Steps" 
           value="6,240" 
@@ -86,17 +86,17 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-800">Weekly Health Trends</h3>
+        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+            <h3 className="font-bold text-slate-800 text-sm sm:text-base">Weekly Health Trends</h3>
             <select className="text-sm border-none bg-slate-50 rounded-lg px-3 py-1 text-slate-600 focus:ring-0">
               <option>Last 7 Days</option>
               <option>Last Month</option>
             </select>
           </div>
-          <div className="h-80">
+          <div className="h-60 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <defs>
@@ -118,12 +118,12 @@ const Dashboard = () => {
         </div>
 
         {/* Health Calendar & Reminders */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <div className="bg-primary-100 p-2 rounded-lg">
               <Calendar size={20} className="text-primary-600" />
             </div>
-            <h3 className="font-bold text-slate-800">Today's Schedule</h3>
+            <h3 className="font-bold text-slate-800 text-sm sm:text-base">Today's Schedule</h3>
           </div>
 
           <div className="space-y-4 flex-1">
@@ -164,14 +164,14 @@ const Dashboard = () => {
       </div>
 
       {/* Risk Summary & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <div className="flex items-center gap-2">
               <div className="bg-red-100 p-2 rounded-lg">
                 <Activity size={20} className="text-red-600" />
               </div>
-              <h3 className="font-bold text-slate-800">Latest Risk Prediction</h3>
+              <h3 className="font-bold text-slate-800 text-sm sm:text-base">Latest Risk Prediction</h3>
             </div>
             <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">Low Risk</span>
           </div>
@@ -193,8 +193,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <div className="bg-purple-100 p-2 rounded-lg">
               <Brain size={20} className="text-purple-600" />
             </div>

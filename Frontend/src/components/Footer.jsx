@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-slate-900 text-slate-300 py-16">
+    <footer className="bg-slate-900 text-slate-300 py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
+          <div className="col-span-2 md:col-span-1 space-y-4">
             <div className="flex items-center space-x-2">
               <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-1.5 rounded-lg">
                 <Activity className="text-white h-5 w-5" />
@@ -18,16 +18,16 @@ const Footer = () => {
               Empowering your health journey with advanced AI analytics and personalized wellness insights.
             </p>
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="hover:text-white transition-colors"><Twitter size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Linkedin size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Instagram size={20} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Twitter size={18} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Linkedin size={18} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Facebook size={18} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Instagram size={18} /></a>
             </div>
           </div>
 
           <div>
-            <h3 className="text-white font-semibold mb-4">Platform</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Platform</h3>
+            <ul className="space-y-2 text-xs sm:text-sm">
               <li><Link to="/" className="hover:text-primary-400 transition-colors">Home</Link></li>
               <li><Link to="/features" className="hover:text-primary-400 transition-colors">Features</Link></li>
               <li><Link to="/pricing" className="hover:text-primary-400 transition-colors">Pricing</Link></li>
@@ -36,26 +36,26 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-white font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Resources</h3>
+            <ul className="space-y-2 text-xs sm:text-sm">
               <li><Link to="/blogs" className="hover:text-primary-400 transition-colors">Blog</Link></li>
               <li><Link to="/faq" className="hover:text-primary-400 transition-colors">FAQ</Link></li>
-              <li><Link to="/contact" className="hover:text-primary-400 transition-colors">Contact Support</Link></li>
-              <li><Link to="/privacy" className="hover:text-primary-400 transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/contact" className="hover:text-primary-400 transition-colors">Support</Link></li>
+              <li><Link to="/privacy" className="hover:text-primary-400 transition-colors">Privacy</Link></li>
             </ul>
           </div>
 
-          <div>
-            <h3 className="text-white font-semibold mb-4">Contact</h3>
-            <ul className="space-y-2 text-sm">
-              <li>123 Innovation Dr, Tech City</li>
-              <li>support@healance.ai</li>
-              <li>+1 (555) 123-4567</li>
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Contact</h3>
+            <ul className="space-y-2 text-xs sm:text-sm">
+              <li>BKC, Bandra East, Mumbai</li>
+              <li className="break-all">support@healance.ai</li>
+              <li>+91 22 1234 5678</li>
             </ul>
           </div>
         </div>
         
-        <div className="border-t border-slate-800 mt-12 pt-8 text-center text-sm text-slate-500">
+        <div className="border-t border-slate-800 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-slate-500">
           © {new Date().getFullYear()} Healance AI. All rights reserved.
         </div>
       </div>

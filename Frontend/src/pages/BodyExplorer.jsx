@@ -52,33 +52,34 @@ const BodyExplorer = () => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Interactive Body Explorer</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Interactive Body Explorer</h2>
         <div className="bg-white p-1 rounded-xl border border-slate-200 flex">
           <button 
             onClick={() => setGender('male')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'male' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'male' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Male
           </button>
           <button 
             onClick={() => setGender('female')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'female' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'female' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Female
           </button>
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-8 relative overflow-hidden flex justify-center items-center">
-        <div className="w-full max-w-md h-full">
+      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-8 relative overflow-hidden flex justify-center items-center min-h-[400px]">
+        <div className="w-full max-w-xs sm:max-w-md h-full">
           <HumanBody gender={gender} onPartClick={handlePartClick} />
         </div>
 
-        <div className="absolute bottom-6 left-6 bg-slate-50 p-4 rounded-xl border border-slate-200 max-w-xs">
-          <p className="text-sm text-slate-600 flex items-center">
-            <Activity size={16} className="mr-2 text-primary-500" />
-            Hover and click on body parts to view detailed health insights.
+        <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 max-w-[200px] sm:max-w-xs">
+          <p className="text-xs sm:text-sm text-slate-600 flex items-center">
+            <Activity size={14} className="mr-2 text-primary-500 flex-shrink-0" />
+            <span className="hidden sm:inline">Hover and click on body parts to view detailed health insights.</span>
+            <span className="sm:hidden">Tap body parts for health insights.</span>
           </p>
         </div>
       </div>
@@ -90,22 +91,22 @@ const BodyExplorer = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] flex flex-col"
             >
-              <div className="bg-gradient-to-r from-primary-500 to-secondary-500 p-6 flex justify-between items-center text-white">
-                <h3 className="text-2xl font-bold">{selectedPart}</h3>
+              <div className="bg-gradient-to-r from-primary-500 to-secondary-500 p-4 sm:p-6 flex justify-between items-center text-white">
+                <h3 className="text-xl sm:text-2xl font-bold">{selectedPart}</h3>
                 <button onClick={() => setSelectedPart(null)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
               
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Function</h4>
-                  <p className="text-slate-700 leading-relaxed">{partInfo.function}</p>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Function</h4>
+                  <p className="text-sm sm:text-base text-slate-700 leading-relaxed">{partInfo.function}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="bg-red-50 p-4 rounded-xl border border-red-100">
                     <div className="flex items-center gap-2 mb-2 text-red-600 font-bold">
                       <AlertCircle size={18} /> Common Diseases
