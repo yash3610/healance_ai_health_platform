@@ -117,25 +117,26 @@ function getActivitySuitability(temp, humidity, aqi, uvIndex) {
   const activities = [];
 
   // Morning Run
-  let runRating = 'Excellent';
-  if (temp > 35 || aqi > 100) runRating = 'Poor';
-  else if (temp > 30 || humidity > 80) runRating = 'Moderate';
-  activities.push({ name: 'Morning Run', rating: runRating });
+  let runSuitability = 'Excellent';
+  if (temp > 35 || aqi > 100) runSuitability = 'Poor';
+  else if (temp > 30 || humidity > 80) runSuitability = 'Moderate';
+  activities.push({ name: 'Morning Run', suitability: runSuitability, time: '6:00 AM - 8:00 AM' });
 
   // Afternoon Cycling
-  let cycleRating = 'Good';
-  if (uvIndex > 6 || temp > 35) cycleRating = 'Poor';
-  else if (temp > 30) cycleRating = 'Moderate';
-  activities.push({ name: 'Afternoon Cycling', rating: cycleRating });
+  let cycleSuitability = 'Good';
+  if (uvIndex > 6 || temp > 35) cycleSuitability = 'Poor';
+  else if (temp > 30) cycleSuitability = 'Moderate';
+  activities.push({ name: 'Afternoon Cycling', suitability: cycleSuitability, time: '4:00 PM - 6:00 PM' });
 
   // Evening Yoga
-  activities.push({ name: 'Evening Yoga', rating: 'Perfect' }); // Always suitable
+  activities.push({ name: 'Evening Yoga', suitability: 'Perfect', time: '6:00 PM - 7:30 PM' });
 
-  // Swimming
-  let swimRating = 'Good';
-  if (temp < 15) swimRating = 'Poor';
-  else if (temp > 25 && temp < 35) swimRating = 'Excellent';
-  activities.push({ name: 'Swimming', rating: swimRating });
+  // Outdoor Walk
+  let walkSuitability = 'Good';
+  if (temp > 35 || aqi > 100) walkSuitability = 'Not Recommended';
+  else if (temp > 30 || humidity > 75) walkSuitability = 'Moderate';
+  else if (temp >= 20 && temp <= 28) walkSuitability = 'Excellent';
+  activities.push({ name: 'Outdoor Walk', suitability: walkSuitability, time: '7:00 AM - 9:00 AM' });
 
   return activities;
 }
@@ -153,27 +154,33 @@ function generateHealthTips(temp, humidity, aqi, uvIndex) {
   return tips;
 }
 
-// @desc    Get 5-day health forecast
+// @desc    Get 7-day health forecast
 // @route   GET /api/forecast/weekly
 // @access  Private
 export const getWeeklyForecast = async (req, res) => {
   try {
-    // Generate 5-day forecast
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const forecast = days.map((day, i) => {
-      const temp = 20 + Math.floor(Math.random() * 15);
-      const humidity = 40 + Math.floor(Math.random() * 40);
-      const conditions = ['Sunny', 'Cloudy', 'Partly Cloudy', 'Clear', 'Light Rain'];
-
-      return {
-        day,
+    // Generate 7-day forecast
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date().getDay();
+    const conditions = ['Sunny', 'Clouds', 'Clear', 'Sunny', 'Clouds', 'Clear', 'Sunny'];
+    
+    const forecast = [];
+    for (let i = 0; i < 7; i++) {
+      const dayIndex = (today + i) % 7;
+      const temp = 22 + Math.floor(Math.random() * 12);
+      const humidity = 45 + Math.floor(Math.random() * 35);
+      
+      forecast.push({
+        day: dayNames[dayIndex],
+        temp,
         temperature: temp,
         condition: conditions[i % conditions.length],
         humidity,
         bestActivity: temp > 30 ? 'Indoor Yoga' : 'Morning Run',
         healthScore: 70 + Math.floor(Math.random() * 25),
-      };
-    });
+        isToday: i === 0
+      });
+    }
 
     res.json({ success: true, forecast });
   } catch (error) {

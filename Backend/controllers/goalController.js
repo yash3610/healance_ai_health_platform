@@ -1,4 +1,5 @@
 import Goal from '../models/Goal.js';
+import { createSystemNotification } from './notificationController.js';
 
 // @desc    Create a new goal
 // @route   POST /api/goals
@@ -9,6 +10,15 @@ export const createGoal = async (req, res) => {
       user: req.user._id,
       ...req.body,
     });
+    
+    // Create notification for new goal
+    await createSystemNotification(
+      req.user._id,
+      '🎯 New Goal Created!',
+      `Your new goal "${goal.title}" has been set. Let's achieve it together!`,
+      'health'
+    );
+    
     res.status(201).json({ success: true, goal });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -42,14 +52,22 @@ export const updateGoal = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
 
+    const wasCompleted = goal.isCompleted;
     const { current, target, isCompleted } = req.body;
     if (current !== undefined) goal.current = current;
     if (target !== undefined) goal.target = target;
     if (isCompleted !== undefined) goal.isCompleted = isCompleted;
 
     // Check if goal is completed
-    if (goal.current >= goal.target) {
+    if (goal.current >= goal.target && !wasCompleted) {
       goal.isCompleted = true;
+      // Create achievement notification
+      await createSystemNotification(
+        req.user._id,
+        '🎯 Goal Completed!',
+        `Congratulations! You've achieved your "${goal.title}" goal!`,
+        'achievement'
+      );
     }
 
     const updatedGoal = await goal.save();
@@ -71,6 +89,7 @@ export const logProgress = async (req, res) => {
 
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
+    const previousProgress = (goal.current / goal.target) * 100;
 
     goal.weeklyProgress.push({
       day: dayNames[today.getDay()],
@@ -85,6 +104,31 @@ export const logProgress = async (req, res) => {
 
     // Update current value
     goal.current = req.body.value;
+    const newProgress = (goal.current / goal.target) * 100;
+
+    // Check for milestone notifications (25%, 50%, 75%, 100%)
+    const milestones = [25, 50, 75, 100];
+    for (const milestone of milestones) {
+      if (previousProgress < milestone && newProgress >= milestone) {
+        if (milestone === 100) {
+          goal.isCompleted = true;
+          await createSystemNotification(
+            req.user._id,
+            '🎯 Goal Completed!',
+            `Amazing! You've completed your "${goal.title}" goal!`,
+            'achievement'
+          );
+        } else {
+          await createSystemNotification(
+            req.user._id,
+            `📈 ${milestone}% Progress!`,
+            `Great work! You're ${milestone}% of the way to your "${goal.title}" goal.`,
+            'health'
+          );
+        }
+        break;
+      }
+    }
 
     await goal.save();
     res.json({ success: true, goal });
