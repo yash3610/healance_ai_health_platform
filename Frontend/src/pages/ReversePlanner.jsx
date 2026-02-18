@@ -646,7 +646,7 @@ const ReversePlanner = () => {
               <h3 className="font-bold text-sm sm:text-base text-slate-800">Weekly Goal Completion</h3>
             </div>
             <div className="h-48 sm:h-64">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={192}>
                 <BarChart data={weeklyData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
