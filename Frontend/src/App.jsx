@@ -14,7 +14,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Blog from './pages/Blog';
 import Contact from './pages/Contact';
-import FAQ from './pages/FAQ';
+import About from './pages/About';
 import RiskPrediction from './pages/RiskPrediction';
 import AIChatbots from './pages/AIChatbots';
 import BodyExplorer from './pages/BodyExplorer';
@@ -53,7 +53,7 @@ function App() {
             <Route path="/blog/:id" element={<Blog />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
-            <Route path="/faq" element={<FAQ />} />
+            <Route path="/faq" element={<About />} />
             
             {/* Protected Dashboard Routes */}
             <Route 
