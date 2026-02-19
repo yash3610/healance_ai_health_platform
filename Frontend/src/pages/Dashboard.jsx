@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import axios from 'axios';
+import { useHealthData } from '../context/HealthDataContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -58,17 +59,33 @@ const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAc
 );
 
 // Water Tracker Component
-const WaterTracker = ({ waterIntake, setWaterIntake, onSetReminder, reminderActive }) => {
+const WaterTracker = ({ onSetReminder, reminderActive }) => {
+  const { waterIntake, addWater, removeWater, updateGoalProgress, activeGoals } = useHealthData();
   const glasses = Math.floor(waterIntake * 4); // 1L = 4 glasses (250ml each)
   const target = 12; // 3L = 12 glasses
   const remaining = Math.max(target - glasses, 0);
 
-  const addGlass = () => {
-    setWaterIntake(prev => Math.min(prev + 0.25, 3));
+  // Find water goal to get actual ID
+  const waterGoal = activeGoals.find(g => g.type === 'water');
+
+  const handleAddGlass = async () => {
+    const newValue = Math.min(waterIntake + 0.25, 3);
+    addWater();
+    
+    // Update backend if water goal exists
+    if (waterGoal) {
+      await updateGoalProgress('water', newValue);
+    }
   };
 
-  const removeGlass = () => {
-    setWaterIntake(prev => Math.max(prev - 0.25, 0));
+  const handleRemoveGlass = async () => {
+    const newValue = Math.max(waterIntake - 0.25, 0);
+    removeWater();
+    
+    // Update backend if water goal exists
+    if (waterGoal) {
+      await updateGoalProgress('water', newValue);
+    }
   };
 
   return (
@@ -116,14 +133,14 @@ const WaterTracker = ({ waterIntake, setWaterIntake, onSetReminder, reminderActi
         </p>
         <div className="flex items-center gap-2">
           <button 
-            onClick={removeGlass}
+            onClick={handleRemoveGlass}
             disabled={waterIntake <= 0}
             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 transition-colors"
           >
             <Minus size={16} className="text-slate-600" />
           </button>
           <button 
-            onClick={addGlass}
+            onClick={handleAddGlass}
             disabled={waterIntake >= 3}
             className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
           >
@@ -196,11 +213,17 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
 };
 
 const Dashboard = () => {
-  const [waterIntake, setWaterIntake] = useState(1.2);
+  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData } = useHealthData();
+  
   const [waterReminderActive, setWaterReminderActive] = useState(false);
   const [waterReminderInterval, setWaterReminderInterval] = useState(30);
   const [isWaterReminderModalOpen, setIsWaterReminderModalOpen] = useState(false);
   const [waterReminderTimerId, setWaterReminderTimerId] = useState(null);
+
+  // Calculate steps progress
+  const stepsProgress = Math.round((dailySteps / stepsGoal) * 100);
+  const stepsFormatted = dailySteps.toLocaleString();
+  const stepsGoalFormatted = (stepsGoal / 1000).toFixed(0) + 'k';
 
   // Request notification permission
   const requestNotificationPermission = async () => {
@@ -301,6 +324,7 @@ const Dashboard = () => {
   // Initialize on mount
   useEffect(() => {
     requestNotificationPermission();
+    fetchHealthData();
 
     // Restore water reminder state
     const savedReminderActive = localStorage.getItem('waterReminderActive');
@@ -323,30 +347,28 @@ const Dashboard = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
           title="Daily Steps" 
-          value="6,240" 
-          unit="/ 10k" 
+          value={stepsFormatted} 
+          unit={`/ ${stepsGoalFormatted}`} 
           change="+12%" 
           icon={Footprints} 
           color="bg-orange-500" 
-          subtext="62% of daily goal"
+          subtext={`${stepsProgress}% of daily goal`}
         />
         <WaterTracker 
-          waterIntake={waterIntake}
-          setWaterIntake={setWaterIntake}
           onSetReminder={() => waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true)}
           reminderActive={waterReminderActive}
         />
         <StatCard 
           title="Active Goals" 
-          value="3" 
+          value={goalsCount.toString()} 
           unit="ongoing" 
           icon={Target} 
           color="bg-purple-500" 
-          subtext="Weight loss on track"
+          subtext="Track your progress"
         />
         <StatCard 
           title="Walk & Earn" 
-          value="450" 
+          value={coins.toString()} 
           unit="coins" 
           icon={Coins} 
           color="bg-yellow-500" 

@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,10 +21,14 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
+    // Prevent multiple simultaneous auth checks
+    if (isCheckingAuth) return;
+    
     const token = localStorage.getItem('healance_token');
     const storedUser = localStorage.getItem('healance_user');
     
     if (token && storedUser) {
+      setIsCheckingAuth(true);
       try {
         // Verify token is still valid by fetching user data
         const data = await authService.getMe();
@@ -33,6 +38,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('healance_token');
         localStorage.removeItem('healance_user');
         setUser(null);
+      } finally {
+        setIsCheckingAuth(false);
       }
     }
     setLoading(false);
@@ -47,7 +54,14 @@ export const AuthProvider = ({ children }) => {
       navigate('/dashboard');
       return { success: true, user: data.user };
     } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      let message = 'Registration failed. Please try again.';
+      
+      if (error.response?.status === 429) {
+        message = 'Too many registration attempts. Please wait a few minutes and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
       setError(message);
       return { success: false, message };
     }
@@ -62,7 +76,15 @@ export const AuthProvider = ({ children }) => {
       navigate('/dashboard');
       return { success: true, user: data.user };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      let message = 'Login failed. Please check your credentials.';
+      
+      // Handle specific error cases
+      if (error.response?.status === 429) {
+        message = 'Too many login attempts. Please wait a few minutes and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
       setError(message);
       return { success: false, message };
     }
@@ -85,7 +107,14 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.forgotPassword(email);
       return { success: true, message: data.message };
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to send reset email.';
+      let message = 'Failed to send reset email.';
+      
+      if (error.response?.status === 429) {
+        message = 'Too many password reset requests. Please wait before trying again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
       setError(message);
       return { success: false, message };
     }

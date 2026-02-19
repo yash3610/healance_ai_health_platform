@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { HealthDataProvider } from './context/HealthDataContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
@@ -45,37 +46,39 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Layout>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/blogs" element={<Blog />} />
-            <Route path="/blog/:id" element={<Blog />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
-            <Route path="/faq" element={<About />} />
-            
-            {/* Protected Dashboard Routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="risk-prediction" element={<RiskPrediction />} />
-              <Route path="chatbots" element={<AIChatbots />} />
-              <Route path="body-explorer" element={<BodyExplorer />} />
-              <Route path="reverse-planner" element={<ReversePlanner />} />
-              <Route path="walk-and-earn" element={<WalkAndEarn />} />
-              <Route path="forecast" element={<Forecast />} />
-              <Route path="blogs" element={<DashboardBlogs />} />
-              <Route path="contact" element={<DashboardContact />} />
-            </Route>
-          </Routes>
-        </Layout>
+        <HealthDataProvider>
+          <Layout>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/blogs" element={<Blog />} />
+              <Route path="/blog/:id" element={<Blog />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
+              <Route path="/faq" element={<About />} />
+              
+              {/* Protected Dashboard Routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="risk-prediction" element={<RiskPrediction />} />
+                <Route path="chatbots" element={<AIChatbots />} />
+                <Route path="body-explorer" element={<BodyExplorer />} />
+                <Route path="reverse-planner" element={<ReversePlanner />} />
+                <Route path="walk-and-earn" element={<WalkAndEarn />} />
+                <Route path="forecast" element={<Forecast />} />
+                <Route path="blogs" element={<DashboardBlogs />} />
+                <Route path="contact" element={<DashboardContact />} />
+              </Route>
+            </Routes>
+          </Layout>
+        </HealthDataProvider>
       </AuthProvider>
     </Router>
   );

@@ -30,12 +30,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle rate limiting
+    if (error.response?.status === 429) {
+      console.error('Too many requests. Please wait a moment before trying again.');
+      // You can dispatch a toast notification here
+    }
+    
+    // Handle unauthorized
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem('healance_token');
       localStorage.removeItem('healance_user');
       // Optionally dispatch logout action or redirect
     }
+    
     return Promise.reject(error);
   }
 );

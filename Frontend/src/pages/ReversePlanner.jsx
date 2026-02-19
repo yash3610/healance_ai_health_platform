@@ -3,6 +3,7 @@ import { Target, Droplets, Flame, Moon, Footprints, Plus, Edit2, Trash2, X, Chec
 import Button from '../components/ui/Button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
+import { useHealthData } from '../context/HealthDataContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -348,6 +349,8 @@ const LogProgressModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 };
 
 const ReversePlanner = () => {
+  const { fetchHealthData } = useHealthData();
+  
   const [goals, setGoals] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -452,6 +455,7 @@ const ReversePlanner = () => {
       if (response.data.success) {
         setSuccess(goalId ? 'Goal updated successfully!' : 'Goal created successfully!');
         fetchGoals();
+        fetchHealthData(); // Sync with global health data
         setIsGoalModalOpen(false);
         setSelectedGoal(null);
         setTimeout(() => setSuccess(''), 3000);
@@ -474,6 +478,7 @@ const ReversePlanner = () => {
       });
       setSuccess('Goal deleted successfully!');
       fetchGoals();
+      fetchHealthData(); // Sync with global health data
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to delete goal');
@@ -493,6 +498,7 @@ const ReversePlanner = () => {
       if (response.data.success) {
         setSuccess('Progress logged successfully!');
         fetchGoals();
+        fetchHealthData(); // Sync with global health data
         setIsLogModalOpen(false);
         setSelectedGoal(null);
         setTimeout(() => setSuccess(''), 3000);
