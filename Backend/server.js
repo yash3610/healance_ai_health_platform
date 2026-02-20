@@ -7,7 +7,6 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 import connectDB from './config/db.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
@@ -96,9 +95,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Healance AI Backend running on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API: http://localhost:${PORT}/api/health\n`);
+  console.log(`\nHealance AI backend running on port ${PORT}...`);
 });
 
 export default app;

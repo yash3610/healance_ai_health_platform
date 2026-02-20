@@ -1,132 +1,134 @@
-# 💊 Healance AI - Health & Wellness Platform
+# Healance AI - Health & Wellness Platform
 
-<div align="center">
+![React](https://img.shields.io/badge/React-19.1-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-6.3-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.21-000000?style=for-the-badge&logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-8.x-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-FFB300?style=for-the-badge&logo=jsonwebtokens&logoColor=black)
+![openFDA](https://img.shields.io/badge/openFDA-API-0A66C2?style=for-the-badge)
 
-![Healance AI](https://img.shields.io/badge/Healance-AI%20Health%20Platform-00D9FF?style=for-the-badge)
-![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
+A comprehensive full-stack health and wellness platform with AI-powered features.
 
-**A comprehensive full-stack health and wellness platform with AI-powered features**
-
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Demo](#-demo-credentials) • [API](#-api-documentation) • [Contributing](#-contributing)
-
-</div>
-
----
-
-## 📋 Overview
-
-Healance AI is a modern health management platform that combines cutting-edge AI technology with comprehensive health tracking features. Get personalized health insights, track your wellness journey, earn rewards for staying active, and access FDA-approved medicine information—all in one place.
-
-## ✨ Features
-
-### 🤖 **AI-Powered Health Assistants**
-- **Health Assistant Bot**: Get instant answers about symptoms, diet, exercise, and wellness
-- **Medicine Information Bot**: Access real-time FDA-approved drug information
-  - Powered by FDA openFDA API
-  - Comprehensive details: dosage, warnings, side effects, interactions
-  - Supports 10,000+ FDA-approved medications
-
-### 📊 **Health Dashboard**
-- Real-time health metrics visualization
-- BMI calculator and health score tracking
-- Goal progress monitoring
-- Activity history and trends
-
-### 🎯 **Goal Tracking & Achievements**
-- Set personalized health goals (weight, steps, calories, water)
-- Track daily progress with visual indicators
-- Earn achievement badges
-- Smart reverse planning from target dates
-
-### 🚶 **Walk & Earn Rewards**
-- Convert daily steps into redeemable points
-- Unlock exclusive health rewards
-- Leaderboard and challenges
-- Integration with fitness trackers
-
-### 🔬 **3D Body Explorer**
-- Interactive 3D human anatomy model
-- Detailed organ information
-- Health tips for each body system
-
-### 🌡️ **Health Forecast**
-- Weather-based health recommendations
-- Pollen and air quality alerts
-- Exercise suggestions based on conditions
-
-### 📰 **Health Blog & News**
-- Curated health articles
-- Expert wellness tips
-- Search and filtering
-
-### 🔐 **Secure Authentication**
-- JWT-based authentication
-- Password reset via email
-- Social login (Google, GitHub)
-- Role-based access control
+**Authors:** Yash Hule & Aaditya Gunjal (Full Stack Developers...)
 
 ---
 
-## 🛠️ Tech Stack
+## Core Features
 
-### **Frontend**
-- **Framework**: React 19.1 + Vite 6.3
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **HTTP Client**: Axios
-- **Routing**: React Router v6
-
-### **Backend**
-- **Runtime**: Node.js 24.5
-- **Framework**: Express 4.21
-- **Database**: MongoDB 8.0
-- **ODM**: Mongoose 8.9
-- **Authentication**: JWT + bcrypt
-- **File Upload**: Multer
-- **Email**: Nodemailer
-
-### **External APIs**
-- **FDA openFDA API**: Real-time medicine information
-- **OpenWeatherMap**: Weather-based health forecasts
-- **OpenAI** *(optional)*: Enhanced chatbot responses
+- **AI-Powered Health Assistants:** Health Assistant Bot for symptoms, diet, exercise, and wellness guidance.
+- **Medicine Information Bot:** Real-time FDA-approved drug details using openFDA API, including dosage, warnings, side effects, interactions, and more.
+- **Health Dashboard:** Real-time health metrics, BMI/health score tracking, and progress visualization.
+- **Goal Tracking & Achievements:** Personalized goals (weight, steps, calories, water), daily progress, badges, and reverse planning.
+- **Walk & Earn Rewards:** Convert steps into points, unlock rewards, and join challenges.
+- **3D Body Explorer:** Interactive 3D anatomy model with body system insights.
+- **Health Forecast:** Weather-based recommendations with air-quality and pollen awareness.
+- **Health Blog & News:** Curated wellness content with search/filter support.
+- **Secure Authentication:** JWT auth, password reset by email, social login, and role-based access.
 
 ---
 
-## 🚀 Getting Started
+## Technology Stack
+
+| Technology | Version | Purpose |
+| ---------- | ------- | ------- |
+| React | 19.1.x | Frontend framework |
+| Vite | 6.3.x | Frontend build tooling |
+| React Router DOM | 7.13.x | Client-side routing |
+| Tailwind CSS | 3.4.x | Styling |
+| Framer Motion | 12.x | Animations |
+| Lucide React | 0.511.x | Icon system |
+| Axios | 1.9.x | HTTP requests |
+| Node.js | 18+ | Backend runtime |
+| Express | 4.21.x | Backend framework |
+| MongoDB | 8.x | Database |
+| Mongoose | 8.x | ODM for MongoDB |
+| JWT | 9.x | Authentication |
+| bcryptjs | 2.4.x | Password hashing |
+| Multer | 1.4.x | File upload |
+| Nodemailer | 6.9.x | Email service |
+
+---
+
+## Project Structure
+
+```text
+healance_ai_health_platform/
++-- Backend/
+|   +-- config/
+|   +-- controllers/
+|   |   +-- authController.js
+|   |   +-- chatbotController.js
+|   |   +-- healthController.js
+|   |   +-- ...
+|   +-- middleware/
+|   +-- models/
+|   |   +-- User.js
+|   |   +-- HealthData.js
+|   |   +-- ChatSession.js
+|   |   +-- ...
+|   +-- routes/
+|   +-- seeds/
+|   +-- tests/
+|   +-- utils/
+|   |   +-- fdaApi.js
+|   |   +-- sendEmail.js
+|   |   +-- generateToken.js
+|   +-- .env
+|   +-- package.json
+|   +-- server.js
+|
++-- Frontend/
+|   +-- src/
+|   |   +-- components/
+|   |   |   +-- AuthModal.jsx
+|   |   |   +-- Navbar.jsx
+|   |   |   +-- HumanBody.jsx
+|   |   |   +-- ui/
+|   |   +-- pages/
+|   |   |   +-- Home.jsx
+|   |   |   +-- Dashboard.jsx
+|   |   |   +-- AIChatbots.jsx
+|   |   |   +-- WalkAndEarn.jsx
+|   |   |   +-- ...
+|   |   +-- context/
+|   |   +-- hooks/
+|   |   +-- layouts/
+|   |   +-- services/
+|   |   +-- App.jsx
+|   +-- .env
+|   +-- package.json
+|   +-- netlify.toml
+|
++-- .gitignore
++-- README.md
+```
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js** 18+ installed
-- **MongoDB** 8.0+ running locally or cloud instance (MongoDB Atlas)
-- **Git** installed
+- Node.js (v18 or higher)
+- MongoDB (8.0+ local or Atlas)
+- Git
+- npm
 
-### Installation
+### Backend Setup
 
-**1. Clone the repository**
-```bash
-git clone https://github.com/yourusername/healance_ai_health_platform.git
-cd healance_ai_health_platform
-```
-
-**2. Backend Setup**
 ```bash
 cd Backend
-
-# Install dependencies
 npm install
-
-# Copy environment file
 cp .env.example .env
-
-# Edit .env with your values
-nano .env  # or use your preferred editor
+# Update .env values, then run:
+npm run dev
+# Backend: http://localhost:5001
 ```
 
-**Required environment variables:**
+**Backend `.env` example:**
+
 ```env
 PORT=5001
 MONGO_URI=mongodb://localhost:27017/healance_ai
@@ -143,307 +145,249 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password
 ```
 
-**3. Frontend Setup**
+### Frontend Setup
+
 ```bash
-cd ../Frontend
-
-# Install dependencies
+cd Frontend
 npm install
-
-# Copy environment file
 cp .env.example .env
-
-# Add backend URL
-echo "VITE_API_URL=http://localhost:5001/api" > .env
+# Set API URL:
+# VITE_API_URL=http://localhost:5001/api
+npm run dev
+# Frontend: http://localhost:5173
 ```
 
-**4. Seed Sample Data** *(Optional)*
+**Frontend `.env` example:**
+
+```env
+VITE_API_URL=http://localhost:5001/api
+```
+
+### Optional Seed Data
+
 ```bash
-cd ../Backend
+cd Backend
 npm run seed
 ```
 
-This creates:
-- 2 demo users (demo@healance.ai / demo123456, admin@healance.ai / admin123456)
-- 6 health blog posts
-- 6 walk & earn rewards
-- 4 sample health goals
-
-**5. Start Development Servers**
-
-**Terminal 1 - Backend:**
-```bash
-cd Backend
-npm run dev
-```
-Backend runs on: http://localhost:5001
-
-**Terminal 2 - Frontend:**
-```bash
-cd Frontend
-npm run dev
-```
-Frontend runs on: http://localhost:5173
+Creates demo users, blog posts, rewards, and sample health goals.
 
 ---
 
-## 🎮 Demo Credentials
+## Usage Flow
+
+1. **Register/Login** - Create account and authenticate.
+2. **Dashboard** - View health stats, trends, and progress.
+3. **Use AI Assistants** - Ask wellness questions or search medicines.
+4. **Set Goals** - Add goals and track daily progress.
+5. **Walk & Earn** - Record steps and redeem rewards.
+6. **Track Insights** - Use forecast, anatomy explorer, and blog resources.
+
+---
+
+## Demo Credentials
 
 | Email | Password | Role |
-|:--|:--|:--|
+| ----- | -------- | ---- |
 | demo@healance.ai | demo123456 | User |
 | admin@healance.ai | admin123456 | Admin |
 
 ---
 
-## 📁 Project Structure
+## UI & Design
 
-```
-healance_ai_health_platform/
-├── Backend/                     # Node.js + Express API
-│   ├── config/                  # Database connection
-│   ├── controllers/             # Route controllers
-│   │   ├── authController.js    # Auth & password reset
-│   │   ├── chatbotController.js # FDA API integration
-│   │   ├── healthController.js  # Health data tracking
-│   │   └── ...
-│   ├── models/                  # Mongoose schemas
-│   │   ├── User.js
-│   │   ├── HealthData.js
-│   │   ├── ChatSession.js
-│   │   └── ...
-│   ├── routes/                  # API routes
-│   ├── middleware/              # Auth, upload, error handling
-│   ├── utils/                   # Helper functions
-│   │   ├── fdaApi.js           # FDA API integration
-│   │   ├── sendEmail.js
-│   │   └── generateToken.js
-│   ├── seeds/                   # Database seeders
-│   ├── tests/                   # Test scripts
-│   └── server.js                # Entry point
-│
-├── Frontend/                    # React + Vite SPA
-│   ├── src/
-│   │   ├── components/          # Reusable components
-│   │   │   ├── AuthModal.jsx
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── HumanBody.jsx
-│   │   │   └── ui/
-│   │   ├── pages/               # Page components
-│   │   │   ├── Home.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── AIChatbots.jsx
-│   │   │   ├── WalkAndEarn.jsx
-│   │   │   └── ...
-│   │   ├── context/             # React context
-│   │   │   └── AuthContext.jsx
-│   │   ├── services/            # API services
-│   │   │   └── api.js
-│   │   ├── layouts/
-│   │   ├── hooks/
-│   │   └── App.jsx
-│   └── package.json
-│
-├── .gitignore                   # Git ignore rules
-└── README.md                    # This file
-```
+- Clean and modern Tailwind CSS based interface
+- Responsive layout for desktop, tablet, and mobile
+- Smooth animation with Framer Motion
+- Reusable component-driven frontend architecture
+- Focused, health-centric UX across modules
 
 ---
 
-## 🔌 API Documentation
+## Security Features
+
+- JWT authentication with HTTP-only cookies
+- Password hashing with bcrypt
+- Role-based route protection
+- Password reset token flow
+- CORS, Helmet, and rate limiting protections
+- Input validation on API routes
+
+---
+
+## API Endpoints
 
 ### Base URL
-```
+
+```text
 http://localhost:5001/api
 ```
 
-### Authentication Endpoints
+### Authentication
 
-| Method | Endpoint | Description | Auth Required |
-|:--|:--|:--|:--|
-| POST | `/auth/register` | Register new user | ❌ |
-| POST | `/auth/login` | Login user | ❌ |
-| GET | `/auth/me` | Get current user | ✅ |
-| POST | `/auth/logout` | Logout user | ✅ |
-| POST | `/auth/forgot-password` | Send reset email | ❌ |
-| PUT | `/auth/reset-password/:token` | Reset password | ❌ |
-| PUT | `/auth/update-password` | Change password | ✅ |
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user (Protected)
+- `POST /api/auth/logout` - Logout (Protected)
+- `POST /api/auth/forgot-password` - Request password reset
+- `PUT /api/auth/reset-password/:token` - Reset password
+- `PUT /api/auth/update-password` - Update password (Protected)
 
-### Chatbot Endpoints
+### Chatbot
 
-| Method | Endpoint | Description | Auth Required |
-|:--|:--|:--|:--|
-| POST | `/chatbot/message` | Send message to bot | ✅ |
-| GET | `/chatbot/sessions` | Get chat sessions | ✅ |
-| GET | `/chatbot/sessions/:id` | Get session messages | ✅ |
-| DELETE | `/chatbot/sessions/:id` | Delete session | ✅ |
+- `POST /api/chatbot/message` - Send message to bot (Protected)
+- `GET /api/chatbot/sessions` - Get chat sessions (Protected)
+- `GET /api/chatbot/sessions/:id` - Get messages by session (Protected)
+- `DELETE /api/chatbot/sessions/:id` - Delete session (Protected)
 
-**Medicine Bot Example:**
-```javascript
-POST /api/chatbot/message
-{
-  "message": "aspirin",
-  "botType": "medicine",
-  "sessionId": "..."
-}
-// Returns FDA-approved medicine information
-```
+### Health Data
 
-### Health Data Endpoints
+- `GET /api/health-data` - Get health records (Protected)
+- `POST /api/health-data` - Add health record (Protected)
+- `GET /api/health-data/latest` - Get latest record (Protected)
 
-| Method | Endpoint | Description | Auth Required |
-|:--|:--|:--|:--|
-| GET | `/health-data` | Get all health records | ✅ |
-| POST | `/health-data` | Add health record | ✅ |
-| GET | `/health-data/latest` | Get latest data | ✅ |
+### Additional Modules
 
-### More Endpoints
 - Goals: `/api/goals`
 - Walk & Earn: `/api/walk-earn`
 - Blogs: `/api/blogs`
-- Forecasts: `/api/forecast`
+- Forecast: `/api/forecast`
 - Contact: `/api/contact`
 
-Full API documentation: [Backend README](./Backend/README.md)
+Full API details: [Backend README](./Backend/README.md)
 
 ---
 
-## 💊 Medicine Information Bot
+## Medicine Information Bot
 
-The Medicine Info Bot uses the **FDA openFDA API** to provide real-time, FDA-approved drug information.
+The Medicine Info Bot integrates with the FDA openFDA API to return real-time, FDA-approved medicine information.
 
-**Supported Information:**
-- ✅ Brand & Generic names
-- ✅ Purpose & Uses
-- ✅ Active Ingredients
-- ✅ Dosage & Administration
-- ✅ Warnings & Precautions
-- ✅ Side Effects
-- ✅ Drug Interactions
-- ✅ Contraindications
-- ✅ Manufacturer details
+**Supported fields include:**
 
-**Example Medicines:**
-- Pain Relief: Aspirin, Ibuprofen, Acetaminophen, Naproxen
-- Antibiotics: Amoxicillin, Azithromycin, Ciprofloxacin
-- Heart/BP: Lisinopril, Atorvastatin, Amlodipine
-- Diabetes: Metformin, Insulin, Glipizide
+- Brand and generic names
+- Purpose and usage
+- Active ingredients
+- Dosage and administration
+- Warnings and precautions
+- Side effects and interactions
+- Contraindications
+- Manufacturer details
 
-**Test Medicine Bot:**
+**Quick test:**
+
 ```bash
 node Backend/tests/testFdaApi.js --detailed aspirin
 ```
 
-📚 Learn more: [Medicine Bot Documentation](./Backend/docs/MEDICINE_BOT_FDA_API.md)
+Detailed docs: [Medicine Bot Documentation](./Backend/docs/MEDICINE_BOT_FDA_API.md)
 
 ---
 
-## 🧪 Testing
+## Testing
 
-**Test FDA API Integration:**
 ```bash
-# Test specific medicine
+# Specific medicine
 node Backend/tests/testFdaApi.js --detailed ibuprofen
 
-# Test all common medicines
+# Common medicine test suite
 node Backend/tests/testFdaApi.js
 ```
 
 ---
 
-## 📦 Deployment
+## Deployment
 
-### Backend (Node.js API)
+### Backend
 
-**Recommended Platforms:**
-- [Railway](https://railway.app/)
-- [Render](https://render.com/)
-- [Heroku](https://heroku.com/)
+- Railway
+- Render
+- Heroku
 - AWS EC2 / DigitalOcean
 
-**Environment Variables:**
-Make sure to set all required environment variables in your hosting platform.
+### Frontend
 
-### Frontend (React SPA)
+- Netlify (recommended)
+- Vercel
+- Cloudflare Pages
 
-**Recommended Platforms:**
-- [Netlify](https://netlify.com/) *(Recommended)*
-- [Vercel](https://vercel.com/)
-- [Cloudflare Pages](https://pages.cloudflare.com/)
+**Build command:**
 
-**Build Command:**
 ```bash
 npm run build
 ```
 
-**Publish Directory:**
-```
+**Publish directory:**
+
+```text
 dist/
 ```
 
-**Netlify Configuration:**
-See [`netlify.toml`](./Frontend/netlify.toml)
+---
+
+## NPM Scripts
+
+### Backend (`Backend/package.json`)
+
+- `npm start` - Start production server
+- `npm run dev` - Start development server with nodemon
+- `npm run seed` - Seed demo data
+
+### Frontend (`Frontend/package.json`)
+
+- `npm run dev` - Start Vite dev server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
 
 ---
 
-## 🔒 Security
+## Troubleshooting
 
-- ✅ JWT authentication with HTTP-only cookies
-- ✅ Password hashing with bcrypt (12 salt rounds)
-- ✅ CORS protection
-- ✅ Rate limiting
-- ✅ Input validation
-- ✅ XSS protection via Helmet
-- ✅ Secure password reset tokens (SHA-256)
-- ⚠️ Never commit `.env` files to Git
+**MongoDB Connection Error**
 
----
+- Ensure MongoDB is running and accessible
+- Check `MONGO_URI` in `Backend/.env`
 
-## 🤝 Contributing
+**CORS or API URL Errors**
 
-Contributions are welcome! Please follow these steps:
+- Verify `CLIENT_URL` in backend `.env`
+- Verify `VITE_API_URL` in `Frontend/.env`
+- Ensure backend and frontend ports match configured URLs
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/AmazingFeature`
-3. **Commit changes**: `git commit -m 'Add AmazingFeature'`
-4. **Push to branch**: `git push origin feature/AmazingFeature`
-5. **Open a Pull Request**
+**Token/Auth Issues**
+
+- Clear cookies/local storage and login again
+- Check JWT secret consistency across environment
 
 ---
 
-## 📝 License
+## Contributing
 
-This project is licensed under the **MIT License**.
-
----
-
-## 👨‍💻 Author
-
-**Vijay Shankar Shewale**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "Add your feature"`
+4. Push your branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
 ---
 
-## 🙏 Acknowledgments
+## Contact & Support
 
-- **FDA openFDA API**: For medicine information
-- **OpenWeatherMap**: For weather data
-- **Tailwind CSS**: For beautiful UI components
-- **React & Node.js communities**: For amazing tools and libraries
-
----
-
-## 📞 Support
-
-- 📧 Email: support@healance.ai
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/healance_ai_health_platform/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/healance_ai_health_platform/discussions)
+- Email: support@healance.ai
+- Issues: [GitHub Issues](https://github.com/yourusername/healance_ai_health_platform/issues)
+- Discussions: [GitHub Discussions](https://github.com/yourusername/healance_ai_health_platform/discussions)
 
 ---
 
-<div align="center">
+## Acknowledgments
 
-**Made with ❤️ for better health and wellness**
+- FDA openFDA API for medicine data
+- OpenWeatherMap for forecast integration
+- Tailwind CSS for frontend styling
+- React and Node.js communities
 
-⭐ Star this repo if you find it helpful!
+---
 
-</div>
+## License
+
+This project is licensed under the MIT License.
