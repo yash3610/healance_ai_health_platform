@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Activity, Shield, Brain, HeartPulse, CheckCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useInView, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { ArrowRight, Activity, Shield, Brain, HeartPulse, Play } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useScrollProgress } from '../hooks/useScrollProgress';
 import Button from '../components/ui/Button';
@@ -28,9 +28,62 @@ const StepCard = ({ number, title, description }) => (
   </div>
 );
 
+const HeroStat = ({ value, suffix, label }) => {
+  const statRef = useRef(null);
+  const isInView = useInView(statRef, { once: true, margin: '-40px' });
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    const duration = 1400;
+    let animationId;
+    let startTime;
+
+    const animateValue = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setDisplayValue(Math.floor(progress * value));
+
+      if (progress < 1) {
+        animationId = window.requestAnimationFrame(animateValue);
+      }
+    };
+
+    animationId = window.requestAnimationFrame(animateValue);
+    return () => window.cancelAnimationFrame(animationId);
+  }, [isInView, value]);
+
+  return (
+    <div ref={statRef}>
+      <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl lg:text-4xl">
+        {displayValue.toLocaleString()}
+        {suffix}
+      </p>
+      <p className="mt-1 text-xs text-white/85 sm:text-sm">{label}</p>
+    </div>
+  );
+};
+
 const Home = () => {
   const { openAuthModal } = useAuth();
   const hasScrolledPast = useScrollProgress(40);
+  const [showCursorEffect, setShowCursorEffect] = useState(false);
+  const [isCursorHovering, setIsCursorHovering] = useState(false);
+  const cursorX = useMotionValue(-100);
+  const cursorY = useMotionValue(-100);
+  const smoothX = useSpring(cursorX, { stiffness: 220, damping: 28, mass: 0.25 });
+  const smoothY = useSpring(cursorY, { stiffness: 220, damping: 28, mass: 0.25 });
+  const ringX = useTransform(smoothX, (value) => value - 18);
+  const ringY = useTransform(smoothY, (value) => value - 18);
+  const dotX = useTransform(smoothX, (value) => value - 5);
+  const dotY = useTransform(smoothY, (value) => value - 5);
+  const heroStats = [
+    { value: 20, suffix: '+', label: 'Years of experience' },
+    { value: 95, suffix: '+', label: 'Patient satisfaction rating' },
+    { value: 5000, suffix: '+', label: 'Patients served annually' },
+    { value: 10, suffix: '+', label: 'Healthcare providers on staff' },
+  ];
   
   // Trigger auth modal on scroll (once per session logic handled in context or here)
   useEffect(() => {
@@ -41,91 +94,136 @@ const Home = () => {
     }
   }, [hasScrolledPast, openAuthModal]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const shouldEnableCursor = () => {
+      const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+      setShowCursorEffect(hasFinePointer && window.innerWidth >= 1024);
+    };
+
+    const handleMouseMove = (event) => {
+      cursorX.set(event.clientX);
+      cursorY.set(event.clientY);
+    };
+
+    const handlePointerOver = (event) => {
+      const targetElement = event.target instanceof Element ? event.target : null;
+      const interactiveElement = targetElement?.closest('button, a, input, textarea, select, [role="button"]');
+      setIsCursorHovering(Boolean(interactiveElement));
+    };
+
+    shouldEnableCursor();
+    window.addEventListener('resize', shouldEnableCursor);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseover', handlePointerOver);
+
+    return () => {
+      window.removeEventListener('resize', shouldEnableCursor);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseover', handlePointerOver);
+    };
+  }, [cursorX, cursorY]);
+
   return (
     <div className="overflow-x-hidden">
+      {showCursorEffect && (
+        <>
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none fixed left-0 top-0 z-30 h-9 w-9 rounded-full bg-primary-300/35 shadow-[0_0_12px_rgba(125,211,252,0.30)]"
+            style={{
+              x: ringX,
+              y: ringY,
+              scale: isCursorHovering ? 1.25 : 1,
+              opacity: isCursorHovering ? 0.95 : 0.8,
+            }}
+            transition={{ duration: 0.18 }}
+          />
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none fixed left-0 top-0 z-30 h-2.5 w-2.5 rounded-full bg-primary-400/90 shadow-[0_0_8px_rgba(56,189,248,0.35)]"
+            style={{
+              x: dotX,
+              y: dotY,
+              scale: isCursorHovering ? 1.15 : 1,
+            }}
+            transition={{ duration: 0.15 }}
+          />
+        </>
+      )}
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20 bg-slate-50">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-primary-200/30 to-secondary-200/30 blur-3xl" />
-          <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tr from-blue-200/30 to-purple-200/30 blur-3xl" />
-        </div>
+      <section className="relative overflow-hidden pt-20 lg:pt-24">
+        <div className="relative min-h-[88vh] lg:min-h-[92vh]">
+          <img
+            src="https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg?auto=compress&cs=tinysrgb&w=2000"
+            alt="Healthcare team"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/75 via-slate-900/45 to-primary-100/10" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-white border border-slate-200 text-sm font-medium text-primary-600 mb-6 shadow-sm">
-                <span className="flex h-2 w-2 rounded-full bg-primary-500 mr-2 animate-pulse"></span>
-                AI-Powered Health Analytics
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-tight mb-6">
-                Your Health, <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-500">
-                  Intelligently Decoded
-                </span>
-              </h1>
-              <p className="text-base sm:text-lg text-slate-600 mb-8 max-w-lg leading-relaxed">
-                Experience the future of personal wellness with Healance. Our AI analyzes your vitals to provide actionable insights and personalized health plans.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={openAuthModal} size="lg" className="shadow-xl shadow-primary-500/20 w-full sm:w-auto">
-                  Start Your Journey
-                </Button>
-                <Button onClick={openAuthModal} variant="secondary" size="lg" className="w-full sm:w-auto">
-                  Go To Dashboard
-                </Button>
-              </div>
-              
-              <div className="mt-10 flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-slate-500">
-                <div className="flex items-center gap-2">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>HIPAA Compliant</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>24/7 AI Monitoring</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+          <div className="relative z-10 mx-auto flex min-h-[88vh] max-w-7xl items-center px-4 pb-44 pt-16 sm:px-6 lg:min-h-[92vh] lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative hidden sm:block"
+              transition={{ duration: 0.5 }}
+              className="max-w-3xl"
             >
-              <div className="relative z-10 bg-white/40 backdrop-blur-xl rounded-3xl p-4 border border-white/50 shadow-2xl animate-float">
-                <img 
-                  src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" 
-                  alt="AI Health Analytics" 
-                  className="rounded-2xl w-full h-auto shadow-sm"
-                />
-                
-                {/* Floating Cards - Hidden on small tablets */}
-                <div className="absolute -bottom-4 -left-4 md:-bottom-6 md:-left-6 bg-white p-3 md:p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 md:gap-3">
-                  <div className="bg-red-100 p-1.5 md:p-2 rounded-full text-red-500">
-                    <HeartPulse size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Heart Rate</p>
-                    <p className="font-bold text-slate-800 text-sm md:text-base">72 BPM</p>
-                  </div>
-                </div>
+              <p className="mb-6 inline-block border-b border-white/60 pb-2 text-xl font-medium text-white/90">Healance AI</p>
+              <h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-7xl">
+                Smarter care,
+                <br />
+                healthier outcomes.
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/85 sm:text-2xl/10">
+                Healance combines expert medical guidance with AI-powered health insights to deliver personalized care, early risk detection, and better day-to-day wellness decisions.
+              </p>
 
-                <div className="absolute -top-4 -right-4 md:-top-6 md:-right-6 bg-white p-3 md:p-4 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 md:gap-3">
-                  <div className="bg-green-100 p-1.5 md:p-2 rounded-full text-green-500">
-                    <Activity size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Health Score</p>
-                    <p className="font-bold text-slate-800 text-sm md:text-base">98/100</p>
-                  </div>
-                </div>
+              <div className="mt-9 flex flex-wrap items-center gap-4">
+                <Button onClick={openAuthModal} size="lg" className="w-full sm:w-auto">
+                  Book Appointment
+                </Button>
+                <button
+                  type="button"
+                  onClick={openAuthModal}
+                  className="inline-flex items-center gap-3 text-lg font-medium text-white transition hover:text-primary-200"
+                >
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70">
+                    <Play size={18} className="ml-0.5" />
+                  </span>
+                  See how we work
+                </button>
               </div>
             </motion.div>
+          </div>
+
+          <div className="absolute right-4 top-28 z-20 rounded-2xl border border-white/50 bg-white/95 px-4 py-3 shadow-xl shadow-slate-900/10 sm:right-8 sm:px-5 lg:right-16">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200" alt="patient" className="h-9 w-9 rounded-full border-2 border-white object-cover" />
+                <img src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=200" alt="patient" className="h-9 w-9 rounded-full border-2 border-white object-cover" />
+                <img src="https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=200" alt="patient" className="h-9 w-9 rounded-full border-2 border-white object-cover" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold leading-none text-slate-800">10K+</p>
+                <p className="text-xs font-medium text-slate-500">Active Users</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute inset-x-4 bottom-5 z-20 overflow-hidden rounded-3xl border border-white/30 bg-slate-900/35 p-5 backdrop-blur-md sm:inset-x-8 lg:left-1/2 lg:right-auto lg:w-[72%] lg:-translate-x-1/2 lg:p-6">
+
+            <div className="relative z-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
+              {heroStats.map((stat) => (
+                <HeroStat
+                  key={stat.label}
+                  value={stat.value}
+                  suffix={stat.suffix}
+                  label={stat.label}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
