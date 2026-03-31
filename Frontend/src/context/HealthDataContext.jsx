@@ -85,11 +85,11 @@ export const HealthDataProvider = ({ children }) => {
 
       // Fetch walk & earn data
       try {
-        const walkEarnResponse = await axios.get(`${API_URL}/walkearn/stats`, {
+        const walkEarnResponse = await axios.get(`${API_URL}/walk-earn/summary`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (walkEarnResponse.data.success) {
-          setCoins(walkEarnResponse.data.stats.totalCoins || 0);
+          setCoins(walkEarnResponse.data.totalCoins || 0);
         }
       } catch (err) {
         console.log('Walk & Earn data not available');

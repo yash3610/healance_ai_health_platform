@@ -1,22 +1,30 @@
 import nodemailer from 'nodemailer';
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, replyTo }) => {
   try {
+    const smtpUser = (process.env.EMAIL_USER || process.env.ADMIN_EMAIL || '').trim();
+    const smtpPass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+
+    if (!smtpUser || !smtpPass) {
+      throw new Error('Email SMTP credentials are missing. Set EMAIL_PASS and either EMAIL_USER or ADMIN_EMAIL in Backend/.env');
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: smtpUser,
+        pass: smtpPass,
       },
     });
 
     const mailOptions = {
-      from: `"Healance AI" <${process.env.EMAIL_USER}>`,
+      from: `"Healance AI" <${smtpUser}>`,
       to,
       subject,
       html,
+      ...(replyTo ? { replyTo } : {}),
     };
 
     const info = await transporter.sendMail(mailOptions);
