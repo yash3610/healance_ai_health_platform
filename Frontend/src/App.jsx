@@ -1,134 +1,92 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { Activity } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { HealthDataProvider } from './context/HealthDataContext';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import AuthModal from './components/AuthModal';
-import ProtectedRoute from './components/ProtectedRoute';
+import WebsiteLayout from './website/components/Layout';
+import AuthModal from './website/components/AuthModal';
+import ProtectedRoute from './shared/components/ProtectedRoute';
 
 // Layouts
-import DashboardLayout from './layouts/DashboardLayout';
+import DashboardLayout from './dashboard/layouts/DashboardLayout';
 
-// Pages
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Blog from './pages/Blog';
-import Contact from './pages/Contact';
-import About from './pages/About';
-import RiskPrediction from './pages/RiskPrediction';
-import AIChatbots from './pages/AIChatbots';
-import BodyExplorer from './pages/BodyExplorer';
-import ReversePlanner from './pages/ReversePlanner';
-import WalkAndEarn from './pages/WalkAndEarn';
-import Forecast from './pages/Forecast';
-import DashboardBlogs from './pages/DashboardBlogs';
-import DashboardContact from './pages/DashboardContact';
-import ResetPassword from './pages/ResetPassword';
+// Website Pages
+import HomePage from './website/pages/HomePage';
+import ContactPage from './website/pages/ContactPage';
+import AboutPage from './website/pages/AboutPage';
+import ServicesPage from './website/pages/ServicesPage';
+import ServiceSinglePage from './website/pages/ServiceSinglePage';
+import BlogPage from './website/pages/BlogPage';
+import BlogSinglePage from './website/pages/BlogSinglePage';
+import DoctorsPage from './website/pages/DoctorsPage';
+import DoctorPage from './website/pages/DoctorPage';
+import DoctorSinglePage from './website/pages/DoctorSinglePage';
+import CaseStudyPage from './website/pages/CaseStudyPage';
+import CaseStudySinglePage from './website/pages/CaseStudySinglePage';
+import ImageGalleryPage from './website/pages/ImageGalleryPage';
+import VideoGalleryPage from './website/pages/VideoGalleryPage';
+import FaqsPage from './website/pages/FaqsPage';
+import BookAppointmentPage from './website/pages/BookAppointmentPage';
+import ProjectsPage from './website/pages/ProjectsPage';
+import IndexImagePage from './website/pages/IndexImagePage';
+import Error404Page from './website/pages/Error404Page';
+
+// Dashboard Pages
+import Dashboard from './dashboard/pages/Dashboard';
+import RiskPrediction from './dashboard/pages/RiskPrediction';
+import AIChatbots from './dashboard/pages/AIChatbots';
+import BodyExplorer from './dashboard/pages/BodyExplorer';
+import ReversePlanner from './dashboard/pages/ReversePlanner';
+import WalkAndEarn from './dashboard/pages/WalkAndEarn';
+import Forecast from './dashboard/pages/Forecast';
+import DashboardBlogs from './dashboard/pages/DashboardBlogs';
+import DashboardContact from './dashboard/pages/DashboardContact';
+import ResetPasswordPage from './website/pages/ResetPassword';
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const hasMountedRef = useRef(false);
-  const [isRouteLoading, setIsRouteLoading] = useState(false);
-  // Hide main navbar/footer for dashboard and auth routes
-  const isDashboard = location.pathname.startsWith('/dashboard');
   const isResetPassword = location.pathname.startsWith('/reset-password');
-
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true;
-      return;
-    }
-
-    setIsRouteLoading(true);
-    const timer = window.setTimeout(() => setIsRouteLoading(false), 450);
-
-    return () => window.clearTimeout(timer);
-  }, [location.pathname]);
 
   return (
     <>
-      {isRouteLoading && (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-50">
-              <div className="absolute inset-0 rounded-full border-2 border-primary-200 border-t-primary-500 animate-spin" />
-              <Activity className="h-4 w-4 text-primary-600" />
-            </div>
-            <p className="text-xs font-medium tracking-wide text-slate-600">Loading page...</p>
-          </div>
-        </div>
-      )}
-      {!isDashboard && !isResetPassword && <Navbar />}
       {children}
-      {!isDashboard && !isResetPassword && <Footer />}
       {!isResetPassword && <AuthModal />}
     </>
   );
 };
 
 function App() {
-  const [isBootLoading, setIsBootLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStartTime = Date.now();
-    const minimumLoaderTime = 700;
-
-    const hideLoader = () => {
-      const elapsed = Date.now() - loadStartTime;
-      const remaining = Math.max(minimumLoaderTime - elapsed, 0);
-      window.setTimeout(() => setIsBootLoading(false), remaining);
-    };
-
-    if (document.readyState === 'complete') {
-      hideLoader();
-    } else {
-      window.addEventListener('load', hideLoader, { once: true });
-    }
-
-    return () => {
-      window.removeEventListener('load', hideLoader);
-    };
-  }, []);
-
-  if (isBootLoading) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-5">
-          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary-50">
-            <div className="absolute inset-0 rounded-full border-2 border-primary-200 border-t-primary-500 animate-spin" />
-            <Activity className="h-6 w-6 text-primary-600" />
-          </div>
-
-          <div className="text-center">
-            <p className="text-lg font-semibold text-slate-800">Healance</p>
-            <p className="mt-1 text-sm text-slate-500">Loading...</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-primary-300 animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="h-2 w-2 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '120ms' }} />
-            <span className="h-2 w-2 rounded-full bg-primary-500 animate-bounce" style={{ animationDelay: '240ms' }} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <Router>
       <AuthProvider>
         <HealthDataProvider>
           <Layout>
             <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/blogs" element={<Blog />} />
-              <Route path="/blog/:id" element={<Blog />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
-              <Route path="/faq" element={<About />} />
+              {/* Website Routes */}
+              <Route element={<WebsiteLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/service-single" element={<ServiceSinglePage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blogs" element={<BlogPage />} />
+                <Route path="/blog-single" element={<BlogSinglePage />} />
+                <Route path="/doctors" element={<DoctorsPage />} />
+                <Route path="/doctor" element={<DoctorPage />} />
+                <Route path="/doctor-single" element={<DoctorSinglePage />} />
+                <Route path="/case-study" element={<CaseStudyPage />} />
+                <Route path="/case-study-single" element={<CaseStudySinglePage />} />
+                <Route path="/image-gallery" element={<ImageGalleryPage />} />
+                <Route path="/video-gallery" element={<VideoGalleryPage />} />
+                <Route path="/faqs" element={<FaqsPage />} />
+                <Route path="/faq" element={<FaqsPage />} />
+                <Route path="/book-appointment" element={<BookAppointmentPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/index-image" element={<IndexImagePage />} />
+                <Route path="/404" element={<Error404Page />} />
+              </Route>
+
+              <Route path="/reset-password/:resetToken" element={<ResetPasswordPage />} />
               
               {/* Protected Dashboard Routes */}
               <Route 
@@ -149,6 +107,8 @@ function App() {
                 <Route path="blogs" element={<DashboardBlogs />} />
                 <Route path="contact" element={<DashboardContact />} />
               </Route>
+
+              <Route path="*" element={<Error404Page />} />
             </Routes>
           </Layout>
         </HealthDataProvider>

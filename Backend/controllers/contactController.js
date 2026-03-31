@@ -7,16 +7,28 @@ import sendEmail from '../utils/sendEmail.js';
 // @access  Public
 export const submitContactForm = async (req, res) => {
   try {
-    const { firstName, lastName, email, message } = req.body;
+    const { firstName, lastName, name, email, message } = req.body;
 
-    if (!firstName || !lastName || !email || !message) {
+    const trimmedName = (name || '').trim();
+    const derivedFirstName = (firstName || '').trim() || (trimmedName ? trimmedName.split(/\s+/)[0] : 'Guest');
+    const derivedLastName = (lastName || '').trim() || (trimmedName ? trimmedName.split(/\s+/).slice(1).join(' ') : '');
+    const adminRecipient = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+
+    if (!email || !message || !derivedFirstName) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required',
       });
     }
 
-    const contact = await Contact.create({ firstName, lastName, email, message });
+    const contact = await Contact.create({
+      firstName: derivedFirstName,
+      lastName: derivedLastName,
+      email,
+      message,
+    });
+
+    let emailDelivered = true;
 
     // Send confirmation email to user
     try {
@@ -26,7 +38,7 @@ export const submitContactForm = async (req, res) => {
             <h1 style="color: white; margin: 0;">Message Received! ✉️</h1>
           </div>
           <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
-            <p>Hi <strong>${firstName}</strong>,</p>
+            <p>Hi <strong>${derivedFirstName}</strong>,</p>
             <p>Thank you for contacting Healance AI. We have received your message and will get back to you within 24 hours.</p>
             <p><strong>Your message:</strong></p>
             <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #0ea5e9; margin: 15px 0;">
@@ -48,7 +60,7 @@ export const submitContactForm = async (req, res) => {
             <h2 style="color: white; margin: 0;">📬 New Contact Form Submission</h2>
           </div>
           <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 16px 16px;">
-            <p><strong>From:</strong> ${firstName} ${lastName}</p>
+            <p><strong>From:</strong> ${derivedFirstName} ${derivedLastName}</p>
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Message:</strong></p>
             <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -60,15 +72,26 @@ export const submitContactForm = async (req, res) => {
           </div>
         </div>
       `;
-      await sendEmail({ to: process.env.ADMIN_EMAIL || 'agroreach01@gmail.com', subject: `New Contact: ${firstName} ${lastName}`, html: adminHtml });
+      if (adminRecipient) {
+        await sendEmail({
+          to: adminRecipient,
+          subject: `New Contact: ${derivedFirstName} ${derivedLastName}`.trim(),
+          html: adminHtml,
+          replyTo: email,
+        });
+      }
     } catch (emailError) {
+      emailDelivered = false;
       console.error('Email sending failed:', emailError.message);
       // Don't fail the request if email fails
     }
 
     res.status(201).json({
       success: true,
-      message: 'Your message has been sent successfully! We will get back to you soon.',
+      message: emailDelivered
+        ? 'Your message has been sent successfully! We will get back to you soon.'
+        : 'Your request was saved, but email delivery failed. Please check server email settings.',
+      emailDelivered,
       contact,
     });
   } catch (error) {
@@ -174,7 +197,15 @@ export const submitSupportTicket = async (req, res) => {
           </div>
         </div>
       `;
-      await sendEmail({ to: process.env.ADMIN_EMAIL || 'agroreach01@gmail.com', subject: `[TICKET] #${ticketId} - ${subject || 'General Inquiry'}`, html: adminHtml });
+      const adminRecipient = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+      if (adminRecipient) {
+        await sendEmail({
+          to: adminRecipient,
+          subject: `[TICKET] #${ticketId} - ${subject || 'General Inquiry'}`,
+          html: adminHtml,
+          replyTo: email,
+        });
+      }
     } catch (emailError) {
       console.error('Email sending failed:', emailError.message);
       // Don't fail the request if email fails

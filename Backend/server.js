@@ -40,8 +40,20 @@ connectDB();
 app.use(helmet());
 
 // CORS
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const isLocalhostDevOrigin = /^http:\/\/localhost:\d+$/.test(origin || '');
+    if (!origin || allowedOrigins.includes(origin) || isLocalhostDevOrigin) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
@@ -80,6 +92,7 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/body-explorer', bodyExplorerRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/walk-earn', walkEarnRoutes);
+app.use('/api/walkearn', walkEarnRoutes);
 app.use('/api/forecast', forecastRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/contact', contactRoutes);

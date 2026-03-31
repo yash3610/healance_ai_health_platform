@@ -7,6 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+        },
+        ink: '#1f2937',
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -38,7 +46,10 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        soft: '0 10px 35px rgba(2, 6, 23, 0.08)',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

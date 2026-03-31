@@ -289,7 +289,7 @@ export const walkEarnService = {
 
   // Log steps
   logSteps: async (steps, date) => {
-    const response = await api.post('/walk-earn/steps', { steps, date });
+    const response = await api.post('/walk-earn/log-steps', { steps, date });
     return response.data;
   },
 };
