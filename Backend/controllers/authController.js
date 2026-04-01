@@ -3,13 +3,15 @@ import { generateToken, sendTokenResponse } from '../utils/generateToken.js';
 import Notification from '../models/Notification.js';
 import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
+import { normalizeWhatsAppNumber, isValidWhatsAppNumber } from '../utils/sendWhatsApp.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, whatsappNumber } = req.body;
+    const normalizedWhatsApp = whatsappNumber ? normalizeWhatsAppNumber(whatsappNumber) : '';
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -17,8 +19,24 @@ export const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists with this email' });
     }
 
+    if (normalizedWhatsApp && !isValidWhatsAppNumber(normalizedWhatsApp)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid WhatsApp number in international format' });
+    }
+
+    if (normalizedWhatsApp) {
+      const existingWhatsAppUser = await User.findOne({ whatsappNumber: normalizedWhatsApp });
+      if (existingWhatsAppUser) {
+        return res.status(400).json({ success: false, message: 'User already exists with this WhatsApp number' });
+      }
+    }
+
     // Create user
-    const user = await User.create({ name, email, password });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      ...(normalizedWhatsApp ? { whatsappNumber: normalizedWhatsApp } : {}),
+    });
 
     // Send welcome notification
     await Notification.create({

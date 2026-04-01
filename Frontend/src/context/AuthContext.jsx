@@ -90,6 +90,88 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendWhatsAppOtp = async ({ whatsappNumber }) => {
+    try {
+      setError(null);
+      const data = await authService.sendWhatsAppLoginOtp({ whatsappNumber });
+      return { success: true, message: data.message, devOtp: data.devOtp };
+    } catch (error) {
+      let message = 'Failed to send WhatsApp OTP.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many OTP requests. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const loginWithWhatsAppOtp = async ({ whatsappNumber, otp }) => {
+    try {
+      setError(null);
+      const data = await authService.verifyWhatsAppLoginOtp({ whatsappNumber, otp });
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      let message = 'WhatsApp OTP login failed.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const sendSignupWhatsAppOtp = async ({ name, email, password, whatsappNumber }) => {
+    try {
+      setError(null);
+      const data = await authService.sendWhatsAppSignupOtp({ name, email, password, whatsappNumber });
+      return { success: true, message: data.message, devOtp: data.devOtp };
+    } catch (error) {
+      let message = 'Failed to send signup OTP.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many OTP requests. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const completeSignupWithOtp = async ({ email, otp }) => {
+    try {
+      setError(null);
+      const data = await authService.verifyWhatsAppSignupOtp({ email, otp });
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      let message = 'Signup OTP verification failed.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
   const logout = async () => {
     try {
       await authService.logout();
@@ -178,6 +260,10 @@ export const AuthProvider = ({ children }) => {
       user, 
       register,
       login, 
+      sendWhatsAppOtp,
+      loginWithWhatsAppOtp,
+      sendSignupWhatsAppOtp,
+      completeSignupWithOtp,
       logout,
       forgotPassword,
       resetPassword,

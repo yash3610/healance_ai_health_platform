@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Github, Chrome, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, User, Chrome, AlertCircle, CheckCircle, Eye, EyeOff, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../shared/ui/Button';
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, login, register, forgotPassword, error, clearError } = useAuth();
+  const {
+    isAuthModalOpen,
+    closeAuthModal,
+    login,
+    register,
+    forgotPassword,
+    sendWhatsAppOtp,
+    loginWithWhatsAppOtp,
+    sendSignupWhatsAppOtp,
+    completeSignupWithOtp,
+    error,
+    clearError,
+  } = useAuth();
   const [mode, setMode] = useState('login'); // 'login', 'signup', 'forgot'
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -13,26 +25,64 @@ const AuthModal = () => {
     name: '', 
     email: '', 
     password: '',
-    confirmPassword: '' 
+    confirmPassword: '',
+    whatsappNumber: '',
   });
   const [validationErrors, setValidationErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [showWhatsAppLogin, setShowWhatsAppLogin] = useState(false);
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [useSignupWithOtp, setUseSignupWithOtp] = useState(false);
+  const [signupOtpRequested, setSignupOtpRequested] = useState(false);
+  const [signupOtp, setSignupOtp] = useState('');
+  const [whatsAppLoginData, setWhatsAppLoginData] = useState({
+    whatsappNumber: '',
+    otp: '',
+  });
+
+  const normalizeForInput = (value) => {
+    const sanitized = String(value || '').replace(/[^\d+]/g, '');
+
+    if (sanitized.startsWith('+')) {
+      const plusNormalized = `+${sanitized.slice(1).replace(/\D/g, '')}`;
+      if (plusNormalized.startsWith('+91') && plusNormalized.length <= 13) return plusNormalized;
+      return plusNormalized.slice(0, 16);
+    }
+
+    const digits = sanitized.replace(/\D/g, '');
+    if (digits.length === 0) return '';
+    if (digits.length <= 10) return `+91${digits}`;
+    if (digits.startsWith('91')) return `+${digits.slice(0, 12)}`;
+    return `+${digits.slice(0, 15)}`;
+  };
 
   // Clear form and errors when modal opens/closes or mode changes
   useEffect(() => {
     if (!isAuthModalOpen) {
-      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      setFormData({ name: '', email: '', password: '', confirmPassword: '', whatsappNumber: '' });
       setValidationErrors({});
       setSuccessMessage('');
+      setShowWhatsAppLogin(false);
+      setOtpRequested(false);
+      setUseSignupWithOtp(false);
+      setSignupOtpRequested(false);
+      setSignupOtp('');
+      setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
       setMode('login');
       clearError();
     }
   }, [isAuthModalOpen]);
 
   useEffect(() => {
-    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', password: '', confirmPassword: '', whatsappNumber: '' });
     setValidationErrors({});
     setSuccessMessage('');
+    setShowWhatsAppLogin(false);
+    setOtpRequested(false);
+    setUseSignupWithOtp(false);
+    setSignupOtpRequested(false);
+    setSignupOtp('');
+    setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
     clearError();
   }, [mode]);
 
@@ -52,7 +102,7 @@ const AuthModal = () => {
       // Password validation
       if (!formData.password) {
         errors.password = 'Password is required';
-      } else if (formData.password.length < 6) {
+      } else if (formData.password && formData.password.length < 6) {
         errors.password = 'Password must be at least 6 characters';
       }
 
@@ -69,6 +119,22 @@ const AuthModal = () => {
           errors.confirmPassword = 'Please confirm your password';
         } else if (formData.password !== formData.confirmPassword) {
           errors.confirmPassword = 'Passwords do not match';
+        }
+
+        if (!formData.whatsappNumber) {
+          if (useSignupWithOtp) {
+            errors.whatsappNumber = 'WhatsApp number is required';
+          }
+        } else if (!/^\+[1-9]\d{7,14}$/.test(formData.whatsappNumber)) {
+          errors.whatsappNumber = 'Use format like +9198XXXXXXXX';
+        }
+
+        if (useSignupWithOtp && signupOtpRequested) {
+          if (!signupOtp) {
+            errors.signupOtp = 'OTP is required';
+          } else if (!/^\d{6}$/.test(signupOtp)) {
+            errors.signupOtp = 'OTP must be 6 digits';
+          }
         }
       }
     }
@@ -93,13 +159,41 @@ const AuthModal = () => {
           setValidationErrors({ general: result.message });
         }
       } else if (mode === 'signup') {
-        const result = await register({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        });
-        if (!result.success) {
-          setValidationErrors({ general: result.message });
+        if (useSignupWithOtp) {
+          if (!signupOtpRequested) {
+            const otpResult = await sendSignupWhatsAppOtp({
+              name: formData.name,
+              email: formData.email,
+              password: formData.password,
+              whatsappNumber: formData.whatsappNumber,
+            });
+
+            if (otpResult.success) {
+              setSignupOtpRequested(true);
+              setSuccessMessage(
+                otpResult.devOtp
+                  ? `Signup OTP sent. Dev OTP: ${otpResult.devOtp}`
+                  : 'Signup OTP sent on your WhatsApp number.'
+              );
+            } else {
+              setValidationErrors({ general: otpResult.message });
+            }
+          } else {
+            const verifyResult = await completeSignupWithOtp({ email: formData.email, otp: signupOtp });
+            if (!verifyResult.success) {
+              setValidationErrors({ general: verifyResult.message });
+            }
+          }
+        } else {
+          const result = await register({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            whatsappNumber: formData.whatsappNumber || undefined,
+          });
+          if (!result.success) {
+            setValidationErrors({ general: result.message });
+          }
         }
       } else if (mode === 'forgot') {
         const result = await forgotPassword(formData.email);
@@ -119,7 +213,8 @@ const AuthModal = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const nextValue = name === 'whatsappNumber' ? normalizeForInput(value) : value;
+    setFormData({ ...formData, [name]: nextValue });
     // Clear error for this field when user starts typing
     if (validationErrors[name]) {
       setValidationErrors({ ...validationErrors, [name]: '' });
@@ -143,6 +238,70 @@ const AuthModal = () => {
       case 'forgot': return 'Enter your email to receive a reset link';
       default: return 'Enter your details to access your health dashboard';
     }
+  };
+
+  const handleWhatsAppLoginInput = (e) => {
+    const { name, value } = e.target;
+    const nextValue = name === 'whatsappNumber' ? normalizeForInput(value) : value;
+    setWhatsAppLoginData((prev) => ({ ...prev, [name]: nextValue }));
+    if (validationErrors[name]) {
+      setValidationErrors({ ...validationErrors, [name]: '' });
+    }
+    if (validationErrors.general) {
+      setValidationErrors({ ...validationErrors, general: '' });
+    }
+  };
+
+  const handleSendOtp = async () => {
+    clearError();
+    setSuccessMessage('');
+    setValidationErrors({});
+
+    if (!whatsAppLoginData.whatsappNumber) {
+      setValidationErrors({ whatsappNumber: 'WhatsApp number is required' });
+      return;
+    }
+
+    if (!/^\+[1-9]\d{7,14}$/.test(whatsAppLoginData.whatsappNumber)) {
+      setValidationErrors({ whatsappNumber: 'Use format like +9198XXXXXXXX' });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await sendWhatsAppOtp({ whatsappNumber: whatsAppLoginData.whatsappNumber });
+    if (result.success) {
+      setOtpRequested(true);
+      setSuccessMessage(result.devOtp ? `OTP sent. Dev OTP: ${result.devOtp}` : 'OTP sent on your WhatsApp number.');
+    } else {
+      setValidationErrors({ general: result.message });
+    }
+    setIsLoading(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    clearError();
+    setValidationErrors({});
+
+    if (!whatsAppLoginData.otp) {
+      setValidationErrors({ otp: 'OTP is required' });
+      return;
+    }
+
+    if (!/^\d{6}$/.test(whatsAppLoginData.otp)) {
+      setValidationErrors({ otp: 'OTP must be 6 digits' });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await loginWithWhatsAppOtp({
+      whatsappNumber: whatsAppLoginData.whatsappNumber,
+      otp: whatsAppLoginData.otp,
+    });
+
+    if (!result.success) {
+      setValidationErrors({ general: result.message });
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -283,6 +442,79 @@ const AuthModal = () => {
                 </div>
               )}
 
+              {/* WhatsApp Number Field (Signup only) */}
+              {mode === 'signup' && (
+                <div>
+                  <div className="relative">
+                    <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      type="text"
+                      name="whatsappNumber"
+                      placeholder="WhatsApp Number (e.g. +919876543210)"
+                      value={formData.whatsappNumber}
+                      onChange={handleInputChange}
+                      className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border ${
+                        validationErrors.whatsappNumber ? 'border-red-300' : 'border-slate-200'
+                      } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                    />
+                  </div>
+                  {validationErrors.whatsappNumber && (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.whatsappNumber}</p>
+                  )}
+                </div>
+              )}
+
+              {mode === 'signup' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={useSignupWithOtp}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setUseSignupWithOtp(checked);
+                        setSignupOtpRequested(false);
+                        setSignupOtp('');
+                        setSuccessMessage('');
+                        setValidationErrors({});
+                      }}
+                    />
+                    Sign up using WhatsApp OTP
+                  </label>
+                  {useSignupWithOtp && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Name, email, password, confirm password and WhatsApp number is compulsory.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {mode === 'signup' && useSignupWithOtp && signupOtpRequested && (
+                <div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      type="text"
+                      name="signupOtp"
+                      placeholder="Enter 6-digit Signup OTP"
+                      value={signupOtp}
+                      onChange={(e) => {
+                        setSignupOtp(e.target.value);
+                        if (validationErrors.signupOtp) {
+                          setValidationErrors({ ...validationErrors, signupOtp: '' });
+                        }
+                      }}
+                      className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border ${
+                        validationErrors.signupOtp ? 'border-red-300' : 'border-slate-200'
+                      } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                    />
+                  </div>
+                  {validationErrors.signupOtp && (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.signupOtp}</p>
+                  )}
+                </div>
+              )}
+
               {/* Forgot Password Link (Login only) */}
               {mode === 'login' && (
                 <div className="text-right">
@@ -297,12 +529,16 @@ const AuthModal = () => {
               )}
 
               <Button type="submit" className="w-full" isLoading={isLoading}>
-                {mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+                {mode === 'login'
+                  ? 'Sign In'
+                  : mode === 'signup'
+                    ? (useSignupWithOtp ? (signupOtpRequested ? 'Verify OTP & Create Account' : 'Send Signup OTP') : 'Create Account')
+                    : 'Send Reset Link'}
               </Button>
             </form>
 
-            {/* Social Login (Not in forgot mode) */}
-            {mode !== 'forgot' && (
+            {/* Social Login (Login mode only) */}
+            {mode === 'login' && (
               <div className="mt-6">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -324,13 +560,71 @@ const AuthModal = () => {
                   </button>
                   <button 
                     type="button"
-                    disabled
-                    className="flex items-center justify-center py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      setShowWhatsAppLogin((prev) => !prev);
+                      setOtpRequested(false);
+                      setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
+                      setSuccessMessage('');
+                      setValidationErrors({});
+                      clearError();
+                    }}
+                    className="flex items-center justify-center py-2 border border-green-200 rounded-xl hover:bg-green-50 transition-colors"
                   >
-                    <Github size={18} className="mr-2 text-slate-600" />
-                    <span className="text-sm font-medium text-slate-600">GitHub</span>
+                    <MessageCircle size={18} className="mr-2 text-green-600" />
+                    <span className="text-sm font-medium text-green-700">WhatsApp OTP</span>
                   </button>
                 </div>
+
+                {showWhatsAppLogin && (
+                  <div className="mt-4 space-y-3 p-3 bg-green-50 border border-green-100 rounded-xl">
+                    <div className="relative">
+                      <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input
+                        type="text"
+                        name="whatsappNumber"
+                        placeholder="WhatsApp Number (e.g. +919876543210)"
+                        value={whatsAppLoginData.whatsappNumber}
+                        onChange={handleWhatsAppLoginInput}
+                        className={`w-full pl-10 pr-4 py-2.5 bg-white border ${
+                          validationErrors.whatsappNumber ? 'border-red-300' : 'border-slate-200'
+                        } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                      />
+                    </div>
+                    {validationErrors.whatsappNumber && (
+                      <p className="-mt-1 text-xs text-red-600">{validationErrors.whatsappNumber}</p>
+                    )}
+
+                    {otpRequested && (
+                      <>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <input
+                            type="text"
+                            name="otp"
+                            placeholder="Enter 6-digit OTP"
+                            value={whatsAppLoginData.otp}
+                            onChange={handleWhatsAppLoginInput}
+                            className={`w-full pl-10 pr-4 py-2.5 bg-white border ${
+                              validationErrors.otp ? 'border-red-300' : 'border-slate-200'
+                            } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                          />
+                        </div>
+                        {validationErrors.otp && (
+                          <p className="-mt-1 text-xs text-red-600">{validationErrors.otp}</p>
+                        )}
+                      </>
+                    )}
+
+                    <Button
+                      type="button"
+                      className="w-full"
+                      isLoading={isLoading}
+                      onClick={otpRequested ? handleVerifyOtp : handleSendOtp}
+                    >
+                      {otpRequested ? 'Verify OTP & Sign In' : 'Send OTP on WhatsApp'}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

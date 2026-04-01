@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
     default: 'local',
   },
   providerId: String,
+  whatsappNumber: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+  },
+  whatsappOtpHash: String,
+  whatsappOtpExpire: Date,
   // Health profile
   profile: {
     age: Number,

@@ -71,6 +71,38 @@ export const authService = {
     return response.data;
   },
 
+  // Send WhatsApp OTP for login
+  sendWhatsAppLoginOtp: async (payload) => {
+    const response = await api.post('/whatsapp/send-login-otp', payload);
+    return response.data;
+  },
+
+  // Verify WhatsApp OTP and login
+  verifyWhatsAppLoginOtp: async (payload) => {
+    const response = await api.post('/whatsapp/verify-login-otp', payload);
+    if (response.data.token) {
+      localStorage.setItem('healance_token', response.data.token);
+      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
+  // Send WhatsApp OTP for signup
+  sendWhatsAppSignupOtp: async (payload) => {
+    const response = await api.post('/whatsapp/send-signup-otp', payload);
+    return response.data;
+  },
+
+  // Verify WhatsApp signup OTP and create account
+  verifyWhatsAppSignupOtp: async (payload) => {
+    const response = await api.post('/whatsapp/verify-signup-otp', payload);
+    if (response.data.token) {
+      localStorage.setItem('healance_token', response.data.token);
+      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
   // Logout user
   logout: async () => {
     try {
