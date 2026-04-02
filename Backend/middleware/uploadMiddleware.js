@@ -1,14 +1,36 @@
 import multer from 'multer';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const backendRoot = path.join(__dirname, '..');
+
+const resolveUploadPath = () => {
+  const configuredPath = process.env.UPLOAD_PATH?.trim();
+
+  if (!configuredPath) {
+    return path.join(backendRoot, 'uploads');
+  }
+
+  return path.isAbsolute(configuredPath)
+    ? configuredPath
+    : path.join(backendRoot, configuredPath);
+};
+
+const ensureUploadDirectory = (uploadPath) => {
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+  }
+};
+
 // Configure storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '..', 'uploads');
+    const uploadPath = resolveUploadPath();
+    ensureUploadDirectory(uploadPath);
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {

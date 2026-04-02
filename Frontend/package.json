@@ -19,7 +19,9 @@
     "react-dom": "^19.1.0",
     "react-is": "^19.1.0",
     "react-router-dom": "^7.13.0",
+    "reactjs-human-body": "^0.0.8",
     "recharts": "^3.7.0",
+    "styled-components": "^6.3.12",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

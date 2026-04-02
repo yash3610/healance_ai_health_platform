@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Activity, AlertCircle, ShieldCheck, Stethoscope } from 'lucide-react';
 import HumanBody from '../components/HumanBody';
-import Button from '../../shared/ui/Button';
 
 const bodyData = {
   "Heart": {
@@ -29,6 +28,38 @@ const bodyData = {
     prevention: ["Avoid smoking", "Air quality awareness", "Breathing exercises"],
     metrics: "Capacity: 98% SpO2"
   },
+  "Shoulders": {
+    function: "Provide joint mobility and support arm rotation and lifting.",
+    diseases: ["Rotator cuff injury", "Bursitis", "Frozen shoulder"],
+    symptoms: ["Shoulder pain", "Stiffness", "Reduced arm movement"],
+    tests: ["Shoulder X-ray", "MRI", "Range of motion test"],
+    prevention: ["Posture correction", "Strength training", "Avoid overuse"],
+    metrics: "Mobility: Functional"
+  },
+  "Hands": {
+    function: "Enable grip, touch sensing, and fine motor movements.",
+    diseases: ["Carpal tunnel syndrome", "Tendonitis", "Arthritis"],
+    symptoms: ["Numbness", "Weak grip", "Joint pain"],
+    tests: ["Nerve conduction study", "X-ray", "Grip strength test"],
+    prevention: ["Ergonomic posture", "Hand stretches", "Frequent breaks"],
+    metrics: "Grip Strength: Normal"
+  },
+  "Legs": {
+    function: "Support body weight and enable walking, running, and balance.",
+    diseases: ["Varicose veins", "Muscle strain", "Knee osteoarthritis"],
+    symptoms: ["Pain", "Swelling", "Weakness"],
+    tests: ["Doppler ultrasound", "X-ray", "Physical assessment"],
+    prevention: ["Regular walking", "Strength training", "Hydration"],
+    metrics: "Gait Score: Stable"
+  },
+  "Feet": {
+    function: "Maintain balance, absorb shock, and support movement.",
+    diseases: ["Plantar fasciitis", "Flat foot", "Diabetic foot"],
+    symptoms: ["Heel pain", "Burning sensation", "Swelling"],
+    tests: ["Foot pressure analysis", "X-ray", "Neuropathy screening"],
+    prevention: ["Supportive footwear", "Foot hygiene", "Stretching"],
+    metrics: "Pressure Pattern: Balanced"
+  },
   // Default fallback for other parts
   "default": {
     function: "Essential body part maintaining structural or physiological integrity.",
@@ -43,9 +74,31 @@ const bodyData = {
 const BodyExplorer = () => {
   const [gender, setGender] = useState('male');
   const [selectedPart, setSelectedPart] = useState(null);
+  const [bodyResetToken, setBodyResetToken] = useState(0);
+
+  const partsInput = {
+    head: { show: true },
+    left_shoulder: { show: true },
+    right_shoulder: { show: true },
+    left_arm: { show: true },
+    right_arm: { show: true },
+    chest: { show: true },
+    stomach: { show: true },
+    left_leg: { show: true },
+    right_leg: { show: true },
+    left_hand: { show: true },
+    right_hand: { show: true },
+    left_foot: { show: true },
+    right_foot: { show: true }
+  };
 
   const handlePartClick = (partName) => {
     setSelectedPart(partName);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedPart(null);
+    setBodyResetToken((prev) => prev + 1);
   };
 
   const partInfo = bodyData[selectedPart] || bodyData["default"];
@@ -72,7 +125,12 @@ const BodyExplorer = () => {
 
       <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-8 relative overflow-hidden flex justify-center items-center min-h-[400px]">
         <div className="w-full max-w-xs sm:max-w-md h-full">
-          <HumanBody gender={gender} onPartClick={handlePartClick} />
+          <HumanBody
+            gender={gender}
+            onPartClick={handlePartClick}
+            partsInput={partsInput}
+            resetToken={bodyResetToken}
+          />
         </div>
 
         <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 max-w-[200px] sm:max-w-xs">
@@ -95,7 +153,7 @@ const BodyExplorer = () => {
             >
               <div className="bg-gradient-to-r from-primary-500 to-secondary-500 p-4 sm:p-6 flex justify-between items-center text-white">
                 <h3 className="text-xl sm:text-2xl font-bold">{selectedPart}</h3>
-                <button onClick={() => setSelectedPart(null)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                <button onClick={handleCloseModal} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
