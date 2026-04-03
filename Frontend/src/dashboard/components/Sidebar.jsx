@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Activity, 
@@ -10,8 +10,8 @@ import {
   CloudSun, 
   FileText, 
   Phone,
+  User,
   LogOut,
-  Settings,
   X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -19,7 +19,11 @@ import { cn } from '../../lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  const backendBase = apiBase.replace(/\/api\/?$/, '');
+  const resolvedAvatar = user?.avatar
+    ? (user.avatar.startsWith('http') ? user.avatar : `${backendBase}${user.avatar}`)
+    : 'https://via.placeholder.com/40';
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
@@ -31,6 +35,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Forecast', path: '/dashboard/forecast', icon: CloudSun },
     { name: 'Blogs', path: '/dashboard/blogs', icon: FileText },
     { name: 'Contact Us', path: '/dashboard/contact', icon: Phone },
+    { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
 
   const handleNavClick = () => {
@@ -71,14 +76,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = item.end 
-            ? location.pathname === item.path
-            : location.pathname.startsWith(item.path);
-
           return (
             <NavLink
               key={item.name}
               to={item.path}
+              end={item.end}
               onClick={handleNavClick}
               className={({ isActive }) => cn(
                 "flex items-center px-4 py-3 rounded-xl font-medium transition-colors",
@@ -95,13 +97,20 @@ const Sidebar = ({ isOpen, onClose }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-100">
-        <div className="flex items-center p-3 rounded-xl bg-slate-50 mb-3">
-          <img src={user?.avatar || "https://via.placeholder.com/40"} alt="User" className="w-10 h-10 rounded-full flex-shrink-0" />
+        <NavLink
+          to="/dashboard/profile"
+          onClick={handleNavClick}
+          className={({ isActive }) => cn(
+            "flex items-center p-3 rounded-xl mb-3 transition-colors",
+            isActive ? "bg-primary-50" : "bg-slate-50 hover:bg-slate-100"
+          )}
+        >
+          <img src={resolvedAvatar} alt="User" className="w-10 h-10 rounded-full flex-shrink-0" />
           <div className="ml-3 overflow-hidden flex-1 min-w-0">
             <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
             <p className="text-xs text-slate-500">Free Plan</p>
           </div>
-        </div>
+        </NavLink>
         <button 
           onClick={logout}
           className="flex items-center w-full px-4 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

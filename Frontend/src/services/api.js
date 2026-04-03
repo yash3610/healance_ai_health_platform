@@ -147,6 +147,30 @@ export const authService = {
     return response.data;
   },
 
+  // Update logged-in user profile
+  updateProfile: async (payload) => {
+    const response = await api.put('/users/profile', payload);
+    if (response.data?.user) {
+      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
+  uploadProfileAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await api.post('/users/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    if (response.data?.user) {
+      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
+    }
+
+    return response.data;
+  },
+
   // Social login (Google/GitHub)
   socialLogin: async (socialData) => {
     const response = await api.post('/auth/social', socialData);

@@ -40,6 +40,7 @@ import WalkAndEarn from './dashboard/pages/WalkAndEarn';
 import Forecast from './dashboard/pages/Forecast';
 import DashboardBlogs from './dashboard/pages/DashboardBlogs';
 import DashboardContact from './dashboard/pages/DashboardContact';
+import Profile from './dashboard/pages/Profile';
 import ResetPasswordPage from './website/pages/ResetPassword';
 
 const Layout = ({ children }) => {
@@ -106,6 +107,7 @@ function App() {
                 <Route path="forecast" element={<Forecast />} />
                 <Route path="blogs" element={<DashboardBlogs />} />
                 <Route path="contact" element={<DashboardContact />} />
+                <Route path="profile" element={<Profile />} />
               </Route>
 
               <Route path="*" element={<Error404Page />} />

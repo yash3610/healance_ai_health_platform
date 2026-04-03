@@ -22,6 +22,26 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Upload profile avatar
+// @route   POST /api/users/profile/avatar
+// @access  Private
+export const uploadProfileAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please upload an image file' });
+    }
+
+    const user = await User.findById(req.user._id);
+    const avatarPath = `/uploads/${req.file.filename}`;
+    user.avatar = avatarPath;
+
+    const updatedUser = await user.save();
+    res.json({ success: true, user: updatedUser, avatar: avatarPath });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Update password
 // @route   PUT /api/users/password
 // @access  Private
