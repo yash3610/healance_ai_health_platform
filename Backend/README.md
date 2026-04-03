@@ -142,6 +142,9 @@ From `Backend/.env.example`:
 | `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
 | `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Weather-based forecast |
+| `OPENWEATHER_API_KEY` | No | empty | Alternate weather key variable name |
+| `WEATHER_API_BASE_URL` | No | `https://api.openweathermap.org/data/2.5` | Weather API base URL |
+| `WEATHER_UNITS` | No | `metric` | Units for weather temperature/speed |
 | `EMAIL_HOST` | No | `smtp.gmail.com` | SMTP host |
 | `EMAIL_PORT` | No | `587` | SMTP port |
 | `EMAIL_USER` | No | `your-email@gmail.com` | SMTP user |

@@ -71,6 +71,7 @@ const Forecast = () => {
   const fetchForecast = async () => {
     try {
       setIsRefreshing(true);
+      setError('');
       const token = localStorage.getItem('healance_token');
       const params = location.lat 
         ? `lat=${location.lat}&lon=${location.lon}` 
@@ -84,28 +85,8 @@ const Forecast = () => {
         setForecast(response.data.forecast);
       }
     } catch (err) {
-      // Use default data if API fails
-      setForecast({
-        temperature: 28,
-        temperatureUnit: '°C',
-        condition: 'Sunny',
-        humidity: 65,
-        windSpeed: 12,
-        airQuality: { value: 45, level: 'Good', advice: 'Safe for outdoor activities' },
-        uvIndex: { value: 4, level: 'Moderate', advice: 'Wear sunscreen' },
-        pollenLevel: { level: 'Low', advice: 'No allergies expected' },
-        activities: [
-          { name: 'Morning Run', suitability: 'Excellent', time: '6:00 AM - 8:00 AM' },
-          { name: 'Afternoon Cycling', suitability: 'Moderate', time: '4:00 PM - 6:00 PM' },
-          { name: 'Evening Yoga', suitability: 'Perfect', time: '6:00 PM - 7:00 PM' }
-        ],
-        healthTips: [
-          'Stay hydrated - drink at least 3L of water today',
-          'Best time for outdoor exercise: Early morning',
-          'Apply SPF 30+ sunscreen before going out'
-        ],
-        location: 'Mumbai'
-      });
+      setForecast(null);
+      setError(err?.response?.data?.message || 'Unable to load live forecast data. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -128,16 +109,7 @@ const Forecast = () => {
         setWeeklyForecast(response.data.forecast);
       }
     } catch (err) {
-      // Generate default weekly forecast
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const today = new Date().getDay();
-      setWeeklyForecast(days.map((day, i) => ({
-        day,
-        temp: Math.round(25 + Math.random() * 8),
-        condition: ['Sunny', 'Clouds', 'Clear', 'Sunny', 'Clouds', 'Clear', 'Sunny'][i],
-        humidity: Math.round(50 + Math.random() * 30),
-        isToday: i === (today === 0 ? 6 : today - 1)
-      })));
+      setWeeklyForecast([]);
     }
   };
 
@@ -161,6 +133,11 @@ const Forecast = () => {
 
   const WeatherIcon = forecast ? (weatherIcons[forecast.condition] || weatherIcons.default) : CloudSun;
 
+  const formatMetricValue = (value, suffix = '') => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return 'N/A';
+    return `${value}${suffix}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -179,6 +156,28 @@ const Forecast = () => {
         </div>
       )}
 
+      {/* Location Selector */}
+      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
+          <MapPin size={18} className="text-primary-500" /> Quick Location Select
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai', 'Hyderabad', 'Kolkata'].map((city) => (
+            <button
+              key={city}
+              onClick={() => handleCityChange(city)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                location.city === city
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {city}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Weather Card */}
       <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
         {/* Background Pattern */}
@@ -195,16 +194,16 @@ const Forecast = () => {
               <p className="text-sm sm:text-base text-blue-100">Plan your outdoor activities based on air quality and weather.</p>
               <div className="flex items-center gap-2 mt-2">
                 <MapPin size={16} className="text-blue-200" />
-                <span className="text-blue-100">{forecast?.location || 'Mumbai'}</span>
+                <span className="text-blue-100">{forecast?.location || location.city || 'Your Location'}</span>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="text-left sm:text-right">
                 <div className="flex items-center gap-3 justify-end">
                   <WeatherIcon size={40} className="text-yellow-300" />
-                  <p className="text-4xl sm:text-5xl font-bold">{forecast?.temperature || 28}{forecast?.temperatureUnit || '°C'}</p>
+                  <p className="text-4xl sm:text-5xl font-bold">{forecast ? `${forecast.temperature}${forecast.temperatureUnit || '°C'}` : 'N/A'}</p>
                 </div>
-                <p className="text-blue-100 text-lg">{forecast?.condition || 'Sunny'}</p>
+                <p className="text-blue-100 text-lg">{forecast?.condition || 'N/A'}</p>
               </div>
               <button 
                 onClick={handleRefresh}
@@ -222,29 +221,29 @@ const Forecast = () => {
               <div className="flex items-center gap-1.5 sm:gap-2 mb-2 text-blue-100 text-xs sm:text-sm">
                 <Wind size={16} className="flex-shrink-0" /> Air Quality
               </div>
-              <p className="text-lg sm:text-xl font-bold">{forecast?.airQuality?.level || 'Good'} ({forecast?.airQuality?.value || 45})</p>
-              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.airQuality?.advice || 'Safe for outdoor run'}</p>
+              <p className="text-lg sm:text-xl font-bold">{forecast?.airQuality?.level || 'N/A'} ({formatMetricValue(forecast?.airQuality?.value)})</p>
+              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.airQuality?.advice || 'No live data available'}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-xl">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-2 text-blue-100 text-xs sm:text-sm">
                 <Droplets size={16} className="flex-shrink-0" /> Humidity
               </div>
-              <p className="text-lg sm:text-xl font-bold">{forecast?.humidity || 65}%</p>
-              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.humidity > 70 ? 'High humidity' : 'Stay hydrated'}</p>
+              <p className="text-lg sm:text-xl font-bold">{formatMetricValue(forecast?.humidity, '%')}</p>
+              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.humidity ? (forecast.humidity > 70 ? 'High humidity' : 'Stay hydrated') : 'No live data available'}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-xl">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-2 text-blue-100 text-xs sm:text-sm">
                 <CloudSun size={16} className="flex-shrink-0" /> UV Index
               </div>
-              <p className="text-lg sm:text-xl font-bold">{forecast?.uvIndex?.level || 'Moderate'} ({forecast?.uvIndex?.value || 4})</p>
-              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.uvIndex?.advice || 'Wear sunscreen'}</p>
+              <p className="text-lg sm:text-xl font-bold">{forecast?.uvIndex?.level || 'N/A'} ({formatMetricValue(forecast?.uvIndex?.value)})</p>
+              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.uvIndex?.advice || 'No live data available'}</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-xl">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-2 text-blue-100 text-xs sm:text-sm">
                 <Thermometer size={16} className="flex-shrink-0" /> Pollen
               </div>
-              <p className="text-lg sm:text-xl font-bold">{forecast?.pollenLevel?.level || 'Low'}</p>
-              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.pollenLevel?.advice || 'No allergies expected'}</p>
+              <p className="text-lg sm:text-xl font-bold">{forecast?.pollenLevel?.level || 'N/A'}</p>
+              <p className="text-[10px] sm:text-xs text-blue-200">{forecast?.pollenLevel?.advice || 'No live data available'}</p>
             </div>
           </div>
         </div>
@@ -289,11 +288,7 @@ const Forecast = () => {
             <Activity size={18} className="text-green-500" /> Activity Suitability
           </h3>
           <div className="space-y-3 sm:space-y-4">
-            {(forecast?.activities || [
-              { name: 'Morning Run', suitability: 'Excellent', time: '6:00 AM - 8:00 AM' },
-              { name: 'Afternoon Cycling', suitability: 'Moderate', time: '4:00 PM - 6:00 PM' },
-              { name: 'Evening Yoga', suitability: 'Perfect', time: '6:00 PM - 7:00 PM' }
-            ]).map((activity, index) => {
+            {(forecast?.activities || []).map((activity, index) => {
               const ActivityIcon = activityIcons[activity.name] || activityIcons.default;
               return (
                 <div 
@@ -319,6 +314,9 @@ const Forecast = () => {
                 </div>
               );
             })}
+            {(!forecast?.activities || forecast.activities.length === 0) && (
+              <p className="text-sm text-slate-500">No live activity insights available right now.</p>
+            )}
           </div>
         </div>
 
@@ -328,11 +326,7 @@ const Forecast = () => {
             <Heart size={18} className="text-red-500" /> Health Tips for Today
           </h3>
           <div className="space-y-3">
-            {(forecast?.healthTips || [
-              'Stay hydrated - drink at least 3L of water today',
-              'Best time for outdoor exercise: Early morning',
-              'Apply SPF 30+ sunscreen before going out'
-            ]).map((tip, index) => (
+            {(forecast?.healthTips || []).map((tip, index) => (
               <div key={index} className="flex gap-3 p-3 bg-slate-50 rounded-xl">
                 <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 text-sm font-bold">
                   {index + 1}
@@ -340,31 +334,13 @@ const Forecast = () => {
                 <p className="text-sm text-slate-700">{tip}</p>
               </div>
             ))}
+            {(!forecast?.healthTips || forecast.healthTips.length === 0) && (
+              <p className="text-sm text-slate-500">No live tips available right now.</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Location Selector */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
-          <MapPin size={18} className="text-primary-500" /> Quick Location Select
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai', 'Hyderabad', 'Kolkata'].map((city) => (
-            <button
-              key={city}
-              onClick={() => handleCityChange(city)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                location.city === city 
-                  ? 'bg-primary-500 text-white' 
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {city}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
