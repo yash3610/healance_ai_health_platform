@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Chrome, AlertCircle, CheckCircle, Eye, EyeOff, MessageCircle } from 'lucide-react';
+import { X, Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, MessageCircle, Smartphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../shared/ui/Button';
 
@@ -13,6 +13,8 @@ const AuthModal = () => {
     forgotPassword,
     sendWhatsAppOtp,
     loginWithWhatsAppOtp,
+    sendSmsOtp,
+    loginWithSmsOtp,
     sendSignupWhatsAppOtp,
     completeSignupWithOtp,
     error,
@@ -31,12 +33,18 @@ const AuthModal = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [showWhatsAppLogin, setShowWhatsAppLogin] = useState(false);
+  const [showSmsLogin, setShowSmsLogin] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
+  const [smsOtpRequested, setSmsOtpRequested] = useState(false);
   const [useSignupWithOtp, setUseSignupWithOtp] = useState(false);
   const [signupOtpRequested, setSignupOtpRequested] = useState(false);
   const [signupOtp, setSignupOtp] = useState('');
   const [whatsAppLoginData, setWhatsAppLoginData] = useState({
     whatsappNumber: '',
+    otp: '',
+  });
+  const [smsLoginData, setSmsLoginData] = useState({
+    phoneNumber: '',
     otp: '',
   });
 
@@ -63,11 +71,14 @@ const AuthModal = () => {
       setValidationErrors({});
       setSuccessMessage('');
       setShowWhatsAppLogin(false);
+      setShowSmsLogin(false);
       setOtpRequested(false);
+      setSmsOtpRequested(false);
       setUseSignupWithOtp(false);
       setSignupOtpRequested(false);
       setSignupOtp('');
       setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
+      setSmsLoginData({ phoneNumber: '', otp: '' });
       setMode('login');
       clearError();
     }
@@ -78,11 +89,14 @@ const AuthModal = () => {
     setValidationErrors({});
     setSuccessMessage('');
     setShowWhatsAppLogin(false);
+    setShowSmsLogin(false);
     setOtpRequested(false);
+    setSmsOtpRequested(false);
     setUseSignupWithOtp(false);
     setSignupOtpRequested(false);
     setSignupOtp('');
     setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
+    setSmsLoginData({ phoneNumber: '', otp: '' });
     clearError();
   }, [mode]);
 
@@ -296,6 +310,70 @@ const AuthModal = () => {
     const result = await loginWithWhatsAppOtp({
       whatsappNumber: whatsAppLoginData.whatsappNumber,
       otp: whatsAppLoginData.otp,
+    });
+
+    if (!result.success) {
+      setValidationErrors({ general: result.message });
+    }
+    setIsLoading(false);
+  };
+
+  const handleSmsLoginInput = (e) => {
+    const { name, value } = e.target;
+    const nextValue = name === 'phoneNumber' ? normalizeForInput(value) : value;
+    setSmsLoginData((prev) => ({ ...prev, [name]: nextValue }));
+    if (validationErrors[name]) {
+      setValidationErrors({ ...validationErrors, [name]: '' });
+    }
+    if (validationErrors.general) {
+      setValidationErrors({ ...validationErrors, general: '' });
+    }
+  };
+
+  const handleSendSmsOtp = async () => {
+    clearError();
+    setSuccessMessage('');
+    setValidationErrors({});
+
+    if (!smsLoginData.phoneNumber) {
+      setValidationErrors({ phoneNumber: 'Phone number is required' });
+      return;
+    }
+
+    if (!/^\+[1-9]\d{7,14}$/.test(smsLoginData.phoneNumber)) {
+      setValidationErrors({ phoneNumber: 'Use format like +9198XXXXXXXX' });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await sendSmsOtp({ phoneNumber: smsLoginData.phoneNumber });
+    if (result.success) {
+      setSmsOtpRequested(true);
+      setSuccessMessage(result.devOtp ? `OTP sent. Dev OTP: ${result.devOtp}` : 'OTP sent on your SMS number.');
+    } else {
+      setValidationErrors({ general: result.message });
+    }
+    setIsLoading(false);
+  };
+
+  const handleVerifySmsOtp = async () => {
+    clearError();
+    setValidationErrors({});
+
+    if (!smsLoginData.otp) {
+      setValidationErrors({ smsOtp: 'OTP is required' });
+      return;
+    }
+
+    if (!/^\d{6}$/.test(smsLoginData.otp)) {
+      setValidationErrors({ smsOtp: 'OTP must be 6 digits' });
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await loginWithSmsOtp({
+      phoneNumber: smsLoginData.phoneNumber,
+      otp: smsLoginData.otp,
     });
 
     if (!result.success) {
@@ -550,18 +628,27 @@ const AuthModal = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button 
+                  <button
                     type="button"
-                    disabled
-                    className="flex items-center justify-center py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      setShowSmsLogin((prev) => !prev);
+                      setShowWhatsAppLogin(false);
+                      setSmsOtpRequested(false);
+                      setSmsLoginData({ phoneNumber: '', otp: '' });
+                      setSuccessMessage('');
+                      setValidationErrors({});
+                      clearError();
+                    }}
+                    className="flex items-center justify-center py-2 border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
                   >
-                    <Chrome size={18} className="mr-2 text-slate-600" />
-                    <span className="text-sm font-medium text-slate-600">Google</span>
+                    <Smartphone size={18} className="mr-2 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-700">SMS OTP</span>
                   </button>
                   <button 
                     type="button"
                     onClick={() => {
                       setShowWhatsAppLogin((prev) => !prev);
+                      setShowSmsLogin(false);
                       setOtpRequested(false);
                       setWhatsAppLoginData({ whatsappNumber: '', otp: '' });
                       setSuccessMessage('');
@@ -574,6 +661,57 @@ const AuthModal = () => {
                     <span className="text-sm font-medium text-green-700">WhatsApp OTP</span>
                   </button>
                 </div>
+
+                {showSmsLogin && (
+                  <div className="mt-4 space-y-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <div className="relative">
+                      <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        placeholder="Phone Number (e.g. +919876543210)"
+                        value={smsLoginData.phoneNumber}
+                        onChange={handleSmsLoginInput}
+                        className={`w-full pl-10 pr-4 py-2.5 bg-white border ${
+                          validationErrors.phoneNumber ? 'border-red-300' : 'border-slate-200'
+                        } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                      />
+                    </div>
+                    {validationErrors.phoneNumber && (
+                      <p className="-mt-1 text-xs text-red-600">{validationErrors.phoneNumber}</p>
+                    )}
+
+                    {smsOtpRequested && (
+                      <>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <input
+                            type="text"
+                            name="otp"
+                            placeholder="Enter 6-digit OTP"
+                            value={smsLoginData.otp}
+                            onChange={handleSmsLoginInput}
+                            className={`w-full pl-10 pr-4 py-2.5 bg-white border ${
+                              validationErrors.smsOtp ? 'border-red-300' : 'border-slate-200'
+                            } rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all`}
+                          />
+                        </div>
+                        {validationErrors.smsOtp && (
+                          <p className="-mt-1 text-xs text-red-600">{validationErrors.smsOtp}</p>
+                        )}
+                      </>
+                    )}
+
+                    <Button
+                      type="button"
+                      className="w-full"
+                      isLoading={isLoading}
+                      onClick={smsOtpRequested ? handleVerifySmsOtp : handleSendSmsOtp}
+                    >
+                      {smsOtpRequested ? 'Verify OTP & Sign In' : 'Send OTP on SMS'}
+                    </Button>
+                  </div>
+                )}
 
                 {showWhatsAppLogin && (
                   <div className="mt-4 space-y-3 p-3 bg-green-50 border border-green-100 rounded-xl">
