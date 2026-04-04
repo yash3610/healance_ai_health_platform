@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "kill-port 5001 && nodemon server.js",
+    "dev": "nodemon --exec \"kill-port 5001 && node server.js\"",
     "seed": "node seeds/seedData.js"
   },
   "dependencies": {

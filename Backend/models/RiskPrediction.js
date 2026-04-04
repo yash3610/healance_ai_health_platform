@@ -10,6 +10,8 @@ const riskPredictionSchema = new mongoose.Schema({
   input: {
     age: { type: Number, required: true },
     gender: { type: String, required: true },
+    weight: Number,
+    height: Number,
     bloodPressure: { type: String, required: true },
     cholesterol: { type: Number, required: true },
     bloodSugar: { type: Number, required: true },

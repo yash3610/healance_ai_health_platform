@@ -268,6 +268,26 @@ export const riskService = {
     const response = await api.get('/risk-prediction/latest');
     return response.data;
   },
+
+  predictDiabetes: async (data) => {
+    const response = await api.post('/predict/diabetes', data);
+    return response.data;
+  },
+
+  predictHeart: async (data) => {
+    const response = await api.post('/predict/heart', data);
+    return response.data;
+  },
+
+  predictAll: async (data) => {
+    const response = await api.post('/predict/all', data);
+    return response.data;
+  },
+
+  shareToWhatsapp: async (data) => {
+    const response = await api.post('/predict/share-whatsapp', data);
+    return response.data;
+  },
 };
 
 // ==================== CHATBOT SERVICES ====================

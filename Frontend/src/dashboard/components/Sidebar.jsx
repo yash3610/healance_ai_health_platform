@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Activity, 
+  ChevronDown,
   MessageSquare, 
   Accessibility, 
   Target, 
@@ -18,6 +19,9 @@ import { cn } from '../../lib/utils';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const isRiskRoute = location.pathname.startsWith('/dashboard/risk-prediction');
+  const [riskDropdownOpen, setRiskDropdownOpen] = React.useState(true);
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   const resolvedAvatar = user?.avatar
@@ -26,7 +30,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
-    { name: 'Risk Prediction', path: '/dashboard/risk-prediction', icon: Activity },
     { name: 'AI Chatbots', path: '/dashboard/chatbots', icon: MessageSquare },
     { name: 'Body Explorer', path: '/dashboard/body-explorer', icon: Accessibility },
     { name: 'Reverse Planner', path: '/dashboard/reverse-planner', icon: Target },
@@ -39,6 +42,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const handleNavClick = () => {
     if (onClose) onClose();
   };
+
+  React.useEffect(() => {
+    if (isRiskRoute) {
+      setRiskDropdownOpen(true);
+    }
+  }, [isRiskRoute]);
 
   return (
     <>
@@ -73,7 +82,66 @@ const Sidebar = ({ isOpen, onClose }) => {
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        <NavLink
+          to={menuItems[0].path}
+          end={menuItems[0].end}
+          onClick={handleNavClick}
+          className={({ isActive }) => cn(
+            "flex items-center px-4 py-3 rounded-xl font-medium transition-colors",
+            isActive
+              ? "text-primary-600 bg-primary-50"
+              : "text-slate-600 hover:bg-slate-50"
+          )}
+        >
+          <LayoutDashboard size={20} className="mr-3 flex-shrink-0" />
+          <span className="truncate">Dashboard</span>
+        </NavLink>
+
+        <button
+          type="button"
+          onClick={() => setRiskDropdownOpen((prev) => !prev)}
+          className={cn(
+            "w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium transition-colors",
+            isRiskRoute ? "text-primary-600 bg-primary-50" : "text-slate-600 hover:bg-slate-50"
+          )}
+        >
+          <span className="flex items-center">
+            <Activity size={20} className="mr-3 flex-shrink-0" />
+            <span className="truncate">Risk Prediction</span>
+          </span>
+          <ChevronDown
+            size={18}
+            className={cn('transition-transform', riskDropdownOpen ? 'rotate-180' : '')}
+          />
+        </button>
+
+        {riskDropdownOpen && (
+          <div className="ml-6 mt-1 mb-2 space-y-1 border-l border-slate-200 pl-3">
+            <NavLink
+              to="/dashboard/risk-prediction"
+              end
+              onClick={handleNavClick}
+              className={({ isActive }) => cn(
+                'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'
+              )}
+            >
+              General Risk
+            </NavLink>
+            <NavLink
+              to="/dashboard/risk-prediction/heart-diabetes"
+              onClick={handleNavClick}
+              className={({ isActive }) => cn(
+                'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'
+              )}
+            >
+              Heart & Diabetes
+            </NavLink>
+          </div>
+        )}
+
+        {menuItems.slice(1).map((item) => {
           return (
             <NavLink
               key={item.name}

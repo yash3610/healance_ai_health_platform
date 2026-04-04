@@ -33,6 +33,7 @@ import Error404Page from './website/pages/Error404Page';
 // Dashboard Pages
 import Dashboard from './dashboard/pages/Dashboard';
 import RiskPrediction from './dashboard/pages/RiskPrediction';
+import HeartDiabetesPrediction from './dashboard/pages/HeartDiabetesPrediction';
 import AIChatbots from './dashboard/pages/AIChatbots';
 import BodyExplorer from './dashboard/pages/BodyExplorer';
 import ReversePlanner from './dashboard/pages/ReversePlanner';
@@ -99,6 +100,7 @@ function App() {
               >
                 <Route index element={<Dashboard />} />
                 <Route path="risk-prediction" element={<RiskPrediction />} />
+                <Route path="risk-prediction/heart-diabetes" element={<HeartDiabetesPrediction />} />
                 <Route path="chatbots" element={<AIChatbots />} />
                 <Route path="body-explorer" element={<BodyExplorer />} />
                 <Route path="reverse-planner" element={<ReversePlanner />} />
