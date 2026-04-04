@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { UploadCloud, Menu, Activity, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
@@ -199,12 +199,12 @@ const DashboardLayout = () => {
           >
             <Menu size={24} />
           </button>
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-1.5 rounded-lg">
               <Activity className="text-white h-5 w-5" />
             </div>
             <span className="text-lg font-bold text-slate-800">Healance</span>
-          </div>
+          </Link>
 <button 
             onClick={() => setIsNotificationOpen(true)}
             className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"

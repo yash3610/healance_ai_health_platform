@@ -242,7 +242,7 @@ export const getWeeklyForecast = async (req, res) => {
     }
 
     const response = await fetch(
-      `${OPEN_METEO_BASE_URL}?latitude=${locationData.lat}&longitude=${locationData.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean&timezone=auto&forecast_days=7`
+      `${OPEN_METEO_BASE_URL}?latitude=${locationData.lat}&longitude=${locationData.lon}&daily=temperature_2m_max,temperature_2m_min,weather_code,relative_humidity_2m_mean,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=7`
     );
 
     if (!response.ok) {
@@ -255,18 +255,30 @@ export const getWeeklyForecast = async (req, res) => {
     const minTemps = data?.daily?.temperature_2m_min || [];
     const weatherCodes = data?.daily?.weather_code || [];
     const humidities = data?.daily?.relative_humidity_2m_mean || [];
+    const precipitationProbability = data?.daily?.precipitation_probability_max || [];
+    const precipitationSum = data?.daily?.precipitation_sum || [];
 
     const forecast = dates.slice(0, 7).map((date, index) => {
-      const avgTemp = Math.round(((maxTemps[index] ?? 0) + (minTemps[index] ?? 0)) / 2);
+      const maxTemp = Math.round(maxTemps[index] ?? 0);
+      const minTemp = Math.round(minTemps[index] ?? 0);
+      const avgTemp = Math.round((maxTemp + minTemp) / 2);
+      const humidity = Math.round(humidities[index] ?? 55);
+      const rainChance = Math.round(precipitationProbability[index] ?? 0);
+      const precipitationMm = Number((precipitationSum[index] ?? 0).toFixed(1));
 
       return {
         day: getDayLabel(date),
+        date,
         temp: avgTemp,
         temperature: avgTemp,
+        maxTemp,
+        minTemp,
         condition: mapOpenMeteoCodeToCondition(weatherCodes[index]),
-        humidity: Math.round(humidities[index] ?? 55),
+        humidity,
+        rainChance,
+        precipitationMm,
         bestActivity: avgTemp > 30 ? 'Indoor Yoga' : 'Morning Run',
-        healthScore: calculateHealthScore(avgTemp, humidities[index] ?? 55),
+        healthScore: calculateHealthScore(avgTemp, humidity),
         isToday: index === 0,
       };
     });

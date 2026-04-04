@@ -156,7 +156,7 @@ canvas {
 }
 
 .hero-original {
-  padding-top: 0;
+  padding-top: clamp(0.75rem, 1.8vw, 1.5rem);
   padding-bottom: 0.75rem;
 }
 

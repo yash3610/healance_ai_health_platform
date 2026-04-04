@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CloudSun, Wind, Droplets, Thermometer, MapPin, RefreshCw, Loader2, AlertCircle, Sun, Cloud, CloudRain, CloudSnow, Sunrise, Sunset, TrendingUp, Heart, Activity, Bike, PersonStanding } from 'lucide-react';
 import axios from 'axios';
 import Button from '../../shared/ui/Button';
@@ -48,12 +48,14 @@ const Forecast = () => {
   const [error, setError] = useState('');
   const [location, setLocation] = useState({ city: 'Mumbai' });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isManualCitySelected = useRef(false);
 
   // Get user location
   const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          if (isManualCitySelected.current) return;
           setLocation({
             lat: position.coords.latitude,
             lon: position.coords.longitude
@@ -128,6 +130,7 @@ const Forecast = () => {
   };
 
   const handleCityChange = (city) => {
+    isManualCitySelected.current = true;
     setLocation({ city });
   };
 
@@ -272,8 +275,9 @@ const Forecast = () => {
                     day.condition === 'Sunny' || day.condition === 'Clear' ? 'text-yellow-500' :
                     day.condition === 'Rain' ? 'text-blue-500' : 'text-slate-400'
                   }`} />
-                  <p className="text-sm sm:text-lg font-bold text-slate-800">{day.temp}°</p>
-                  <p className="text-[10px] text-slate-500">{day.humidity}%</p>
+                  <p className="text-sm sm:text-lg font-bold text-slate-800">{day.maxTemp ?? day.temp}°</p>
+                  <p className="text-[10px] text-slate-500">{day.minTemp ?? day.temp}° min</p>
+                  <p className="text-[10px] text-blue-500 font-medium">Rain {day.rainChance ?? day.humidity}%</p>
                 </div>
               );
             })}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Activity, 
@@ -59,12 +59,12 @@ const Sidebar = ({ isOpen, onClose }) => {
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
       <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        <Link to="/" onClick={handleNavClick} className="flex items-center space-x-2">
           <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-1.5 rounded-lg">
             <Activity className="text-white h-5 w-5" />
           </div>
           <span className="text-xl font-bold text-slate-800">Healance</span>
-        </div>
+        </Link>
         {/* Mobile close button */}
         <button 
           onClick={onClose}
