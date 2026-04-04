@@ -131,6 +131,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendSmsOtp = async ({ phoneNumber }) => {
+    try {
+      setError(null);
+      const data = await authService.sendSmsLoginOtp({ phoneNumber });
+      return { success: true, message: data.message, devOtp: data.devOtp };
+    } catch (error) {
+      let message = 'Failed to send SMS OTP.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many OTP requests. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
+  const loginWithSmsOtp = async ({ phoneNumber, otp }) => {
+    try {
+      setError(null);
+      const data = await authService.verifySmsLoginOtp({ phoneNumber, otp });
+      setUser(data.user);
+      setIsAuthModalOpen(false);
+      navigate('/dashboard');
+      return { success: true, user: data.user };
+    } catch (error) {
+      let message = 'SMS OTP login failed.';
+
+      if (error.response?.status === 429) {
+        message = 'Too many attempts. Please wait and try again.';
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+
+      setError(message);
+      return { success: false, message };
+    }
+  };
+
   const sendSignupWhatsAppOtp = async ({ name, email, password, whatsappNumber }) => {
     try {
       setError(null);
@@ -262,6 +303,8 @@ export const AuthProvider = ({ children }) => {
       login, 
       sendWhatsAppOtp,
       loginWithWhatsAppOtp,
+      sendSmsOtp,
+      loginWithSmsOtp,
       sendSignupWhatsAppOtp,
       completeSignupWithOtp,
       logout,

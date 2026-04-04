@@ -87,6 +87,22 @@ export const authService = {
     return response.data;
   },
 
+  // Send SMS OTP for login
+  sendSmsLoginOtp: async (payload) => {
+    const response = await api.post('/sms/send-login-otp', payload);
+    return response.data;
+  },
+
+  // Verify SMS OTP and login
+  verifySmsLoginOtp: async (payload) => {
+    const response = await api.post('/sms/verify-login-otp', payload);
+    if (response.data.token) {
+      localStorage.setItem('healance_token', response.data.token);
+      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
   // Send WhatsApp OTP for signup
   sendWhatsAppSignupOtp: async (payload) => {
     const response = await api.post('/whatsapp/send-signup-otp', payload);
