@@ -36,7 +36,6 @@ import RiskPrediction from './dashboard/pages/RiskPrediction';
 import AIChatbots from './dashboard/pages/AIChatbots';
 import BodyExplorer from './dashboard/pages/BodyExplorer';
 import ReversePlanner from './dashboard/pages/ReversePlanner';
-import WalkAndEarn from './dashboard/pages/WalkAndEarn';
 import Forecast from './dashboard/pages/Forecast';
 import DashboardBlogs from './dashboard/pages/DashboardBlogs';
 import DashboardContact from './dashboard/pages/DashboardContact';
@@ -103,7 +102,6 @@ function App() {
                 <Route path="chatbots" element={<AIChatbots />} />
                 <Route path="body-explorer" element={<BodyExplorer />} />
                 <Route path="reverse-planner" element={<ReversePlanner />} />
-                <Route path="walk-and-earn" element={<WalkAndEarn />} />
                 <Route path="forecast" element={<Forecast />} />
                 <Route path="blogs" element={<DashboardBlogs />} />
                 <Route path="contact" element={<DashboardContact />} />
