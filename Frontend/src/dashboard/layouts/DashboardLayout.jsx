@@ -1,20 +1,47 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import { UploadCloud, Menu, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 import { useAuth } from '../../context/AuthContext';
+import { ToastProvider } from '../../context/ToastContext';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// Page config for dynamic titles
+const pageConfig = {
+  '/dashboard': { kicker: 'Dashboard', title: (name) => `Welcome back, ${name} 👋`, subtitle: "Here's your health overview for today." },
+  '/dashboard/risk-prediction': { kicker: 'Risk Prediction', title: () => 'AI Health Risk Prediction', subtitle: 'Enter your vitals for analysis.' },
+  '/dashboard/risk-prediction/heart-diabetes': { kicker: 'Heart & Diabetes', title: () => 'Heart & Diabetes Check', subtitle: 'Specialized cardiac and metabolic analysis.' },
+  '/dashboard/chatbots': { kicker: 'AI Chatbots', title: () => 'Health & Medicine Assistant', subtitle: 'Chat with our AI-powered health bots.' },
+  '/dashboard/body-explorer': { kicker: 'Body Explorer', title: () => '3D Anatomy Viewer', subtitle: 'Explore the human body interactively.' },
+  '/dashboard/reverse-planner': { kicker: 'Reverse Planner', title: () => 'Health Goal Tracker', subtitle: 'Set goals and track your progress.' },
+  '/dashboard/forecast': { kicker: 'Forecast', title: () => 'Health Weather Forecast', subtitle: 'Plan activities based on conditions.' },
+  '/dashboard/blogs': { kicker: 'Knowledge Base', title: () => 'Health Articles', subtitle: 'Curated content for healthier living.' },
+  '/dashboard/contact': { kicker: 'Support', title: () => 'Support Center', subtitle: 'Get help from our team.' },
+  '/dashboard/profile': { kicker: 'Account', title: () => 'Profile Settings', subtitle: 'Manage your account and health data.' },
+};
+
 // Notification Panel Component
 const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onClearAll, isLoading }) => {
+  const markAllRef = useRef(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    markAllRef.current?.focus();
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 bg-[#0b1030]/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 bg-[#0b1030]/30 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true" aria-label="Notifications">
       <div
         className="bg-white rounded-[20px] w-full max-w-md max-h-[80vh] overflow-hidden mt-16 mr-4"
         style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}
@@ -31,14 +58,15 @@ const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkA
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
+              ref={markAllRef}
               onClick={onMarkAllRead}
-              className="text-xs font-medium text-primary-600 hover:text-primary-700"
+              className="text-xs font-medium text-[#506cd7] hover:text-[#4753bf]"
             >
               Mark all read
             </button>
-            <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg">
-              <X size={18} className="text-slate-500" />
+            <button onClick={onClose} className="p-1.5 hover:bg-[#f0f1fc] rounded-lg" aria-label="Close notifications">
+              <X size={18} className="text-[#5f697a]" />
             </button>
           </div>
         </div>
@@ -101,16 +129,26 @@ const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkA
         </div>
 
         {notifications.length > 0 && (
-          <div className="border-t border-slate-100 p-3">
-            <button 
-              onClick={onClearAll}
-              className="w-full text-center text-sm text-red-600 hover:text-red-700 py-2"
+          <div className="border-t border-[#e8eaf9] p-3">
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="w-full text-center text-sm text-red-500 hover:text-red-600 py-2 transition-colors"
             >
               Clear all notifications
             </button>
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showClearConfirm}
+        title="Clear all notifications?"
+        description="This will permanently delete all your notifications. This action cannot be undone."
+        confirmLabel="Clear All"
+        variant="danger"
+        onConfirm={() => { onClearAll(); setShowClearConfirm(false); }}
+        onClose={() => setShowClearConfirm(false)}
+      />
     </div>
   );
 };
@@ -182,35 +220,54 @@ const DashboardLayout = () => {
     }
   };
 
+  // Dynamic page config
+  const config = pageConfig[location.pathname] || pageConfig['/dashboard'];
+  const firstName = user?.name?.split(' ')[0] || 'User';
+  const pageTitle = config.title(firstName);
+
+  // Set document title on route change
+  useEffect(() => {
+    document.title = `${config.kicker} | Healance AI`;
+  }, [config.kicker]);
+
+  // Poll notifications only when tab is visible
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchNotifications();
+    }, 30000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
+  const bellLabel = unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications';
+
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-[#f3f3ff] flex">
+      {/* Skip to content */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[70] focus:bg-[#506cd7] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm">
+        Skip to main content
+      </a>
+
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
+
       <main className="flex-1 lg:ml-64 min-h-screen flex flex-col">
         {/* Mobile Header */}
         <div className="lg:hidden sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-[#e8eaf9] px-4 py-3 flex items-center justify-between">
-          <button 
+          <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+            className="p-2.5 text-[#5f697a] hover:text-[#0b1030] hover:bg-[#f0f1fc] rounded-lg"
+            aria-label="Open navigation menu"
           >
             <Menu size={24} />
           </button>
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/favicon.svg" alt="Healance" className="h-8 w-8 rounded-lg" />
-            <span className="text-lg font-bold text-[#0b1030] font-heading">Healance</span>
-          </Link>
-<button 
+          <span className="text-sm font-heading font-bold text-[#0b1030] truncate max-w-[140px]">{config.kicker}</span>
+          <button
             onClick={() => setIsNotificationOpen(true)}
-            className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="relative p-2.5 hover:bg-[#f0f1fc] rounded-lg transition-colors"
+            aria-label={bellLabel}
           >
-            <Bell size={20} className="text-slate-600" />
+            <Bell size={20} className="text-[#5f697a]" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -219,20 +276,21 @@ const DashboardLayout = () => {
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 lg:p-8 flex-1">
+        <div id="main-content" className="p-4 sm:p-6 lg:p-8 flex-1">
           {/* Desktop Header */}
           <header className="hidden lg:flex justify-between items-center mb-8">
             <div>
-              <p className="dash-kicker mb-1">Dashboard</p>
-              <h1 className="text-2xl font-heading font-bold text-[#0b1030]">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-              <p className="text-[#5f697a]">Here's your health overview for today.</p>
+              <p className="dash-kicker mb-1">{config.kicker}</p>
+              <h1 className="text-2xl font-heading font-bold text-[#0b1030]">{pageTitle}</h1>
+              <p className="text-[#5f697a]">{config.subtitle}</p>
             </div>
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setIsNotificationOpen(true)}
-                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="relative p-2.5 hover:bg-[#f0f1fc] rounded-lg transition-colors"
+                aria-label={bellLabel}
               >
-                <Bell size={20} className="text-slate-600" />
+                <Bell size={20} className="text-[#5f697a]" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -247,9 +305,9 @@ const DashboardLayout = () => {
 
           {/* Mobile Welcome Message */}
           <div className="lg:hidden mb-6">
-            <p className="dash-kicker mb-1">Dashboard</p>
-            <h1 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-            <p className="text-sm text-[#5f697a]">Here's your health overview for today.</p>
+            <p className="dash-kicker mb-1">{config.kicker}</p>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">{pageTitle}</h1>
+            <p className="text-sm text-[#5f697a]">{config.subtitle}</p>
           </div>
 
           <motion.div
@@ -274,6 +332,7 @@ const DashboardLayout = () => {
         />
       </main>
     </div>
+    </ToastProvider>
   );
 };
 

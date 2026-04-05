@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Clock, ArrowRight, TrendingUp, Bookmark } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import EmptyState from '../../shared/ui/EmptyState';
 
 const blogPosts = [
   {
@@ -125,7 +126,16 @@ const DashboardBlogs = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Content Grid */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {filteredPosts.map(post => (
+          {filteredPosts.length === 0 ? (
+            <div className="sm:col-span-2">
+              <EmptyState
+                icon={Search}
+                title="No articles found"
+                description={`No results for "${searchQuery}" in ${selectedCategory}`}
+                action={{ label: 'Clear filters', onClick: () => { setSearchQuery(''); setSelectedCategory('All'); } }}
+              />
+            </div>
+          ) : filteredPosts.map(post => (
             <div key={post.id} className="dash-card overflow-hidden group flex flex-col h-full !p-0">
               <div className="relative h-40 sm:h-48 overflow-hidden">
                 <img
@@ -157,7 +167,7 @@ const DashboardBlogs = () => {
           ))}
         </div>
 
-        {/* Right Sidebar - Popular & Trending */}
+        {/* Right Sidebar */}
         <div className="space-y-4 sm:space-y-6">
           <div className="dash-card-static">
             <div className="flex items-center gap-2 mb-4">

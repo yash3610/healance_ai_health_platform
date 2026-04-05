@@ -33,6 +33,7 @@ export const HealthDataProvider = ({ children }) => {
   
   // Fetch state to prevent multiple simultaneous calls
   const [isFetching, setIsFetching] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Update water intake in localStorage whenever it changes
   useEffect(() => {
@@ -99,6 +100,7 @@ export const HealthDataProvider = ({ children }) => {
       console.error('Failed to fetch health data:', err);
     } finally {
       setIsFetching(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -178,6 +180,10 @@ export const HealthDataProvider = ({ children }) => {
     coins,
     setCoins,
     
+    // State
+    isFetching,
+    isInitialLoad,
+
     // Functions
     fetchHealthData,
     updateGoalProgress

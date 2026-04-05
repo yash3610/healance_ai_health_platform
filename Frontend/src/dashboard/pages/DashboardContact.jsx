@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Mail, Phone, Clock, MapPin, UploadCloud, Send, MessageSquare, Headphones, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
+import { Mail, Phone, Clock, MapPin, UploadCloud, Send, MessageSquare, Headphones, Loader2, X } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import axios from 'axios';
+import { useToast } from '../../context/ToastContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -16,13 +17,11 @@ const DashboardContact = () => {
   });
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const { toast } = useToast();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
   };
 
   const handleFileChange = (e) => {
@@ -41,16 +40,13 @@ const DashboardContact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
-
     if (!formData.fullName || !formData.email || !formData.message) {
-      setError('Please fill in all required fields');
+      toast({ title: 'Please fill in all required fields', variant: 'error' });
       return;
     }
 
     if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      setError('Please enter a valid email address');
+      toast({ title: 'Please enter a valid email address', variant: 'error' });
       return;
     }
 
@@ -77,7 +73,7 @@ const DashboardContact = () => {
       });
 
       if (response.data.success) {
-        setSuccess(true);
+        toast({ title: 'Ticket submitted successfully', description: "We'll respond within 24 hours.", variant: 'success' });
         setFormData({
           fullName: '',
           email: '',
@@ -89,10 +85,10 @@ const DashboardContact = () => {
           fileInputRef.current.value = '';
         }
       } else {
-        setError(response.data.message || 'Something went wrong');
+        toast({ title: response.data.message || 'Something went wrong', variant: 'error' });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit ticket. Please try again.');
+      toast({ title: err.response?.data?.message || 'Failed to submit ticket', variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -116,24 +112,7 @@ const DashboardContact = () => {
               Submit a Request
             </h3>
 
-            {/* Success Message */}
-            {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-[16px] flex items-start gap-3">
-                <CheckCircle size={20} className="text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-green-800">Ticket submitted successfully!</p>
-                  <p className="text-sm text-green-700">We'll respond within 24 hours. Check your email for confirmation.</p>
-                </div>
-              </div>
-            )}
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-[16px] flex items-start gap-3">
-                <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

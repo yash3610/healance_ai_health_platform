@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Save, UploadCloud, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Save, UploadCloud, Loader2 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
   const avatarInputRef = useRef(null);
+  const { toast } = useToast();
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   const avatarSrc = user?.avatar
@@ -26,8 +28,6 @@ const Profile = () => {
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [profileSuccess, setProfileSuccess] = useState('');
-  const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -47,8 +47,6 @@ const Profile = () => {
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfileForm((prev) => ({ ...prev, [name]: value }));
-    setProfileSuccess('');
-    setProfileError('');
   };
 
   const toStringArray = (value) =>
@@ -59,11 +57,8 @@ const Profile = () => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setProfileSuccess('');
-    setProfileError('');
-
     if (!profileForm.name.trim()) {
-      setProfileError('Name is required.');
+      toast({ title: 'Name is required', variant: 'error' });
       return;
     }
 
@@ -88,9 +83,9 @@ const Profile = () => {
         updateUser(data.user);
       }
 
-      setProfileSuccess('Profile updated successfully.');
+      toast({ title: 'Profile updated', variant: 'success' });
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to update profile.');
+      toast({ title: error.response?.data?.message || 'Failed to update profile', variant: 'error' });
     } finally {
       setIsSavingProfile(false);
     }
@@ -105,8 +100,6 @@ const Profile = () => {
       return;
     }
 
-    setProfileSuccess('');
-    setProfileError('');
     setIsUploadingAvatar(true);
 
     try {
@@ -114,9 +107,9 @@ const Profile = () => {
       if (data?.user) {
         updateUser(data.user);
       }
-      setProfileSuccess('Profile photo uploaded successfully.');
+      toast({ title: 'Profile photo uploaded', variant: 'success' });
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to upload profile photo.');
+      toast({ title: error.response?.data?.message || 'Failed to upload photo', variant: 'error' });
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) {
@@ -177,17 +170,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {profileSuccess && (
-            <div className="mb-5 p-3 rounded-xl border border-green-200 bg-green-50 text-green-700 flex items-center gap-2 text-sm">
-              <CheckCircle size={16} /> {profileSuccess}
-            </div>
-          )}
-
-          {profileError && (
-            <div className="mb-5 p-3 rounded-xl border border-red-200 bg-red-50 text-red-700 flex items-center gap-2 text-sm">
-              <AlertCircle size={16} /> {profileError}
-            </div>
-          )}
 
           <form onSubmit={handleProfileSubmit} className="space-y-4 sm:space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

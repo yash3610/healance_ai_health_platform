@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
-import { Send, Bot, Pill, User, Info, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Send, Bot, Pill, User, Info, Loader2, ShieldAlert } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import { chatbotService } from '../../services/api';
+
+const TypingDots = () => (
+  <div className="flex gap-1 items-center p-4">
+    {[0, 1, 2].map(i => (
+      <motion.div key={i} className="w-2 h-2 bg-[#506cd7] rounded-full"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+      />
+    ))}
+  </div>
+);
 
 const AIChatbots = () => {
   const [activeTab, setActiveTab] = useState('health');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  const chatEndRef = useRef(null);
   const [messages, setMessages] = useState([
     { type: 'bot', text: 'Hello! I am your AI Health Assistant. How can I help you today?', botType: 'health' },
     { type: 'bot', text: 'I can provide detailed information about medicines using FDA database. Just type the medicine name (e.g., aspirin, ibuprofen, metformin).', botType: 'medicine' }
@@ -56,6 +69,11 @@ const AIChatbots = () => {
 
   const filteredMessages = messages.filter(m => m.botType === activeTab);
 
+  // Auto-scroll to latest message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [filteredMessages, loading]);
+
   const renderMessage = (text) => {
     if (typeof text !== 'string') return text;
 
@@ -103,10 +121,22 @@ const AIChatbots = () => {
         </button>
       </div>
 
+      {/* Medical Disclaimer */}
+      <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+        <ShieldAlert size={14} className="flex-shrink-0" />
+        <span>This AI provides general health information only. Always consult a healthcare professional for medical advice.</span>
+      </div>
+
       {/* Chat Area */}
       <div className="flex-1 p-3 sm:p-6 overflow-y-auto scrollbar-hide space-y-3 sm:space-y-4 bg-[#f3f3ff]">
         {filteredMessages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <motion.div
+            key={idx}
+            className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className={`flex max-w-[90%] sm:max-w-[85%] gap-2 sm:gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.type === 'user' ? 'bg-[#e8eaf9]' : 'bg-[#f0f1fc] text-[#506cd7]'}`}>
                 {msg.type === 'user' ? <User size={14} /> : (activeTab === 'health' ? <Bot size={14} /> : <Pill size={14} />)}
@@ -115,22 +145,23 @@ const AIChatbots = () => {
                 {renderMessage(msg.text)}
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
 
-        {/* Loading indicator */}
+        {/* Typing indicator */}
         {loading && (
           <div className="flex justify-start">
             <div className="flex max-w-[80%] gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#f0f1fc] text-[#506cd7]">
                 {activeTab === 'health' ? <Bot size={16} /> : <Pill size={16} />}
               </div>
-              <div className="p-4 rounded-[16px] bg-white border border-[#e8eaf9] rounded-tl-none" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
-                <Loader2 size={16} className="animate-spin text-[#506cd7]" />
+              <div className="rounded-[16px] bg-white border border-[#e8eaf9] rounded-tl-none" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
+                <TypingDots />
               </div>
             </div>
           </div>
         )}
+        <div ref={chatEndRef} />
       </div>
 
       {/* Input Area */}

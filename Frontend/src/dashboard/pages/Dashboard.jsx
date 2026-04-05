@@ -5,9 +5,11 @@ import {
 } from 'recharts';
 import {
   Activity, Heart, TrendingUp, AlertCircle, Brain, Footprints, Droplets, Target, Coins, Calendar,
-  Bell, BellRing, X, Plus, Minus, Volume2
+  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle
 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import { SkeletonCard, SkeletonChart, SkeletonSchedule, SkeletonRiskCard } from '../../shared/ui/Skeleton';
+import EmptyState from '../../shared/ui/EmptyState';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
 
@@ -136,14 +138,16 @@ const WaterTracker = ({ onSetReminder, reminderActive }) => {
           <button
             onClick={handleRemoveGlass}
             disabled={waterIntake <= 0}
-            className="p-1.5 rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            aria-label="Remove one glass of water"
           >
             <Minus size={16} className="text-[#5f697a]" />
           </button>
           <button
             onClick={handleAddGlass}
             disabled={waterIntake >= 3}
-            className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            aria-label="Add one glass of water"
           >
             <Plus size={16} className="text-blue-600" />
           </button>
@@ -214,7 +218,7 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
 };
 
 const Dashboard = () => {
-  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData } = useHealthData();
+  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
   
   const [waterReminderActive, setWaterReminderActive] = useState(false);
   const [waterReminderInterval, setWaterReminderInterval] = useState(30);
@@ -345,6 +349,11 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Stats Grid */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {[
           <StatCard
@@ -391,7 +400,14 @@ const Dashboard = () => {
           </motion.div>
         ))}
       </div>
+      )}
 
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <SkeletonChart />
+          <SkeletonSchedule />
+        </div>
+      ) : (
       <motion.div
         className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8"
         initial={{ opacity: 0, y: 20 }}
@@ -473,8 +489,15 @@ const Dashboard = () => {
           </div>
         </div>
       </motion.div>
+      )}
 
       {/* Risk Summary & Insights */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <SkeletonRiskCard />
+          <SkeletonRiskCard />
+        </div>
+      ) : (
       <motion.div
         className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
         initial={{ opacity: 0, y: 20 }}
@@ -489,7 +512,7 @@ const Dashboard = () => {
               </div>
               <h3 className="dash-heading text-sm sm:text-base">Latest Risk Prediction</h3>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">Low Risk</span>
+            <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full inline-flex items-center gap-1"><CheckCircle size={12} /> Low Risk</span>
           </div>
 
           <div className="space-y-4">
@@ -544,6 +567,7 @@ const Dashboard = () => {
           </div>
         </div>
       </motion.div>
+      )}
 
       {/* Water Reminder Modal */}
       <WaterReminderModal

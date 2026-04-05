@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Droplets, Flame, Moon, Footprints, Plus, Edit2, Trash2, X, CheckCircle, AlertCircle, Loader2, TrendingUp, Calendar, Sparkles } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
+import { useToast } from '../../context/ToastContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -45,11 +47,11 @@ const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
   return (
     <div className="dash-card relative group">
       {/* Action Buttons */}
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(goal)} className="p-1.5 hover:bg-[#f0f1fc] rounded-lg transition-colors">
+      <div className="absolute top-2 right-2 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <button onClick={() => onEdit(goal)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#f0f1fc] rounded-lg transition-colors" aria-label="Edit goal">
           <Edit2 size={14} className="text-[#5f697a]" />
         </button>
-        <button onClick={() => onDelete(goal._id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
+        <button onClick={() => onDelete(goal._id)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-red-50 rounded-lg transition-colors" aria-label="Delete goal">
           <Trash2 size={14} className="text-red-500" />
         </button>
       </div>
@@ -350,18 +352,18 @@ const LogProgressModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 
 const ReversePlanner = () => {
   const { fetchHealthData } = useHealthData();
-  
+  const { toast } = useToast();
+
   const [goals, setGoals] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
+
   // Modals
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [goalToDelete, setGoalToDelete] = useState(null);
 
   // Fetch goals
   const fetchGoals = async () => {
@@ -374,7 +376,7 @@ const ReversePlanner = () => {
         setGoals(response.data.goals);
       }
     } catch (err) {
-      setError('Failed to load goals');
+      toast({ title: 'Failed to load goals', variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -453,35 +455,36 @@ const ReversePlanner = () => {
       }
       
       if (response.data.success) {
-        setSuccess(goalId ? 'Goal updated successfully!' : 'Goal created successfully!');
+        toast({ title: goalId ? 'Goal updated' : 'Goal created', variant: 'success' });
         fetchGoals();
-        fetchHealthData(); // Sync with global health data
+        fetchHealthData();
         setIsGoalModalOpen(false);
         setSelectedGoal(null);
-        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save goal');
+      toast({ title: err.response?.data?.message || 'Failed to save goal', variant: 'error' });
     } finally {
       setIsSaving(false);
     }
   };
 
   // Delete goal
-  const handleDeleteGoal = async (goalId) => {
-    if (!window.confirm('Are you sure you want to delete this goal?')) return;
-    
+  const handleDeleteGoal = (goalId) => setGoalToDelete(goalId);
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
     try {
       const token = localStorage.getItem('healance_token');
-      await axios.delete(`${API_URL}/goals/${goalId}`, {
+      await axios.delete(`${API_URL}/goals/${goalToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Goal deleted successfully!');
+      toast({ title: 'Goal deleted', variant: 'success' });
       fetchGoals();
-      fetchHealthData(); // Sync with global health data
-      setTimeout(() => setSuccess(''), 3000);
+      fetchHealthData();
     } catch (err) {
-      setError('Failed to delete goal');
+      toast({ title: 'Failed to delete goal', variant: 'error' });
+    } finally {
+      setGoalToDelete(null);
     }
   };
 
@@ -496,15 +499,14 @@ const ReversePlanner = () => {
       );
       
       if (response.data.success) {
-        setSuccess('Progress logged successfully!');
+        toast({ title: 'Progress logged', variant: 'success' });
         fetchGoals();
-        fetchHealthData(); // Sync with global health data
+        fetchHealthData();
         setIsLogModalOpen(false);
         setSelectedGoal(null);
-        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      setError('Failed to log progress');
+      toast({ title: 'Failed to log progress', variant: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -601,22 +603,16 @@ const ReversePlanner = () => {
         </Button>
       </div>
 
-      {/* Messages */}
-      {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-          <CheckCircle size={20} className="text-green-500" />
-          <p className="text-green-700">{success}</p>
-        </div>
-      )}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-          <AlertCircle size={20} className="text-red-500" />
-          <p className="text-red-700">{error}</p>
-          <button onClick={() => setError('')} className="ml-auto">
-            <X size={18} className="text-red-500" />
-          </button>
-        </div>
-      )}
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={!!goalToDelete}
+        title="Delete this goal?"
+        description="This action cannot be undone. All progress data for this goal will be lost."
+        confirmLabel="Delete Goal"
+        variant="danger"
+        onConfirm={confirmDeleteGoal}
+        onClose={() => setGoalToDelete(null)}
+      />
 
       {/* Goals Grid */}
       {goals.length === 0 ? (

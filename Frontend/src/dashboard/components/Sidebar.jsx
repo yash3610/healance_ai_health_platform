@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const isRiskRoute = location.pathname.startsWith('/dashboard/risk-prediction');
-  const [riskDropdownOpen, setRiskDropdownOpen] = React.useState(true);
+  const [riskDropdownOpen, setRiskDropdownOpen] = React.useState(isRiskRoute);
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   const resolvedAvatar = user?.avatar
@@ -71,9 +71,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           <span className="text-xl font-bold text-[#0b1030] font-heading">Healance</span>
         </Link>
         {/* Mobile close button */}
-        <button 
+        <button
           onClick={onClose}
-          className="lg:hidden p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+          className="lg:hidden p-2.5 text-[#5f697a] hover:text-[#0b1030] rounded-lg hover:bg-[#f0f1fc]"
+          aria-label="Close navigation menu"
         >
           <X size={20} />
         </button>
