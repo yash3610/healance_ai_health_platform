@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Activity, AlertCircle, ShieldCheck, Stethoscope } from 'lucide-react';
-import HumanBody from '../components/HumanBody';
+import { Activity } from 'lucide-react';
+import AnatomyViewer from '../components/body-explorer/AnatomyViewer';
+import PartDetailCard from '../components/body-explorer/PartDetailCard';
 
 const bodyData = {
   "Heart": {
@@ -60,7 +60,6 @@ const bodyData = {
     prevention: ["Supportive footwear", "Foot hygiene", "Stretching"],
     metrics: "Pressure Pattern: Balanced"
   },
-  // Default fallback for other parts
   "default": {
     function: "Essential body part maintaining structural or physiological integrity.",
     diseases: ["Infection", "Inflammation", "Trauma"],
@@ -74,138 +73,79 @@ const bodyData = {
 const BodyExplorer = () => {
   const [gender, setGender] = useState('male');
   const [selectedPart, setSelectedPart] = useState(null);
-  const [bodyResetToken, setBodyResetToken] = useState(0);
-
-  const partsInput = {
-    head: { show: true },
-    left_shoulder: { show: true },
-    right_shoulder: { show: true },
-    left_arm: { show: true },
-    right_arm: { show: true },
-    chest: { show: true },
-    stomach: { show: true },
-    left_leg: { show: true },
-    right_leg: { show: true },
-    left_hand: { show: true },
-    right_hand: { show: true },
-    left_foot: { show: true },
-    right_foot: { show: true }
-  };
+  const [hoveredPart, setHoveredPart] = useState(null);
+  const [activeLayer, setActiveLayer] = useState('muscles');
 
   const handlePartClick = (partName) => {
     setSelectedPart(partName);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseDetail = () => {
     setSelectedPart(null);
-    setBodyResetToken((prev) => prev + 1);
   };
 
-  const partInfo = bodyData[selectedPart] || bodyData["default"];
+  const partInfo = selectedPart ? (bodyData[selectedPart] || bodyData["default"]) : null;
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Interactive Body Explorer</h2>
-        <div className="bg-white p-1 rounded-xl border border-slate-200 flex">
-          <button 
+      {/* Header */}
+      <div className="flex justify-between items-center gap-3 mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 truncate">
+          Interactive Body Explorer
+        </h2>
+        <div className="bg-white p-0.5 sm:p-1 rounded-xl border border-slate-200 flex flex-shrink-0">
+          <button
             onClick={() => setGender('male')}
-            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'male' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
+              ${gender === 'male'
+                ? 'bg-red-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
           >
             Male
           </button>
-          <button 
+          <button
             onClick={() => setGender('female')}
-            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${gender === 'female' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
+              ${gender === 'female'
+                ? 'bg-red-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
           >
             Female
           </button>
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-8 relative overflow-hidden flex justify-center items-center min-h-[400px]">
-        <div className="w-full max-w-xs sm:max-w-md h-full">
-          <HumanBody
-            gender={gender}
-            onPartClick={handlePartClick}
-            partsInput={partsInput}
-            resetToken={bodyResetToken}
-          />
-        </div>
+      {/* 3D Viewer */}
+      <div className="flex-1 bg-gradient-to-b from-slate-50 to-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100
+                      relative overflow-hidden min-h-[350px] sm:min-h-[450px] lg:min-h-[550px]">
+        <AnatomyViewer
+          gender={gender}
+          selectedPart={selectedPart}
+          onPartClick={handlePartClick}
+          onHover={setHoveredPart}
+          activeLayer={activeLayer}
+          onLayerChange={setActiveLayer}
+        />
 
-        <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 max-w-[200px] sm:max-w-xs">
-          <p className="text-xs sm:text-sm text-slate-600 flex items-center">
-            <Activity size={14} className="mr-2 text-primary-500 flex-shrink-0" />
-            <span className="hidden sm:inline">Hover and click on body parts to view detailed health insights.</span>
-            <span className="sm:hidden">Tap body parts for health insights.</span>
+        <PartDetailCard
+          partName={selectedPart}
+          partInfo={partInfo}
+          onClose={handleCloseDetail}
+        />
+
+        {/* Hint - hidden on very small screens to save space */}
+        <div className="absolute bottom-12 sm:bottom-14 left-3 sm:left-4 z-10
+                        bg-white/80 backdrop-blur-md p-2 sm:p-3 rounded-lg sm:rounded-xl
+                        border border-slate-200/60 max-w-[150px] sm:max-w-[180px] shadow-sm">
+          <p className="text-[9px] sm:text-[10px] lg:text-xs text-slate-400 flex items-center">
+            <Activity size={10} className="mr-1 sm:mr-1.5 text-red-400 flex-shrink-0" />
+            <span className="hidden sm:inline">Drag to rotate, scroll to zoom</span>
+            <span className="sm:hidden">Drag & pinch</span>
           </p>
         </div>
       </div>
-
-      <AnimatePresence>
-        {selectedPart && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] flex flex-col"
-            >
-              <div className="bg-gradient-to-r from-primary-500 to-secondary-500 p-4 sm:p-6 flex justify-between items-center text-white">
-                <h3 className="text-xl sm:text-2xl font-bold">{selectedPart}</h3>
-                <button onClick={handleCloseModal} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Function</h4>
-                  <p className="text-sm sm:text-base text-slate-700 leading-relaxed">{partInfo.function}</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                    <div className="flex items-center gap-2 mb-2 text-red-600 font-bold">
-                      <AlertCircle size={18} /> Common Diseases
-                    </div>
-                    <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
-                      {partInfo.diseases.map((d, i) => <li key={i}>{d}</li>)}
-                    </ul>
-                  </div>
-
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <div className="flex items-center gap-2 mb-2 text-blue-600 font-bold">
-                      <Stethoscope size={18} /> Recommended Tests
-                    </div>
-                    <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
-                      {partInfo.tests.map((t, i) => <li key={i}>{t}</li>)}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                  <div className="flex items-center gap-2 mb-2 text-green-700 font-bold">
-                    <ShieldCheck size={18} /> Prevention & Care
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {partInfo.prevention.map((p, i) => (
-                      <span key={i} className="px-3 py-1 bg-white rounded-full text-xs font-medium text-green-700 shadow-sm border border-green-100">
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-500">Related Metrics</span>
-                  <span className="font-bold text-slate-800">{partInfo.metrics}</span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
