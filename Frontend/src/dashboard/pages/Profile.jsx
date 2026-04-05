@@ -128,26 +128,28 @@ const Profile = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Profile Settings</h2>
-        <p className="text-sm sm:text-base text-slate-600">Manage your account details and health profile.</p>
+        <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Profile Settings</h2>
+        <p className="text-sm sm:text-base text-[#5f697a]">Manage your account details and health profile.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-base sm:text-lg text-slate-900 mb-5 flex items-center gap-2">
-            <User size={18} className="text-primary-500" />
+        <div className="dash-card-static">
+          <h3 className="dash-heading text-base sm:text-lg mb-5 flex items-center gap-2">
+            <div className="dash-icon-badge bg-[#506cd7]">
+              <User size={20} className="text-white" />
+            </div>
             Personal Information
           </h3>
 
-          <div className="mb-5 p-4 border border-slate-200 rounded-xl bg-slate-50">
+          <div className="mb-5 p-4 border border-[#e8eaf9] rounded-xl bg-[#f0f1fc]">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <img
                 src={avatarSrc}
                 alt="Profile avatar"
-                className="w-20 h-20 rounded-full object-cover border border-slate-200"
+                className="w-20 h-20 rounded-full object-cover border border-[#e8eaf9]"
               />
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 mb-2">Profile Photo</p>
+                <p className="text-sm font-medium text-[#0b1030] mb-2">Profile Photo</p>
                 <input
                   ref={avatarInputRef}
                   type="file"
@@ -190,47 +192,47 @@ const Profile = () => {
           <form onSubmit={handleProfileSubmit} className="space-y-4 sm:space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Full Name</label>
                 <input
                   type="text"
                   name="name"
                   value={profileForm.name}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  className="dash-input"
                   placeholder="Your name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Email</label>
                 <input
                   type="email"
                   value={user?.email || ''}
                   disabled
-                  className="w-full px-4 py-2.5 text-sm bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                  className="dash-input !bg-[#e8eaf9] text-[#5f697a] cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Age</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Age</label>
                 <input
                   type="number"
                   min="1"
                   name="age"
                   value={profileForm.age}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  className="dash-input"
                   placeholder="28"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Gender</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Gender</label>
                 <select
                   name="gender"
                   value={profileForm.gender}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  className="dash-input"
                 >
                   <option value="">Select</option>
                   <option value="male">Male</option>
@@ -239,67 +241,67 @@ const Profile = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Height (cm)</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Height (cm)</label>
                 <input
                   type="number"
                   min="1"
                   name="height"
                   value={profileForm.height}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  className="dash-input"
                   placeholder="170"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Weight (kg)</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Weight (kg)</label>
                 <input
                   type="number"
                   min="1"
                   name="weight"
                   value={profileForm.weight}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  className="dash-input"
                   placeholder="65"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Blood Group</label>
+              <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Blood Group</label>
               <input
                 type="text"
                 name="bloodGroup"
                 value={profileForm.bloodGroup}
                 onChange={handleProfileChange}
-                className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                className="dash-input"
                 placeholder="B+"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Medical Conditions</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Medical Conditions</label>
                 <textarea
                   rows="3"
                   name="medicalConditions"
                   value={profileForm.medicalConditions}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                  className="dash-input resize-none"
                   placeholder="Diabetes, Hypertension"
                 />
-                <p className="text-xs text-slate-500 mt-1">Use comma to separate multiple values.</p>
+                <p className="text-xs text-[#5f697a] mt-1">Use comma to separate multiple values.</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Medications</label>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Medications</label>
                 <textarea
                   rows="3"
                   name="medications"
                   value={profileForm.medications}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                  className="dash-input resize-none"
                   placeholder="Metformin, Aspirin"
                 />
-                <p className="text-xs text-slate-500 mt-1">Use comma to separate multiple values.</p>
+                <p className="text-xs text-[#5f697a] mt-1">Use comma to separate multiple values.</p>
               </div>
             </div>
 

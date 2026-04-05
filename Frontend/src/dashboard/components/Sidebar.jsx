@@ -61,16 +61,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       
       {/* Sidebar */}
       <aside className={cn(
-        "w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-40 transition-transform duration-300 ease-in-out",
+        "w-64 bg-[#f8f8ff] border-r border-[#e8eaf9] flex flex-col fixed h-full z-40 transition-transform duration-300 ease-in-out",
         "lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+      <div className="p-6 border-b border-[#e8eaf9] flex items-center justify-between">
         <Link to="/" onClick={handleNavClick} className="flex items-center space-x-2">
-          <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-1.5 rounded-lg">
-            <Activity className="text-white h-5 w-5" />
-          </div>
-          <span className="text-xl font-bold text-slate-800">Healance</span>
+          <img src="/favicon.svg" alt="Healance" className="h-9 w-9 rounded-lg" />
+          <span className="text-xl font-bold text-[#0b1030] font-heading">Healance</span>
         </Link>
         {/* Mobile close button */}
         <button 
@@ -81,16 +79,16 @@ const Sidebar = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
         <NavLink
           to={menuItems[0].path}
           end={menuItems[0].end}
           onClick={handleNavClick}
           className={({ isActive }) => cn(
-            "flex items-center px-4 py-3 rounded-xl font-medium transition-colors",
+            "flex items-center px-4 py-3 rounded-xl font-medium transition-colors border-l-[3px]",
             isActive
-              ? "text-primary-600 bg-primary-50"
-              : "text-slate-600 hover:bg-slate-50"
+              ? "text-[#506cd7] bg-[#f0f1fc] border-l-[#506cd7]"
+              : "text-slate-600 hover:bg-[#f0f1fc] border-l-transparent"
           )}
         >
           <LayoutDashboard size={20} className="mr-3 flex-shrink-0" />
@@ -101,8 +99,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           type="button"
           onClick={() => setRiskDropdownOpen((prev) => !prev)}
           className={cn(
-            "w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium transition-colors",
-            isRiskRoute ? "text-primary-600 bg-primary-50" : "text-slate-600 hover:bg-slate-50"
+            "w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium transition-colors border-l-[3px]",
+            isRiskRoute ? "text-[#506cd7] bg-[#f0f1fc] border-l-[#506cd7]" : "text-slate-600 hover:bg-[#f0f1fc] border-l-transparent"
           )}
         >
           <span className="flex items-center">
@@ -123,7 +121,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               onClick={handleNavClick}
               className={({ isActive }) => cn(
                 'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'
+                isActive ? 'text-[#506cd7] bg-[#f0f1fc]' : 'text-slate-600 hover:bg-[#f0f1fc]'
               )}
             >
               General Risk
@@ -133,7 +131,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               onClick={handleNavClick}
               className={({ isActive }) => cn(
                 'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'
+                isActive ? 'text-[#506cd7] bg-[#f0f1fc]' : 'text-slate-600 hover:bg-[#f0f1fc]'
               )}
             >
               Heart & Diabetes
@@ -149,10 +147,10 @@ const Sidebar = ({ isOpen, onClose }) => {
               end={item.end}
               onClick={handleNavClick}
               className={({ isActive }) => cn(
-                "flex items-center px-4 py-3 rounded-xl font-medium transition-colors",
-                isActive 
-                  ? "text-primary-600 bg-primary-50" 
-                  : "text-slate-600 hover:bg-slate-50"
+                "flex items-center px-4 py-3 rounded-xl font-medium transition-colors border-l-[3px]",
+                isActive
+                  ? "text-[#506cd7] bg-[#f0f1fc] border-l-[#506cd7]"
+                  : "text-slate-600 hover:bg-[#f0f1fc] border-l-transparent"
               )}
             >
               <item.icon size={20} className="mr-3 flex-shrink-0" />
@@ -162,13 +160,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-[#e8eaf9]">
         <NavLink
           to="/dashboard/profile"
           onClick={handleNavClick}
           className={({ isActive }) => cn(
             "flex items-center p-3 rounded-xl mb-3 transition-colors",
-            isActive ? "bg-primary-50" : "bg-slate-50 hover:bg-slate-100"
+            isActive ? "bg-[#f0f1fc]" : "bg-[#f0f1fc]/50 hover:bg-[#f0f1fc]"
           )}
         >
           <img src={resolvedAvatar} alt="User" className="w-10 h-10 rounded-full flex-shrink-0" />

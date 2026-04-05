@@ -14,7 +14,17 @@ export default {
           600: '#0284c7',
           700: '#0369a1',
         },
-        ink: '#1f2937',
+        ink: {
+          DEFAULT: '#0b1030',
+          light: '#5f697a',
+          muted: '#6a7283',
+        },
+        accent: {
+          DEFAULT: '#506cd7',
+          dark: '#4753bf',
+          light: '#e8eaf9',
+          bg: '#f0f1fc',
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',
@@ -47,9 +57,12 @@ export default {
       },
       fontFamily: {
         sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Sora', 'DM Sans', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 10px 35px rgba(2, 6, 23, 0.08)',
+        card: '0 10px 35px rgba(2, 6, 23, 0.08)',
+        'card-hover': '0 22px 38px rgba(11, 16, 48, 0.11)',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

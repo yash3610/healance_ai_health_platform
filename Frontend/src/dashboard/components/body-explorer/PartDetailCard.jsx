@@ -67,7 +67,7 @@ const CardHeader = ({ partName, onClose }) => (
 );
 
 const CardContent = ({ partInfo }) => (
-  <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3 overflow-y-auto flex-1 text-xs">
+  <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3 overflow-y-auto scrollbar-hide flex-1 text-xs">
     <p className="text-slate-600 leading-relaxed">{partInfo.function}</p>
 
     <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
-import { UploadCloud, Menu, Activity, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
+import { UploadCloud, Menu, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
@@ -13,15 +14,16 @@ const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkA
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 bg-slate-900/30 backdrop-blur-sm" onClick={onClose}>
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mt-16 mr-4"
+    <div className="fixed inset-0 z-50 flex items-start justify-end p-4 bg-[#0b1030]/30 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-[20px] w-full max-w-md max-h-[80vh] overflow-hidden mt-16 mr-4"
+        style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-white border-b border-[#e8eaf9] p-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Bell size={20} className="text-primary-600" />
-            <h3 className="text-lg font-bold text-slate-900">Notifications</h3>
+            <Bell size={20} className="text-[#506cd7]" />
+            <h3 className="text-lg font-bold text-[#0b1030] font-heading">Notifications</h3>
             {notifications.filter(n => !n.isRead).length > 0 && (
               <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
                 {notifications.filter(n => !n.isRead).length}
@@ -41,7 +43,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkA
           </div>
         </div>
 
-        <div className="overflow-y-auto max-h-[60vh]">
+        <div className="overflow-y-auto scrollbar-hide max-h-[60vh]">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 size={24} className="animate-spin text-primary-500" />
@@ -115,6 +117,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications, onMarkRead, onMarkA
 
 const DashboardLayout = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -187,12 +190,12 @@ const DashboardLayout = () => {
   }, [fetchNotifications]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[#f3f3ff] flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <main className="flex-1 lg:ml-64 min-h-screen flex flex-col">
         {/* Mobile Header */}
-        <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+        <div className="lg:hidden sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-[#e8eaf9] px-4 py-3 flex items-center justify-between">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
@@ -200,10 +203,8 @@ const DashboardLayout = () => {
             <Menu size={24} />
           </button>
           <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-1.5 rounded-lg">
-              <Activity className="text-white h-5 w-5" />
-            </div>
-            <span className="text-lg font-bold text-slate-800">Healance</span>
+            <img src="/favicon.svg" alt="Healance" className="h-8 w-8 rounded-lg" />
+            <span className="text-lg font-bold text-[#0b1030] font-heading">Healance</span>
           </Link>
 <button 
             onClick={() => setIsNotificationOpen(true)}
@@ -222,8 +223,9 @@ const DashboardLayout = () => {
           {/* Desktop Header */}
           <header className="hidden lg:flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-              <p className="text-slate-500">Here's your health overview for today.</p>
+              <p className="dash-kicker mb-1">Dashboard</p>
+              <h1 className="text-2xl font-heading font-bold text-[#0b1030]">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
+              <p className="text-[#5f697a]">Here's your health overview for today.</p>
             </div>
             <div className="flex items-center gap-4">
               <button 
@@ -245,11 +247,19 @@ const DashboardLayout = () => {
 
           {/* Mobile Welcome Message */}
           <div className="lg:hidden mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-            <p className="text-sm text-slate-500">Here's your health overview for today.</p>
+            <p className="dash-kicker mb-1">Dashboard</p>
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
+            <p className="text-sm text-[#5f697a]">Here's your health overview for today.</p>
           </div>
-          
-          <Outlet />
+
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <Outlet />
+          </motion.div>
         </div>
 
         {/* Notification Panel */}
