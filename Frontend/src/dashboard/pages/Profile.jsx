@@ -4,6 +4,7 @@ import Button from '../../shared/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import DashReveal from '../../shared/ui/DashReveal';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -125,7 +126,7 @@ const Profile = () => {
         <p className="text-sm sm:text-base text-[#5f697a]">Manage your account details and health profile.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <DashReveal className="grid grid-cols-1 gap-6">
         <div className="dash-card-static">
           <h3 className="dash-heading text-base sm:text-lg mb-5 flex items-center gap-2">
             <div className="dash-icon-badge bg-[#506cd7]">
@@ -303,7 +304,7 @@ const Profile = () => {
           </form>
         </div>
 
-      </div>
+      </DashReveal>
     </div>
   );
 };

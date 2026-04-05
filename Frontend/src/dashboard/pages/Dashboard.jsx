@@ -10,10 +10,10 @@ import {
 import Button from '../../shared/ui/Button';
 import { SkeletonCard, SkeletonChart, SkeletonSchedule, SkeletonRiskCard } from '../../shared/ui/Skeleton';
 import EmptyState from '../../shared/ui/EmptyState';
+import DashReveal from '../../shared/ui/DashReveal';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL } from '../../constants/config';
 
 const data = [
   { name: 'Mon', score: 65, heart: 72 },
@@ -408,12 +408,7 @@ const Dashboard = () => {
           <SkeletonSchedule />
         </div>
       ) : (
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.35 }}
-      >
+      <DashReveal delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Chart */}
         <div className="lg:col-span-2 dash-card-static">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -436,7 +431,20 @@ const Dashboard = () => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} />
                 <Tooltip
-                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(80, 108, 215, 0.12)', boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="bg-white px-4 py-3 rounded-2xl border border-[#e8eaf9]" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
+                        <p className="text-xs font-bold text-[#0b1030] mb-1">{label}</p>
+                        {payload.map((entry, i) => (
+                          <p key={i} className="text-sm text-[#5f697a]">
+                            <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: entry.color }} />
+                            Health Score: <span className="font-bold text-[#0b1030]">{entry.value}</span>
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }}
                 />
                 <Area type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
               </AreaChart>
@@ -488,7 +496,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </DashReveal>
       )}
 
       {/* Risk Summary & Insights */}
@@ -498,11 +506,7 @@ const Dashboard = () => {
           <SkeletonRiskCard />
         </div>
       ) : (
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.5 }}
+      <DashReveal delay={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
       >
         <div className="dash-card">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
@@ -566,7 +570,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </DashReveal>
       )}
 
       {/* Water Reminder Modal */}

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CloudSun, Wind, Droplets, Thermometer, MapPin, RefreshCw, Loader2, AlertCircle, Sun, Cloud, CloudRain, CloudSnow, Sunrise, Sunset, TrendingUp, Heart, Activity, Bike, PersonStanding } from 'lucide-react';
 import axios from 'axios';
 import Button from '../../shared/ui/Button';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import DashReveal from '../../shared/ui/DashReveal';
+import { API_URL } from '../../constants/config';
 
 const weatherIcons = {
   Sunny: Sun,
@@ -156,6 +156,7 @@ const Forecast = () => {
       )}
 
       {/* Location Selector */}
+      <DashReveal>
       <div className="dash-card-static">
         <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
           <MapPin size={18} className="text-[#506cd7]" /> Quick Location Select
@@ -176,8 +177,10 @@ const Forecast = () => {
           ))}
         </div>
       </div>
+      </DashReveal>
 
-      {/* Main Weather Card - keep the blue gradient as intentional branded element */}
+      {/* Main Weather Card */}
+      <DashReveal delay={0.1}>
       <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-[20px] sm:rounded-[28px] p-5 sm:p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -247,6 +250,8 @@ const Forecast = () => {
           </div>
         </div>
       </div>
+
+      </DashReveal>
 
       {/* Weekly Forecast */}
       {weeklyForecast.length > 0 && (

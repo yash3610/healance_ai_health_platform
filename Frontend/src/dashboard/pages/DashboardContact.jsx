@@ -3,8 +3,8 @@ import { Mail, Phone, Clock, MapPin, UploadCloud, Send, MessageSquare, Headphone
 import Button from '../../shared/ui/Button';
 import axios from 'axios';
 import { useToast } from '../../context/ToastContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import DashReveal from '../../shared/ui/DashReveal';
+import { API_URL } from '../../constants/config';
 
 const DashboardContact = () => {
   const fileInputRef = useRef(null);
@@ -101,7 +101,7 @@ const DashboardContact = () => {
         <p className="text-sm sm:text-base text-[#5f697a]">Need help? Submit a ticket or contact our support team directly.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      <DashReveal className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Left Column: Support Form */}
         <div className="lg:col-span-2">
           <div className="dash-card-static h-full">
@@ -306,9 +306,10 @@ const DashboardContact = () => {
             </div>
           </div>
         </div>
-      </div>
+      </DashReveal>
 
-      {/* Bottom Banner - keep the gradient as intentional brand element */}
+      {/* Bottom Banner */}
+      <DashReveal delay={0.15}>
       <div className="bg-gradient-to-r from-primary-600 to-secondary-600 rounded-[20px] p-8 text-white shadow-lg flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
         <div className="relative z-10 flex-1">
           <h3 className="text-2xl font-heading font-bold mb-2">Need Medical Advice?</h3>
@@ -333,6 +334,7 @@ const DashboardContact = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
       </div>
+      </DashReveal>
     </div>
   );
 };

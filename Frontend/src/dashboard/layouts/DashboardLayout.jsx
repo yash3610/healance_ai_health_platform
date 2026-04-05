@@ -8,8 +8,7 @@ import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 import { useAuth } from '../../context/AuthContext';
 import { ToastProvider } from '../../context/ToastContext';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL } from '../../constants/config';
 
 // Page config for dynamic titles
 const pageConfig = {

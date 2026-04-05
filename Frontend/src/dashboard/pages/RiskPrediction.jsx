@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Star, MapPin, Calendar, CheckCircle, Utensils, Dumbbell } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import DashReveal from '../../shared/ui/DashReveal';
 
 const DoctorCard = ({ name, specialty, distance, rating, image }) => (
   <div className="dash-card flex items-center gap-4">
@@ -23,6 +24,7 @@ const RiskPrediction = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      <DashReveal>
       <div className="dash-card-static">
         <div className="mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">AI Health Risk Prediction</h2>
@@ -60,6 +62,7 @@ const RiskPrediction = () => {
           </div>
         </form>
       </div>
+      </DashReveal>
 
       {showResults && (
         <motion.div

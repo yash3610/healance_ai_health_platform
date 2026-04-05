@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Filter, Clock, ArrowRight, TrendingUp, Bookmark } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import EmptyState from '../../shared/ui/EmptyState';
+import DashReveal from '../../shared/ui/DashReveal';
 
 const blogPosts = [
   {
@@ -123,7 +124,7 @@ const DashboardBlogs = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      <DashReveal className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Content Grid */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {filteredPosts.length === 0 ? (
@@ -202,7 +203,7 @@ const DashboardBlogs = () => {
             </Button>
           </div>
         </div>
-      </div>
+      </DashReveal>
     </div>
   );
 };

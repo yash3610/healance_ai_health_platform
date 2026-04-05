@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Heart, Droplets, Loader2, Send } from 'lucide-react';
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
+import DashReveal from '../../shared/ui/DashReveal';
 
 const initialForm = {
   age: '',
@@ -130,6 +131,7 @@ const HeartDiabetesPrediction = () => {
 
   return (
     <div className="space-y-6">
+      <DashReveal>
       <div className="dash-card-static">
         <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Heart & Diabetes ML Prediction</h2>
         <p className="text-sm text-[#5f697a] mt-1">
@@ -248,6 +250,7 @@ const HeartDiabetesPrediction = () => {
           </div>
         </form>
       </div>
+      </DashReveal>
 
       {results && (
         <motion.div
