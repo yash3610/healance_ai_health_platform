@@ -124,11 +124,6 @@ const Profile = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Profile Settings</h2>
-        <p className="text-sm sm:text-base text-[#5f697a]">Manage your account details and health profile.</p>
-      </div>
-
       <DashReveal className="grid grid-cols-1 gap-6">
         <div className="dash-card-static">
           <h3 className="dash-heading text-base sm:text-lg mb-5 flex items-center gap-2">

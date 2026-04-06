@@ -53,8 +53,6 @@ const DashboardContact = () => {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('healance_token');
-
       const submitData = new FormData();
       submitData.append('fullName', formData.fullName);
       submitData.append('email', formData.email);
@@ -67,9 +65,9 @@ const DashboardContact = () => {
 
       const response = await axios.post(`${API_URL}/contact/ticket`, submitData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        withCredentials: true,
       });
 
       if (response.data.success) {
@@ -97,8 +95,8 @@ const DashboardContact = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
-        <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Support Center</h2>
-        <p className="text-sm sm:text-base text-[#5f697a]">Need help? Submit a ticket or contact our support team directly.</p>
+        {/* <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Support Center</h2>
+        <p className="text-sm sm:text-base text-[#5f697a]">Need help? Submit a ticket or contact our support team directly.</p> */}
       </div>
 
       <DashReveal className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">

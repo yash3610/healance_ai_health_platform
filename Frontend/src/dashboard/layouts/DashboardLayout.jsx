@@ -166,10 +166,7 @@ const DashboardLayout = () => {
   const fetchNotifications = useCallback(async () => {
     setIsNotificationLoading(true);
     try {
-      const token = localStorage.getItem('healance_token');
-      const response = await axios.get(`${API_URL}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/notifications`, { withCredentials: true });
       if (response.data.success) {
         setNotifications(response.data.notifications);
         setUnreadCount(response.data.unreadCount);
@@ -184,10 +181,7 @@ const DashboardLayout = () => {
   // Mark notification as read
   const markAsRead = async (id) => {
     try {
-      const token = localStorage.getItem('healance_token');
-      await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`${API_URL}/notifications/${id}/read`, {}, { withCredentials: true });
       fetchNotifications();
     } catch (err) {
       console.error('Failed to mark as read');
@@ -197,10 +191,7 @@ const DashboardLayout = () => {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('healance_token');
-      await axios.put(`${API_URL}/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`${API_URL}/notifications/read-all`, {}, { withCredentials: true });
       fetchNotifications();
     } catch (err) {
       console.error('Failed to mark all as read');
@@ -210,10 +201,7 @@ const DashboardLayout = () => {
   // Clear all notifications
   const clearAllNotifications = async () => {
     try {
-      const token = localStorage.getItem('healance_token');
-      await axios.delete(`${API_URL}/notifications/clear-all`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_URL}/notifications/clear-all`, { withCredentials: true });
       fetchNotifications();
     } catch (err) {
       console.error('Failed to clear notifications');

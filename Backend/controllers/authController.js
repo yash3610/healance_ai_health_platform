@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import { generateToken, sendTokenResponse } from '../utils/generateToken.js';
+import { generateToken, sendTokenResponse, getAuthCookieOptions } from '../utils/generateToken.js';
 import Notification from '../models/Notification.js';
 import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
@@ -86,8 +86,9 @@ export const login = async (req, res) => {
 // @access  Private
 export const logout = (req, res) => {
   res.cookie('token', '', {
-    httpOnly: true,
+    ...getAuthCookieOptions(),
     expires: new Date(0),
+    maxAge: 0,
   });
   res.json({ success: true, message: 'Logged out successfully' });
 };

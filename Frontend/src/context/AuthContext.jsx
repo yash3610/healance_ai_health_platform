@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 
 const AuthContext = createContext();
@@ -13,7 +13,6 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Check authentication on mount
   useEffect(() => {
@@ -23,26 +22,17 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
     // Prevent multiple simultaneous auth checks
     if (isCheckingAuth) return;
-    
-    const token = localStorage.getItem('healance_token');
-    const storedUser = localStorage.getItem('healance_user');
-    
-    if (token && storedUser) {
-      setIsCheckingAuth(true);
-      try {
-        // Verify token is still valid by fetching user data
-        const data = await authService.getMe();
-        setUser(data.user);
-      } catch (error) {
-        // Token invalid, clear storage
-        localStorage.removeItem('healance_token');
-        localStorage.removeItem('healance_user');
-        setUser(null);
-      } finally {
-        setIsCheckingAuth(false);
-      }
+
+    setIsCheckingAuth(true);
+    try {
+      const data = await authService.getMe();
+      setUser(data.user || null);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setIsCheckingAuth(false);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const register = async (userData) => {
@@ -286,7 +276,6 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = (updatedUser) => {
     setUser(updatedUser);
-    localStorage.setItem('healance_user', JSON.stringify(updatedUser));
   };
 
   const openAuthModal = () => setIsAuthModalOpen(true);

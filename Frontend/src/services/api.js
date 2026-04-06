@@ -2,27 +2,13 @@ import axios from 'axios';
 import { API_URL } from '../constants/config';
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Send cookies with requests
 });
-
-// Request interceptor - Add auth token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('healance_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor - Handle errors globally
 api.interceptors.response.use(
@@ -32,14 +18,6 @@ api.interceptors.response.use(
     if (error.response?.status === 429) {
       console.error('Too many requests. Please wait a moment before trying again.');
       // You can dispatch a toast notification here
-    }
-    
-    // Handle unauthorized
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('healance_token');
-      localStorage.removeItem('healance_user');
-      // Optionally dispatch logout action or redirect
     }
     
     return Promise.reject(error);
@@ -52,20 +30,12 @@ export const authService = {
   // Register new user
   register: async (userData) => {
     const response = await api.post('/auth/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
   // Login user
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -78,10 +48,6 @@ export const authService = {
   // Verify WhatsApp OTP and login
   verifyWhatsAppLoginOtp: async (payload) => {
     const response = await api.post('/whatsapp/verify-login-otp', payload);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -94,10 +60,6 @@ export const authService = {
   // Verify SMS OTP and login
   verifySmsLoginOtp: async (payload) => {
     const response = await api.post('/sms/verify-login-otp', payload);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -110,29 +72,17 @@ export const authService = {
   // Verify WhatsApp signup OTP and create account
   verifyWhatsAppSignupOtp: async (payload) => {
     const response = await api.post('/whatsapp/verify-signup-otp', payload);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
   // Logout user
   logout: async () => {
-    try {
-      await api.post('/auth/logout');
-    } finally {
-      localStorage.removeItem('healance_token');
-      localStorage.removeItem('healance_user');
-    }
+    await api.post('/auth/logout');
   },
 
   // Get current user
   getMe: async () => {
     const response = await api.get('/auth/me');
-    if (response.data.user) {
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -145,10 +95,6 @@ export const authService = {
   // Reset password
   resetPassword: async (resetToken, password) => {
     const response = await api.put(`/auth/reset-password/${resetToken}`, { password });
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -164,9 +110,6 @@ export const authService = {
   // Update logged-in user profile
   updateProfile: async (payload) => {
     const response = await api.put('/users/profile', payload);
-    if (response.data?.user) {
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 
@@ -178,20 +121,12 @@ export const authService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
 
-    if (response.data?.user) {
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
-
     return response.data;
   },
 
   // Social login (Google/GitHub)
   socialLogin: async (socialData) => {
     const response = await api.post('/auth/social', socialData);
-    if (response.data.token) {
-      localStorage.setItem('healance_token', response.data.token);
-      localStorage.setItem('healance_user', JSON.stringify(response.data.user));
-    }
     return response.data;
   },
 };

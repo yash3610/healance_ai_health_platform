@@ -386,10 +386,9 @@ const Dashboard = () => {
   // Create notification
   const createNotification = async (title, message, type = 'reminder') => {
     try {
-      const token = localStorage.getItem('healance_token');
       await axios.post(`${API_URL}/notifications`, 
         { title, message, type },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
     } catch (err) {
       console.error('Failed to create notification');
@@ -398,12 +397,7 @@ const Dashboard = () => {
 
   const fetchWeatherSummary = useCallback(async () => {
     try {
-      const token = localStorage.getItem('healance_token');
-      if (!token) return;
-
-      const { data } = await axios.get(`${API_URL}/forecast?city=mumbai`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(`${API_URL}/forecast?city=mumbai`, { withCredentials: true });
 
       const forecast = data?.forecast;
       if (!forecast) return;

@@ -7,16 +7,18 @@ export const generateToken = (id) => {
   });
 };
 
+export const getAuthCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+});
+
 // Send token as response (with cookie)
 export const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
-
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  };
+  const cookieOptions = getAuthCookieOptions();
 
   // Remove password from output
   const userObj = user.toObject();
@@ -27,7 +29,6 @@ export const sendTokenResponse = (user, statusCode, res) => {
     .cookie('token', token, cookieOptions)
     .json({
       success: true,
-      token,
       user: userObj,
     });
 };

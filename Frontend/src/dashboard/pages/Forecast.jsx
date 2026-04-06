@@ -71,14 +71,11 @@ const Forecast = () => {
     try {
       setIsRefreshing(true);
       setError('');
-      const token = localStorage.getItem('healance_token');
       const params = location.lat
         ? `lat=${location.lat}&lon=${location.lon}`
         : `city=${location.city}`;
 
-      const response = await axios.get(`${API_URL}/forecast?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/forecast?${params}`, { withCredentials: true });
 
       if (response.data.success) {
         setForecast(response.data.forecast);
@@ -94,14 +91,11 @@ const Forecast = () => {
 
   const fetchWeeklyForecast = async () => {
     try {
-      const token = localStorage.getItem('healance_token');
       const params = location.lat
         ? `lat=${location.lat}&lon=${location.lon}`
         : `city=${location.city}`;
 
-      const response = await axios.get(`${API_URL}/forecast/weekly?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/forecast/weekly?${params}`, { withCredentials: true });
 
       if (response.data.success) {
         setWeeklyForecast(response.data.forecast);
