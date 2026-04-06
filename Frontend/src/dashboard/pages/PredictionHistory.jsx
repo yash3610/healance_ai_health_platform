@@ -1,0 +1,366 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Activity, Brain, CalendarClock, ChevronRight, Heart, ListChecks } from 'lucide-react';
+import { riskService } from '../../services/api';
+
+const formatDate = (value) => {
+  if (!value) return 'N/A';
+  return new Date(value).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const Badge = ({ children, tone = 'default' }) => {
+  const toneMap = {
+    default: 'bg-[#f0f1fc] text-[#506cd7]',
+    success: 'bg-green-100 text-green-700',
+    warning: 'bg-amber-100 text-amber-700',
+    danger: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <span className={`text-xs font-medium px-2 py-1 rounded-full ${toneMap[tone] || toneMap.default}`}>
+      {children}
+    </span>
+  );
+};
+
+const SectionCard = ({ title, children, icon: Icon }) => (
+  <div className="rounded-xl border border-[#e8eaf9] bg-white p-4">
+    <div className="flex items-center gap-2 mb-3">
+      {Icon ? <Icon size={16} className="text-[#506cd7]" /> : null}
+      <h4 className="text-sm font-semibold text-[#0b1030]">{title}</h4>
+    </div>
+    {children}
+  </div>
+);
+
+const ListBlock = ({ items, emptyText = 'Not available' }) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return <p className="text-sm text-[#5f697a]">{emptyText}</p>;
+  }
+
+  return (
+    <ul className="space-y-1.5">
+      {items.map((item, idx) => (
+        <li key={`${item}-${idx}`} className="text-sm text-[#1f2937] flex gap-2">
+          <span className="mt-1 text-[#506cd7]">•</span>
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+const HistoryList = ({ items, selectedId, onSelect, type }) => {
+  if (!items.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-[#d7dbf6] bg-[#fafbff] p-6 text-center">
+        <p className="text-sm text-[#5f697a]">No predictions found yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+      {items.map((item) => {
+        const isActive = selectedId === item._id;
+        const title = type === 'heart'
+          ? `Overall: ${(item.results?.overallRisk || 'low').toUpperCase()}`
+          : item.predictedDisease;
+
+        const subline = type === 'heart'
+          ? `Heart ${typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'} • Diabetes ${typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}`
+          : `Confidence ${typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}`;
+
+        return (
+          <button
+            key={item._id}
+            type="button"
+            onClick={() => onSelect(item)}
+            className={`w-full text-left rounded-xl border p-3 transition-colors ${
+              isActive
+                ? 'border-[#506cd7] bg-[#f3f5ff]'
+                : 'border-[#e8eaf9] bg-white hover:bg-[#f9faff]'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-[#0b1030]">{title}</p>
+                <p className="text-xs text-[#5f697a] mt-1">{subline}</p>
+              </div>
+              <ChevronRight size={16} className="text-[#9aa3b2] mt-0.5" />
+            </div>
+            <p className="text-xs text-[#6a7283] mt-2">{formatDate(item.createdAt)}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+const HeartDetail = ({ item }) => {
+  if (!item) {
+    return <p className="text-sm text-[#5f697a]">Select a heart/diabetes prediction to see full details.</p>;
+  }
+
+  const overallRisk = item.results?.overallRisk || 'low';
+  const riskTone = overallRisk === 'critical' || overallRisk === 'high'
+    ? 'danger'
+    : overallRisk === 'moderate'
+      ? 'warning'
+      : 'success';
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Summary" icon={Activity}>
+        <div className="flex items-center gap-2 mb-3">
+          <Badge tone={riskTone}>Overall {overallRisk.toUpperCase()}</Badge>
+          <span className="text-xs text-[#6a7283]">{formatDate(item.createdAt)}</span>
+        </div>
+        <p className="text-sm text-[#1f2937] mb-3">{item.results?.summary || 'No summary available.'}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg bg-[#f8f9ff] border border-[#edf0ff] p-2">
+            <p className="text-xs text-[#6a7283]">Heart Risk</p>
+            <p className="text-sm font-bold text-[#0b1030]">{typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'}</p>
+          </div>
+          <div className="rounded-lg bg-[#f8f9ff] border border-[#edf0ff] p-2">
+            <p className="text-xs text-[#6a7283]">Diabetes Risk</p>
+            <p className="text-sm font-bold text-[#0b1030]">{typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}</p>
+          </div>
+          <div className="rounded-lg bg-[#f8f9ff] border border-[#edf0ff] p-2">
+            <p className="text-xs text-[#6a7283]">Stroke Risk</p>
+            <p className="text-sm font-bold text-[#0b1030]">{typeof item.results?.strokeRisk === 'number' ? `${item.results.strokeRisk}%` : 'N/A'}</p>
+          </div>
+          <div className="rounded-lg bg-[#f8f9ff] border border-[#edf0ff] p-2">
+            <p className="text-xs text-[#6a7283]">BP Risk</p>
+            <p className="text-sm font-bold text-[#0b1030]">{typeof item.results?.bpRisk === 'number' ? `${item.results.bpRisk}%` : 'N/A'}</p>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Input Values" icon={ListChecks}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">Age:</span> {item.input?.age ?? 'N/A'}</p>
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">Gender:</span> {item.input?.gender ?? 'N/A'}</p>
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">BMI:</span> {item.input?.bmi ?? 'N/A'}</p>
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">BP:</span> {item.input?.bloodPressure ?? 'N/A'}</p>
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">Cholesterol:</span> {item.input?.cholesterol ?? 'N/A'}</p>
+          <p className="text-[#1f2937]"><span className="text-[#6a7283]">Blood Sugar:</span> {item.input?.bloodSugar ?? 'N/A'}</p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Recommendations" icon={Heart}>
+        <ListBlock items={item.results?.recommendations || []} emptyText="No recommendations available." />
+      </SectionCard>
+
+      <SectionCard title="Diet Plan" icon={Heart}>
+        <div className="space-y-1 text-sm text-[#1f2937]">
+          <p><span className="text-[#6a7283]">Breakfast:</span> {item.dietPlan?.breakfast || 'N/A'}</p>
+          <p><span className="text-[#6a7283]">Lunch:</span> {item.dietPlan?.lunch || 'N/A'}</p>
+          <p><span className="text-[#6a7283]">Dinner:</span> {item.dietPlan?.dinner || 'N/A'}</p>
+          <p><span className="text-[#6a7283]">Snacks:</span> {item.dietPlan?.snacks || 'N/A'}</p>
+          <p><span className="text-[#6a7283]">Notes:</span> {item.dietPlan?.notes || 'N/A'}</p>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Workout Plan" icon={Heart}>
+        {(item.workoutPlan || []).length ? (
+          <div className="space-y-2">
+            {item.workoutPlan.map((w, idx) => (
+              <div key={`${w.day}-${idx}`} className="text-sm text-[#1f2937] rounded-lg bg-[#f8f9ff] border border-[#edf0ff] px-3 py-2">
+                {w.day || 'Day'}: {w.exercise || 'Exercise'} ({w.duration || 'N/A'})
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[#5f697a]">No workout plan available.</p>
+        )}
+      </SectionCard>
+    </div>
+  );
+};
+
+const SymptomsDetail = ({ item }) => {
+  if (!item) {
+    return <p className="text-sm text-[#5f697a]">Select a symptoms prediction to see full details.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionCard title="Summary" icon={Brain}>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <Badge>{item.predictedDisease || 'N/A'}</Badge>
+          <span className="text-xs text-[#6a7283]">
+            Confidence: {typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}
+          </span>
+          <span className="text-xs text-[#6a7283]">{formatDate(item.createdAt)}</span>
+        </div>
+        <p className="text-sm text-[#1f2937]">{item.details?.description || 'No description available.'}</p>
+      </SectionCard>
+
+      <SectionCard title="Selected Symptoms" icon={ListChecks}>
+        <ListBlock items={item.selectedSymptoms || []} emptyText="Symptoms not available." />
+      </SectionCard>
+
+      <SectionCard title="Top Predictions" icon={Activity}>
+        {(item.topPredictions || []).length ? (
+          <div className="space-y-2">
+            {item.topPredictions.map((p, idx) => (
+              <div key={`${p.disease}-${idx}`} className="rounded-lg bg-[#f8f9ff] border border-[#edf0ff] px-3 py-2 text-sm text-[#1f2937] flex justify-between">
+                <span>{p.disease || 'Unknown'}</span>
+                <span className="font-semibold text-[#0b1030]">
+                  {typeof p.confidence === 'number' ? `${Math.round(p.confidence * 100)}%` : 'N/A'}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-[#5f697a]">No top predictions available.</p>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Precautions" icon={Heart}>
+        <ListBlock items={item.details?.precautions || []} emptyText="No precautions available." />
+      </SectionCard>
+
+      <SectionCard title="Medications" icon={Heart}>
+        <ListBlock items={item.details?.medications || []} emptyText="No medication suggestions available." />
+      </SectionCard>
+
+      <SectionCard title="Diet Plan" icon={Heart}>
+        <ListBlock items={item.details?.diets || []} emptyText="No diet suggestions available." />
+      </SectionCard>
+
+      <SectionCard title="Workout Plan" icon={Heart}>
+        <ListBlock items={item.details?.workouts || []} emptyText="No workout suggestions available." />
+      </SectionCard>
+
+      <SectionCard title="Risk Factors" icon={Heart}>
+        <ListBlock items={item.details?.riskFactors || []} emptyText="No risk factors available." />
+      </SectionCard>
+    </div>
+  );
+};
+
+const PredictionHistory = () => {
+  const [activeTab, setActiveTab] = useState('heart');
+  const [loading, setLoading] = useState(true);
+  const [heartPredictions, setHeartPredictions] = useState([]);
+  const [symptomPredictions, setSymptomPredictions] = useState([]);
+  const [selectedHeart, setSelectedHeart] = useState(null);
+  const [selectedSymptom, setSelectedSymptom] = useState(null);
+
+  useEffect(() => {
+    const fetchAllHistory = async () => {
+      setLoading(true);
+      try {
+        const [riskResponse, symptomResponse] = await Promise.all([
+          riskService.getRiskHistory({ all: true }),
+          riskService.getSymptomsPredictionHistory({ all: true }),
+        ]);
+
+        const riskItems = (riskResponse?.predictions || []).filter((item) => (
+          typeof item?.results?.heartDiseaseRisk === 'number' || typeof item?.results?.diabetesRisk === 'number'
+        ));
+        const symptomItems = symptomResponse?.predictions || [];
+
+        setHeartPredictions(riskItems);
+        setSymptomPredictions(symptomItems);
+        setSelectedHeart(riskItems[0] || null);
+        setSelectedSymptom(symptomItems[0] || null);
+      } catch (error) {
+        setHeartPredictions([]);
+        setSymptomPredictions([]);
+        setSelectedHeart(null);
+        setSelectedSymptom(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllHistory();
+  }, []);
+
+  const currentList = useMemo(() => (
+    activeTab === 'heart' ? heartPredictions : symptomPredictions
+  ), [activeTab, heartPredictions, symptomPredictions]);
+
+  const selectedId = activeTab === 'heart' ? selectedHeart?._id : selectedSymptom?._id;
+
+  const handleSelect = (item) => {
+    if (activeTab === 'heart') setSelectedHeart(item);
+    else setSelectedSymptom(item);
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="dash-card">
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarClock size={20} className="text-[#506cd7]" />
+          <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Prediction History</h2>
+        </div>
+        <p className="text-sm text-[#5f697a]">View all saved predictions and tap any record to see complete details.</p>
+      </div>
+
+      <div className="dash-card">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('heart')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'heart' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            }`}
+          >
+            Heart & Diabetes ({heartPredictions.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('symptoms')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'symptoms' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            }`}
+          >
+            Symptoms Disease ({symptomPredictions.length})
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="dash-card">
+          <p className="text-sm text-[#5f697a]">Loading prediction history...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+          <div className="xl:col-span-1">
+            <div className="dash-card h-full">
+              <h3 className="dash-heading text-sm sm:text-base mb-3">All Records</h3>
+              <HistoryList
+                items={currentList}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                type={activeTab === 'heart' ? 'heart' : 'symptoms'}
+              />
+            </div>
+          </div>
+
+          <div className="xl:col-span-2">
+            <div className="dash-card h-full">
+              <h3 className="dash-heading text-sm sm:text-base mb-3">Full Details</h3>
+              {activeTab === 'heart' ? (
+                <HeartDetail item={selectedHeart} />
+              ) : (
+                <SymptomsDetail item={selectedSymptom} />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PredictionHistory;

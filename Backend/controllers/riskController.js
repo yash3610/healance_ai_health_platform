@@ -164,9 +164,18 @@ export const analyzeRisk = async (req, res) => {
 // @access  Private
 export const getRiskHistory = async (req, res) => {
   try {
-    const predictions = await RiskPrediction.find({ user: req.user._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    const isAll = String(req.query.all || '').toLowerCase() === 'true';
+    const requestedLimit = Number(req.query.limit);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 500)
+      : 10;
+
+    const query = RiskPrediction.find({ user: req.user._id }).sort({ createdAt: -1 });
+    if (!isAll) {
+      query.limit(limit);
+    }
+
+    const predictions = await query;
     res.json({ success: true, predictions });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -14,6 +14,7 @@ import DashReveal from '../../shared/ui/DashReveal';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
 import { API_URL } from '../../constants/config';
+import { riskService } from '../../services/api';
 
 const data = [
   { name: 'Mon', score: 65, heart: 72 },
@@ -217,6 +218,131 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
   );
 };
 
+const SymptomsPredictionHistory = ({ predictions }) => {
+  const visiblePredictions = (predictions || []).slice(0, 2);
+
+  if (!visiblePredictions.length) {
+    return (
+      <div className="dash-card">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="dash-icon-badge bg-indigo-500">
+            <Brain size={20} className="text-white" />
+          </div>
+          <h3 className="dash-heading text-sm sm:text-base">Symptoms Prediction History</h3>
+        </div>
+        <p className="text-sm text-[#5f697a]">
+          No symptoms predictions yet. Run a prediction from the Symptoms Disease page.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dash-card">
+      <div className="flex items-center gap-2 mb-4 sm:mb-6">
+        <div className="dash-icon-badge bg-indigo-500">
+          <Brain size={20} className="text-white" />
+        </div>
+        <h3 className="dash-heading text-sm sm:text-base">Symptoms Prediction History</h3>
+      </div>
+
+      <div className="space-y-3">
+        {visiblePredictions.map((item) => (
+          <div key={item._id} className="rounded-xl border border-[#e8eaf9] p-3 bg-[#f8f9ff]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <p className="text-sm font-bold text-[#0b1030]">{item.predictedDisease}</p>
+                <p className="text-xs text-[#5f697a]">
+                  Confidence: {typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}
+                </p>
+              </div>
+              <p className="text-xs text-[#6a7283]">
+                {new Date(item.createdAt).toLocaleString('en-IN', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+            <p className="text-xs text-[#5f697a] mt-2">
+              Symptoms: {(item.selectedSymptoms || []).slice(0, 5).join(', ') || 'Not available'}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const HeartDiabetesPredictionHistory = ({ predictions }) => {
+  if (!predictions.length) {
+    return (
+      <div className="dash-card">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="dash-icon-badge bg-rose-500">
+            <Heart size={20} className="text-white" />
+          </div>
+          <h3 className="dash-heading text-sm sm:text-base">Heart & Diabetes History</h3>
+        </div>
+        <p className="text-sm text-[#5f697a]">
+          No Heart/Diabetes predictions yet. Run a prediction from Heart & Diabetes page.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dash-card">
+      <div className="flex items-center gap-2 mb-4 sm:mb-6">
+        <div className="dash-icon-badge bg-rose-500">
+          <Heart size={20} className="text-white" />
+        </div>
+        <h3 className="dash-heading text-sm sm:text-base">Heart & Diabetes History</h3>
+      </div>
+
+      <div className="space-y-3">
+        {predictions.map((item) => (
+          <div key={item._id} className="rounded-xl border border-[#e8eaf9] p-3 bg-[#fff7f7]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-[#6a7283]">
+                {new Date(item.createdAt).toLocaleString('en-IN', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-[#f0f1fc] text-[#506cd7]">
+                {(item.results?.overallRisk || 'low').toUpperCase()}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="rounded-lg bg-white p-2 border border-[#f0f1fc]">
+                <p className="text-[11px] text-[#6a7283]">Heart Risk</p>
+                <p className="text-sm font-bold text-[#0b1030]">
+                  {typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'}
+                </p>
+              </div>
+              <div className="rounded-lg bg-white p-2 border border-[#f0f1fc]">
+                <p className="text-[11px] text-[#6a7283]">Diabetes Risk</p>
+                <p className="text-sm font-bold text-[#0b1030]">
+                  {typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {item.results?.summary && (
+              <p className="text-xs text-[#5f697a] mt-2 line-clamp-2">{item.results.summary}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const { dailySteps, stepsGoal, goalsCount, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
   
@@ -229,6 +355,9 @@ const Dashboard = () => {
     condition: 'Loading weather...',
     location: 'Mumbai',
   });
+  const [symptomPredictions, setSymptomPredictions] = useState([]);
+  const [heartDiabetesPredictions, setHeartDiabetesPredictions] = useState([]);
+  const latestSymptomPrediction = symptomPredictions[0] || null;
 
   // Calculate steps progress
   const stepsProgress = Math.round((dailySteps / stepsGoal) * 100);
@@ -290,6 +419,31 @@ const Dashboard = () => {
         condition: 'Weather unavailable',
         location: 'Mumbai',
       });
+    }
+  }, []);
+
+  const fetchSymptomsPredictionHistory = useCallback(async () => {
+    try {
+      const response = await riskService.getSymptomsPredictionHistory(2);
+      if (response.success) {
+        setSymptomPredictions((response.predictions || []).slice(0, 2));
+      }
+    } catch (err) {
+      setSymptomPredictions([]);
+    }
+  }, []);
+
+  const fetchHeartDiabetesPredictionHistory = useCallback(async () => {
+    try {
+      const response = await riskService.getRiskHistory();
+      if (response.success) {
+        const filtered = (response.predictions || []).filter((item) => (
+          typeof item?.results?.heartDiseaseRisk === 'number' || typeof item?.results?.diabetesRisk === 'number'
+        ));
+        setHeartDiabetesPredictions(filtered.slice(0, 2));
+      }
+    } catch (err) {
+      setHeartDiabetesPredictions([]);
     }
   }, []);
 
@@ -362,6 +516,8 @@ const Dashboard = () => {
     requestNotificationPermission();
     fetchHealthData();
     fetchWeatherSummary();
+    fetchSymptomsPredictionHistory();
+    fetchHeartDiabetesPredictionHistory();
 
     // Restore water reminder state
     const savedReminderActive = localStorage.getItem('waterReminderActive');
@@ -544,28 +700,43 @@ const Dashboard = () => {
         <div className="dash-card">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <div className="flex items-center gap-2">
-              <div className="dash-icon-badge bg-red-500">
-                <Activity size={20} className="text-white" />
+              <div className="dash-icon-badge bg-indigo-500">
+                <Brain size={20} className="text-white" />
               </div>
-              <h3 className="dash-heading text-sm sm:text-base">Latest Risk Prediction</h3>
+              <h3 className="dash-heading text-sm sm:text-base">Latest Symptoms Prediction</h3>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full inline-flex items-center gap-1"><CheckCircle size={12} /> Low Risk</span>
+            {latestSymptomPrediction ? (
+              <span className="text-xs font-medium px-2 py-1 bg-[#f0f1fc] text-[#506cd7] rounded-full inline-flex items-center gap-1">
+                <CheckCircle size={12} />
+                {typeof latestSymptomPrediction.confidence === 'number'
+                  ? `${Math.round(latestSymptomPrediction.confidence * 100)}% confidence`
+                  : 'Prediction Ready'}
+              </span>
+            ) : null}
           </div>
 
           <div className="space-y-4">
-             <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-               <span className="text-sm text-[#5f697a]">Heart Disease Risk</span>
-               <span className="font-bold text-[#0b1030]">12%</span>
-             </div>
-             <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-               <span className="text-sm text-[#5f697a]">Diabetes Probability</span>
-               <span className="font-bold text-[#0b1030]">5%</span>
-             </div>
-             <div className="mt-4 pt-4 border-t border-[#e8eaf9]">
-               <p className="text-sm text-[#5f697a]">
-                 Based on your latest vitals, your health metrics are stable. Continue your current workout routine.
-               </p>
-             </div>
+            {latestSymptomPrediction ? (
+              <>
+                <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
+                  <span className="text-sm text-[#5f697a]">Predicted Disease</span>
+                  <span className="font-bold text-[#0b1030]">{latestSymptomPrediction.predictedDisease || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
+                  <span className="text-sm text-[#5f697a]">Selected Symptoms</span>
+                  <span className="font-bold text-[#0b1030]">{(latestSymptomPrediction.selectedSymptoms || []).length}</span>
+                </div>
+                <div className="mt-4 pt-4 border-t border-[#e8eaf9]">
+                  <p className="text-sm text-[#5f697a]">
+                    {latestSymptomPrediction.details?.description || 'Latest symptoms prediction is available in your history.'}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-[#5f697a]">
+                No symptoms prediction yet. Go to Symptoms Disease page and run a prediction.
+              </p>
+            )}
           </div>
         </div>
 
@@ -604,6 +775,13 @@ const Dashboard = () => {
           </div>
         </div>
       </DashReveal>
+      )}
+
+      {!isInitialLoad && (
+        <DashReveal delay={0.25} className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <HeartDiabetesPredictionHistory predictions={heartDiabetesPredictions} />
+          <SymptomsPredictionHistory predictions={symptomPredictions} />
+        </DashReveal>
       )}
 
       {/* Water Reminder Modal */}

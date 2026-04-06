@@ -244,7 +244,7 @@ const HeartDiabetesPrediction = () => {
                   Predicting...
                 </span>
               ) : (
-                'Run ML Prediction'
+                'Predict Risk'
               )}
             </Button>
           </div>

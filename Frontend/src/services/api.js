@@ -256,8 +256,8 @@ export const riskService = {
   },
 
   // Get risk history
-  getRiskHistory: async () => {
-    const response = await api.get('/risk-prediction/history');
+  getRiskHistory: async (params = {}) => {
+    const response = await api.get('/risk-prediction/history', { params });
     return response.data;
   },
 
@@ -282,8 +282,24 @@ export const riskService = {
     return response.data;
   },
 
+  predictSymptomsDisease: async (data) => {
+    const response = await api.post('/predict/symptoms-disease', data);
+    return response.data;
+  },
+
+  getSymptomsPredictionHistory: async (options = 5) => {
+    const params = typeof options === 'number' ? { limit: options } : options;
+    const response = await api.get('/predict/symptoms-history', { params });
+    return response.data;
+  },
+
   shareToWhatsapp: async (data) => {
     const response = await api.post('/predict/share-whatsapp', data);
+    return response.data;
+  },
+
+  shareSymptomsToWhatsapp: async (data) => {
+    const response = await api.post('/predict/share-symptoms-whatsapp', data);
     return response.data;
   },
 };

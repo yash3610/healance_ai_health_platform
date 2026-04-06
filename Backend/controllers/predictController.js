@@ -1,7 +1,32 @@
 import Notification from '../models/Notification.js';
 import RiskPrediction from '../models/RiskPrediction.js';
-import runPythonPrediction from '../utils/mlPredictor.js';
+import SymptomPrediction from '../models/SymptomPrediction.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import runPythonPrediction, { runPythonScript } from '../utils/mlPredictor.js';
 import { normalizeWhatsAppNumber, isValidWhatsAppNumber, sendWhatsAppTextMessage } from '../utils/sendWhatsApp.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const symptomScriptPath = path.resolve(__dirname, '../../ML Services/Symtums_diseas/predict_symptom_disease.py');
+const symptomFeatures = [
+  'fever',
+  'cough',
+  'headache',
+  'fatigue',
+  'vomiting',
+  'chest_pain',
+  'sore_throat',
+  'breathlessness',
+  'nausea',
+  'dizziness',
+  'body_pain',
+  'diarrhea',
+  'skin_rash',
+  'itching',
+  'weight_loss',
+  'sweating',
+];
 
 const parseNumber = (value) => {
   const n = Number(value);
@@ -331,6 +356,167 @@ export const predictAll = async (req, res) => {
       bmiCategory,
       fbs,
       suggestions,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Predict disease from symptoms and return guidance
+// @route   POST /api/predict/symptoms-disease
+// @access  Private
+export const predictSymptomsDisease = async (req, res) => {
+  try {
+    const payloadFeatures = {};
+
+    symptomFeatures.forEach((feature) => {
+      const raw = req.body[feature];
+      payloadFeatures[feature] = raw === true || raw === 1 || String(raw).toLowerCase() === 'true' ? 1 : 0;
+    });
+
+    const selectedCount = Object.values(payloadFeatures).filter((value) => value === 1).length;
+    if (selectedCount < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select at least 2 symptoms for better prediction.',
+      });
+    }
+
+    const prediction = await runPythonScript(symptomScriptPath, { features: payloadFeatures });
+
+    await SymptomPrediction.create({
+      user: req.user._id,
+      selectedSymptoms: prediction.selectedSymptoms || [],
+      predictedDisease: prediction.predictedDisease,
+      confidence: typeof prediction.confidence === 'number' ? prediction.confidence : null,
+      topPredictions: Array.isArray(prediction.topPredictions) ? prediction.topPredictions : [],
+      details: prediction.details || {},
+    });
+
+    return res.json({
+      success: true,
+      ...prediction,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get symptoms prediction history
+// @route   GET /api/predict/symptoms-history
+// @access  Private
+export const getSymptomsPredictionHistory = async (req, res) => {
+  try {
+    const isAll = String(req.query.all || '').toLowerCase() === 'true';
+    const requestedLimit = Number(req.query.limit);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 500)
+      : 5;
+
+    const query = SymptomPrediction.find({ user: req.user._id }).sort({ createdAt: -1 });
+    if (!isAll) {
+      query.limit(limit);
+    }
+
+    const predictions = await query;
+
+    return res.json({
+      success: true,
+      predictions,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const toBulletLines = (items = [], max = 5) => {
+  if (!Array.isArray(items) || items.length === 0) return ['- Not available'];
+  return items
+    .slice(0, max)
+    .map((item) => `- ${String(item).replace(/\s+/g, ' ').trim()}`);
+};
+
+const section = (title, lines = []) => [title, ...lines, ''];
+
+// @desc    Share symptom disease prediction on WhatsApp
+// @route   POST /api/predict/share-symptoms-whatsapp
+// @access  Private
+export const shareSymptomsPredictionOnWhatsApp = async (req, res) => {
+  try {
+    const {
+      predictedDisease,
+      confidence,
+      topPredictions,
+      selectedSymptoms,
+      details,
+    } = req.body;
+
+    if (!predictedDisease) {
+      return res.status(400).json({
+        success: false,
+        message: 'predictedDisease is required.',
+      });
+    }
+
+    if (!req.user?.whatsappNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'No WhatsApp number found in your profile. Please add it first.',
+      });
+    }
+
+    const normalized = normalizeWhatsAppNumber(req.user.whatsappNumber);
+    if (!isValidWhatsAppNumber(normalized)) {
+      return res.status(400).json({ success: false, message: 'Invalid WhatsApp number.' });
+    }
+
+    const safeDetails = details || {};
+    const confidencePercent = typeof confidence === 'number' ? `${Math.round(confidence * 100)}%` : 'N/A';
+
+    const topPredictionsLines = Array.isArray(topPredictions) && topPredictions.length
+      ? topPredictions.slice(0, 3).map((item) => {
+          const c = typeof item?.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A';
+          return `- ${item?.disease || 'Unknown'} (${c})`;
+        })
+      : ['- Not available'];
+
+    const selectedSymptomsLines = toBulletLines(selectedSymptoms, 8);
+    const precautionsLines = toBulletLines(safeDetails.precautions, 6);
+    const medicationsLines = toBulletLines(safeDetails.medications, 6);
+    const dietsLines = toBulletLines(safeDetails.diets, 6);
+    const workoutsLines = toBulletLines(safeDetails.workouts, 6);
+    const riskFactorsLines = toBulletLines(safeDetails.riskFactors, 6);
+
+    const patientName = req.user?.name || 'User';
+    const whatsappMessage = [
+      `Healance AI Health Report`,
+      `Patient: ${patientName}`,
+      `Generated: ${new Date().toLocaleString('en-IN')}`,
+      '',
+      'Prediction Summary',
+      `- Predicted Disease: ${predictedDisease}`,
+      `- Confidence: ${confidencePercent}`,
+      '',
+      ...section('Selected Symptoms', selectedSymptomsLines),
+      ...section('Top 3 Predictions', topPredictionsLines),
+      ...section('Description', [safeDetails.description || 'Not available']),
+      ...section('Precautions', precautionsLines),
+      ...section('Medications', medicationsLines),
+      ...section('Diet Plan', dietsLines),
+      ...section('Workout Plan', workoutsLines),
+      ...section('Risk Factors', riskFactorsLines),
+      'Disclaimer',
+      '- This is an AI-assisted prediction and not a final diagnosis.',
+      '- Please consult a qualified doctor for medical advice.',
+    ].join('\n');
+
+    const sendResult = await sendWhatsAppTextMessage(normalized, whatsappMessage);
+
+    return res.json({
+      success: true,
+      message: sendResult.sent
+        ? 'Symptoms prediction sent to WhatsApp successfully.'
+        : 'WhatsApp credentials missing. Message simulated in dev mode.',
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

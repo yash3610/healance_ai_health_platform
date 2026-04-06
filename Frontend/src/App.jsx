@@ -40,6 +40,7 @@ const Forecast = lazy(() => import('./dashboard/pages/Forecast'));
 const DashboardBlogs = lazy(() => import('./dashboard/pages/DashboardBlogs'));
 const DashboardContact = lazy(() => import('./dashboard/pages/DashboardContact'));
 const Profile = lazy(() => import('./dashboard/pages/Profile'));
+const PredictionHistory = lazy(() => import('./dashboard/pages/PredictionHistory'));
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -107,6 +108,7 @@ function App() {
                   <Route path="blogs" element={<DashboardBlogs />} />
                   <Route path="contact" element={<DashboardContact />} />
                   <Route path="profile" element={<Profile />} />
+                  <Route path="prediction-history" element={<PredictionHistory />} />
                 </Route>
 
                 <Route path="*" element={<Error404Page />} />

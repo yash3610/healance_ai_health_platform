@@ -10,6 +10,7 @@ import {
   CloudSun, 
   FileText, 
   Phone,
+  History,
   User,
   LogOut,
   X
@@ -35,6 +36,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Reverse Planner', path: '/dashboard/reverse-planner', icon: Target },
     { name: 'Forecast', path: '/dashboard/forecast', icon: CloudSun },
     { name: 'Blogs', path: '/dashboard/blogs', icon: FileText },
+    { name: 'Prediction History', path: '/dashboard/prediction-history', icon: History },
     { name: 'Contact Us', path: '/dashboard/contact', icon: Phone },
     { name: 'Profile', path: '/dashboard/profile', icon: User },
   ];
@@ -125,7 +127,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 isActive ? 'text-[#506cd7] bg-[#f0f1fc]' : 'text-slate-600 hover:bg-[#f0f1fc]'
               )}
             >
-              General Risk
+              Symptoms Disease
             </NavLink>
             <NavLink
               to="/dashboard/risk-prediction/heart-diabetes"

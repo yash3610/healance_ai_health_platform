@@ -13,13 +13,14 @@ import { API_URL } from '../../constants/config';
 // Page config for dynamic titles
 const pageConfig = {
   '/dashboard': { kicker: 'Dashboard', title: (name) => `Welcome back, ${name} 👋`, subtitle: "Here's your health overview for today." },
-  '/dashboard/risk-prediction': { kicker: 'Risk Prediction', title: () => 'AI Health Risk Prediction', subtitle: 'Enter your vitals for analysis.' },
+  '/dashboard/risk-prediction': { kicker: 'Risk Prediction', title: () => 'Symptoms Disease Prediction', subtitle: 'Select symptoms and get AI-guided disease insights.' },
   '/dashboard/risk-prediction/heart-diabetes': { kicker: 'Heart & Diabetes', title: () => 'Heart & Diabetes Check', subtitle: 'Specialized cardiac and metabolic analysis.' },
   '/dashboard/chatbots': { kicker: 'AI Chatbots', title: () => 'Health & Medicine Assistant', subtitle: 'Chat with our AI-powered health bots.' },
   '/dashboard/body-explorer': { kicker: 'Body Explorer', title: () => '3D Anatomy Viewer', subtitle: 'Explore the human body interactively.' },
   '/dashboard/reverse-planner': { kicker: 'Reverse Planner', title: () => 'Health Goal Tracker', subtitle: 'Set goals and track your progress.' },
   '/dashboard/forecast': { kicker: 'Forecast', title: () => 'Health Weather Forecast', subtitle: 'Plan activities based on conditions.' },
   '/dashboard/blogs': { kicker: 'Knowledge Base', title: () => 'Health Articles', subtitle: 'Curated content for healthier living.' },
+  '/dashboard/prediction-history': { kicker: 'Prediction History', title: () => 'All Saved Predictions', subtitle: 'Open any entry to view complete details.' },
   '/dashboard/contact': { kicker: 'Support', title: () => 'Support Center', subtitle: 'Get help from our team.' },
   '/dashboard/profile': { kicker: 'Account', title: () => 'Profile Settings', subtitle: 'Manage your account and health data.' },
 };

@@ -7,10 +7,10 @@ const __dirname = path.dirname(__filename);
 
 const modelScriptPath = path.resolve(__dirname, '../../ML Services/Heart&diabeties/predict.py');
 
-const runPythonPrediction = (payload) => {
+export const runPythonScript = (scriptPath, payload) => {
   return new Promise((resolve, reject) => {
-    const pythonCommand = process.env.PYTHON_BIN || 'python3';
-    const pyProcess = spawn(pythonCommand, [modelScriptPath], {
+    const pythonCommand = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const pyProcess = spawn(pythonCommand, [scriptPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -50,5 +50,7 @@ const runPythonPrediction = (payload) => {
     pyProcess.stdin.end();
   });
 };
+
+const runPythonPrediction = (payload) => runPythonScript(modelScriptPath, payload);
 
 export default runPythonPrediction;

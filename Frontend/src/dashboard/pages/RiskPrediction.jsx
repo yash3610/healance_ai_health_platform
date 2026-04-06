@@ -1,156 +1,321 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Star, MapPin, Calendar, CheckCircle, Utensils, Dumbbell } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  Dumbbell,
+  Loader2,
+  MessageCircle,
+  Pill,
+  ShieldCheck,
+  Soup,
+  Stethoscope,
+} from 'lucide-react';
+import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
 import DashReveal from '../../shared/ui/DashReveal';
 
-const DoctorCard = ({ name, specialty, distance, rating, image }) => (
-  <div className="dash-card flex items-center gap-4">
-    <img src={image} alt={name} className="w-16 h-16 rounded-full object-cover" />
-    <div className="flex-1">
-      <h4 className="font-bold text-[#0b1030]">{name}</h4>
-      <p className="text-xs text-[#506cd7] font-medium">{specialty}</p>
-      <div className="flex items-center gap-3 mt-1 text-xs text-[#5f697a]">
-        <span className="flex items-center"><MapPin size={12} className="mr-1" /> {distance}</span>
-        <span className="flex items-center text-yellow-500"><Star size={12} className="mr-1 fill-current" /> {rating}</span>
-      </div>
-    </div>
-    <Button size="sm" variant="secondary">Book</Button>
-  </div>
-);
+const SYMPTOM_LABELS = {
+  fever: 'Fever',
+  cough: 'Cough',
+  headache: 'Headache',
+  fatigue: 'Fatigue',
+  vomiting: 'Vomiting',
+  chest_pain: 'Chest Pain',
+  sore_throat: 'Sore Throat',
+  breathlessness: 'Breathlessness',
+  nausea: 'Nausea',
+  dizziness: 'Dizziness',
+  body_pain: 'Body Pain',
+  diarrhea: 'Diarrhea',
+  skin_rash: 'Skin Rash',
+  itching: 'Itching',
+  weight_loss: 'Weight Loss',
+  sweating: 'Sweating',
+};
+
+const initialSymptoms = Object.keys(SYMPTOM_LABELS).reduce((acc, key) => {
+  acc[key] = false;
+  return acc;
+}, {});
+
+const confidenceText = (value) => {
+  if (typeof value !== 'number') return 'N/A';
+  return `${Math.round(value * 100)}%`;
+};
 
 const RiskPrediction = () => {
-  const [showResults, setShowResults] = useState(false);
+  const [symptoms, setSymptoms] = useState(initialSymptoms);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const selectedSymptoms = useMemo(
+    () => Object.entries(symptoms).filter(([, enabled]) => enabled).map(([key]) => key),
+    [symptoms]
+  );
+
+  const toggleSymptom = (key) => {
+    setSymptoms((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const resetAll = () => {
+    setSymptoms(initialSymptoms);
+    setResult(null);
+    setError('');
+    setMessage('');
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setResult(null);
+
+    if (selectedSymptoms.length < 2) {
+      setError('Please select at least 2 symptoms for better prediction.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const payload = Object.keys(symptoms).reduce((acc, key) => {
+        acc[key] = symptoms[key];
+        return acc;
+      }, {});
+
+      const response = await riskService.predictSymptomsDisease(payload);
+      if (response.success) {
+        setResult(response);
+      }
+    } catch (apiError) {
+      setError(apiError.response?.data?.message || 'Prediction failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleShareWhatsapp = async () => {
+    if (!result) return;
+
+    try {
+      setIsSharing(true);
+      setError('');
+      setMessage('');
+
+      const response = await riskService.shareSymptomsToWhatsapp({
+        predictedDisease: result.predictedDisease,
+        confidence: result.confidence,
+        topPredictions: result.topPredictions,
+        selectedSymptoms: result.selectedSymptoms,
+        details: result.details,
+      });
+
+      setMessage(response.message || 'Prediction summary sent on WhatsApp.');
+    } catch (apiError) {
+      setError(apiError.response?.data?.message || 'Unable to share on WhatsApp right now.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const details = result?.details || {};
 
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashReveal>
       <div className="dash-card-static">
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">AI Health Risk Prediction</h2>
-          <p className="text-sm sm:text-base text-[#5f697a]">Enter your vitals to get a comprehensive health analysis.</p>
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Symptoms Disease Prediction</h2>
+          <p className="text-sm sm:text-base text-[#5f697a]">
+            Select symptoms and the AI model will suggest the most likely disease along with diet, workout, precautions, and medications.
+          </p>
         </div>
 
-        <form className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-          <div>
-            <label className="block text-sm font-medium text-[#0b1030] mb-2">Age</label>
-            <input type="number" className="dash-input" placeholder="25" />
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {Object.entries(SYMPTOM_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => toggleSymptom(key)}
+                className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors text-left ${
+                  symptoms[key]
+                    ? 'bg-[#506cd7] text-white border-[#506cd7]'
+                    : 'bg-white text-[#0b1030] border-[#e8eaf9] hover:bg-[#f0f1fc]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[#0b1030] mb-2">Gender</label>
-            <select className="dash-input">
-              <option>Male</option>
-              <option>Female</option>
-            </select>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-[#5f697a]">
+              Selected: <span className="font-semibold text-[#0b1030]">{selectedSymptoms.length}</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" onClick={resetAll}>
+                Reset
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin" />
+                    Predicting...
+                  </span>
+                ) : (
+                  'Predict Disease'
+                )}
+              </Button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[#0b1030] mb-2">Blood Pressure</label>
-            <input type="text" className="dash-input" placeholder="120/80" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#0b1030] mb-2">Cholesterol Level</label>
-            <input type="number" className="dash-input" placeholder="180" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#0b1030] mb-2">Blood Sugar</label>
-            <input type="number" className="dash-input" placeholder="90" />
-          </div>
-          <div className="flex items-end">
-            <Button className="w-full" onClick={(e) => { e.preventDefault(); setShowResults(true); }}>
-              Analyze Health Risk
-            </Button>
-          </div>
+
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </form>
       </div>
       </DashReveal>
 
-      {showResults && (
+      {result && (
         <motion.div
           className="space-y-6 sm:space-y-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
         >
-          {/* Results Summary */}
-          <div className="bg-green-50 border border-green-100 p-4 sm:p-6 rounded-[20px] flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="dash-icon-badge bg-green-500">
-              <CheckCircle size={22} className="text-white" />
+          <div className="bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-[20px] flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="dash-icon-badge bg-blue-600">
+              <Stethoscope size={22} className="text-white" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-heading font-bold text-green-800">Low Risk Detected</h3>
-              <p className="text-sm sm:text-base text-green-700">Your vitals are within the healthy range. Keep up the good work!</p>
+              <h3 className="text-base sm:text-lg font-heading font-bold text-[#0b1030]">
+                Predicted Disease: {result.predictedDisease}
+              </h3>
+              <p className="text-sm sm:text-base text-[#394162]">
+                Confidence: <span className="font-semibold">{confidenceText(result.confidence)}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <Activity size={18} className="text-[#506cd7]" />
+                Description
+              </h4>
+              <p className="text-sm text-[#5f697a]">
+                {details.description || 'Description not available for this disease.'}
+              </p>
+            </div>
+
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <AlertTriangle size={18} className="text-[#f59e0b]" />
+                Top Predictions
+              </h4>
+              <div className="space-y-2">
+                {(result.topPredictions || []).map((item) => (
+                  <div
+                    key={item.disease}
+                    className="flex items-center justify-between rounded-xl border border-[#e8eaf9] px-3 py-2"
+                  >
+                    <span className="text-sm font-medium text-[#0b1030]">{item.disease}</span>
+                    <span className="text-xs font-semibold text-[#506cd7]">{confidenceText(item.confidence)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {/* Recommendations */}
-            <div className="space-y-4 sm:space-y-6">
-              <h3 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Recommended Doctors</h3>
-              <DoctorCard
-                name="Dr. Emily White"
-                specialty="Cardiologist"
-                distance="2.5 km"
-                rating="4.9"
-                image="https://images.pexels.com/photos/5215024/pexels-photo-5215024.jpeg?auto=compress&cs=tinysrgb&w=200"
-              />
-              <DoctorCard
-                name="Dr. Raj Patel"
-                specialty="General Physician"
-                distance="4.1 km"
-                rating="4.7"
-                image="https://images.pexels.com/photos/5452293/pexels-photo-5452293.jpeg?auto=compress&cs=tinysrgb&w=200"
-              />
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <ShieldCheck size={18} className="text-green-600" />
+                Precautions
+              </h4>
+              <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
+                {(details.precautions || []).length > 0
+                  ? details.precautions.map((item) => <li key={item}>{item}</li>)
+                  : <li>No precautions available.</li>}
+              </ul>
             </div>
 
-            <div className="space-y-4 sm:space-y-6">
-              <h3 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Personalized Plans</h3>
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <Pill size={18} className="text-[#ef4444]" />
+                Medications
+              </h4>
+              <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
+                {(details.medications || []).length > 0
+                  ? details.medications.map((item) => <li key={item}>{item}</li>)
+                  : <li>No medication guidance available.</li>}
+              </ul>
+            </div>
 
-              {/* Diet Plan */}
-              <div className="dash-card-static">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="dash-icon-badge bg-orange-500">
-                    <Utensils size={20} className="text-white" />
-                  </div>
-                  <h4 className="dash-heading text-sm sm:text-base">Indian Diet Plan</h4>
-                </div>
-                <ul className="space-y-3 text-sm text-[#5f697a]">
-                  <li className="flex justify-between border-b border-[#f0f1fc] pb-2">
-                    <span>Breakfast</span>
-                    <span className="font-medium text-[#0b1030]">Oats Upma + Green Tea</span>
-                  </li>
-                  <li className="flex justify-between border-b border-[#f0f1fc] pb-2">
-                    <span>Lunch</span>
-                    <span className="font-medium text-[#0b1030]">2 Roti + Dal + Sabzi</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Dinner</span>
-                    <span className="font-medium text-[#0b1030]">Grilled Paneer Salad</span>
-                  </li>
-                </ul>
-              </div>
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <Soup size={18} className="text-orange-500" />
+                Diet Plan
+              </h4>
+              <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
+                {(details.diets || []).length > 0
+                  ? details.diets.map((item) => <li key={item}>{item}</li>)
+                  : <li>No diet suggestions available.</li>}
+              </ul>
+            </div>
 
-              {/* Workout Plan */}
-              <div className="dash-card-static">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="dash-icon-badge bg-blue-500">
-                    <Dumbbell size={20} className="text-white" />
-                  </div>
-                  <h4 className="dash-heading text-sm sm:text-base">Weekly Workout</h4>
-                </div>
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                    <div key={day} className="min-w-[80px] bg-[#f0f1fc] p-3 rounded-xl text-center border border-[#e8eaf9]">
-                      <p className="text-xs font-bold text-[#6a7283] mb-1">{day}</p>
-                      <p className="text-sm font-bold text-[#506cd7]">Cardio</p>
-                      <p className="text-[10px] text-[#5f697a]">30 mins</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
+                <Dumbbell size={18} className="text-blue-500" />
+                Workout Plan
+              </h4>
+              <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
+                {(details.workouts || []).length > 0
+                  ? details.workouts.map((item) => <li key={item}>{item}</li>)
+                  : <li>No workout suggestions available.</li>}
+              </ul>
+            </div>
+          </div>
+
+          {(details.riskFactors || []).length > 0 && (
+            <div className="dash-card-static space-y-3">
+              <h4 className="dash-heading text-sm sm:text-base">Risk Factors</h4>
+              <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
+                {details.riskFactors.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            </div>
+          )}
+
+          <div className="dash-card-static">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-[#5f697a]">
+                Share this complete report, including all suggestions, on WhatsApp.
+              </p>
+              <Button type="button" variant="secondary" onClick={handleShareWhatsapp} disabled={isSharing}>
+                {isSharing ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin" />
+                    Sending...
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <MessageCircle size={16} />
+                    Send Full Result on WhatsApp
+                  </span>
+                )}
+              </Button>
             </div>
           </div>
         </motion.div>
       )}
+
+      {message && <p className="text-sm font-medium text-[#5f697a]">{message}</p>}
     </div>
   );
 };
