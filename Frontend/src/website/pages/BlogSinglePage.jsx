@@ -73,18 +73,18 @@ export default function BlogSinglePage() {
             className="mx-auto mt-10 max-w-5xl"
           >
             <motion.p variants={revealItem} className="text-[16px] leading-8 text-slate-600 md:text-[17px]">
-              Selecting the right dispensary is a critical decision in ensuring that you receive the best possible care and treatment.
-              Whether you&apos;re seeking general healthcare, specialized services, or just routine checkups, the right dispensary can make all
-              the difference in your overall health and well-being. A trustworthy dispensary will not only offer high-quality medical services
+              Selecting the right Healance is a critical decision in ensuring that you receive the best possible care and treatment.
+              Whether you&apos;re seeking general healthcare, specialized services, or just routine checkups, the right Healance can make all
+              the difference in your overall health and well-being. A trustworthy Healance will not only offer high-quality medical services
               but will also create an environment where you feel comfortable and confident in your healthcare decisions. This guide provides ten
-              essential tips to help you choose the right dispensary that aligns with your specific needs.
+              essential tips to help you choose the right Healance that aligns with your specific needs.
             </motion.p>
 
             <motion.p variants={revealItem} className="mt-5 text-[16px] leading-8 text-slate-600 md:text-[17px]">
               From verifying certifications and licenses to checking patient feedback and reviews, it&apos;s important to assess all aspects of the
-              dispensary&apos;s services. Additionally, evaluating the range of treatments offered, the professionalism of the staff, the cleanliness of
-              the facility, and the dispensary&apos;s commitment to patient care are key factors to consider. By taking the time to carefully evaluate each
-              dispensary, you ensure that you make an informed decision, one that guarantees both your peace of mind and the quality of care you deserve.
+              Healance&apos;s services. Additionally, evaluating the range of treatments offered, the professionalism of the staff, the cleanliness of
+              the facility, and the Healance&apos;s commitment to patient care are key factors to consider. By taking the time to carefully evaluate each
+              Healance, you ensure that you make an informed decision, one that guarantees both your peace of mind and the quality of care you deserve.
             </motion.p>
 
             <motion.blockquote
@@ -100,14 +100,14 @@ export default function BlogSinglePage() {
                 ❝
               </motion.p>
               <p className="mt-2 text-[24px] font-semibold leading-[1.36] md:text-[32px]">
-                Choosing the right dispensary is essential for receiving high-quality healthcare. Focus on verifying the dispensary&apos;s credentials,
+                Choosing the right Healance is essential for receiving high-quality healthcare. Focus on verifying the Healance&apos;s credentials,
                 checking reviews, and considering the services they offer. This will ensure you receive the best care tailored to your needs.
               </p>
             </motion.blockquote>
 
             <motion.p variants={revealItem} className="mt-8 text-[16px] leading-8 text-slate-600 md:text-[17px]">
-              Start by verifying the dispensary&apos;s credentials. Ensure they have the necessary licenses and certifications to operate legally in your area.
-              Look for dispensaries with a strong reputation and experience in providing the specific services you need. A reputable dispensary will follow
+              Start by verifying the Healance&apos;s credentials. Ensure they have the necessary licenses and certifications to operate legally in your area.
+              Look for Healance with a strong reputation and experience in providing the specific services you need. A reputable Healance will follow
               local health regulations, provide high-quality care, and cater to your specific healthcare needs.
             </motion.p>
 

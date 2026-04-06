@@ -113,7 +113,7 @@ export default function Navbar() {
     >
       <div className="container-shell relative flex h-24 items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-2 transition-transform duration-300 hover:scale-[1.03]">
-          <img src="/assets/images/logo.svg" alt="Dispnsary" className="h-10" />
+          <img src="/assets/images/logo.png" alt="Healance" className="h-10" />
         </Link>
 
         <button

@@ -1,5 +1,12 @@
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const backendRoot = path.join(__dirname, '..');
 
 // @desc    Update user profile
 // @route   PUT /api/users/profile
@@ -32,10 +39,27 @@ export const uploadProfileAvatar = async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
+    const previousAvatar = user.avatar;
     const avatarPath = `/uploads/${req.file.filename}`;
     user.avatar = avatarPath;
 
     const updatedUser = await user.save();
+
+    // Delete previous local upload file after successful avatar update.
+    if (previousAvatar && previousAvatar.startsWith('/uploads/') && previousAvatar !== avatarPath) {
+      const previousFileName = path.basename(previousAvatar);
+      const previousFilePath = path.join(backendRoot, 'uploads', previousFileName);
+
+      try {
+        await fs.promises.unlink(previousFilePath);
+      } catch (unlinkError) {
+        // Ignore missing-file errors to avoid blocking successful profile updates.
+        if (unlinkError.code !== 'ENOENT') {
+          console.warn(`Failed to delete old avatar: ${previousFilePath}`, unlinkError.message);
+        }
+      }
+    }
+
     res.json({ success: true, user: updatedUser, avatar: avatarPath });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

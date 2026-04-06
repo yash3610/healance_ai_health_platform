@@ -4,8 +4,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Activity, Heart, TrendingUp, AlertCircle, Brain, Footprints, Droplets, Target, Coins, Calendar,
-  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle
+  Activity, Heart, TrendingUp, AlertCircle, Brain, Footprints, Droplets, Target, Calendar,
+  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle, CloudSun
 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
 import { SkeletonCard, SkeletonChart, SkeletonSchedule, SkeletonRiskCard } from '../../shared/ui/Skeleton';
@@ -62,7 +62,7 @@ const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAc
 );
 
 // Water Tracker Component
-const WaterTracker = ({ onSetReminder, reminderActive }) => {
+const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
   const { waterIntake, addWater, removeWater, updateGoalProgress, activeGoals } = useHealthData();
   const glasses = Math.floor(waterIntake * 4); // 1L = 4 glasses (250ml each)
   const target = 12; // 3L = 12 glasses
@@ -157,7 +157,7 @@ const WaterTracker = ({ onSetReminder, reminderActive }) => {
       {reminderActive && (
         <div className="mt-3 p-2 bg-blue-50 rounded-lg flex items-center gap-2 text-xs text-blue-700">
           <Volume2 size={14} />
-          <span>Reminder every 30 minutes</span>
+          <span>Reminder every {reminderInterval} minutes</span>
         </div>
       )}
     </div>
@@ -218,12 +218,17 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
 };
 
 const Dashboard = () => {
-  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
+  const { dailySteps, stepsGoal, goalsCount, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
   
   const [waterReminderActive, setWaterReminderActive] = useState(false);
   const [waterReminderInterval, setWaterReminderInterval] = useState(30);
   const [isWaterReminderModalOpen, setIsWaterReminderModalOpen] = useState(false);
   const [waterReminderTimerId, setWaterReminderTimerId] = useState(null);
+  const [weatherSummary, setWeatherSummary] = useState({
+    temperature: '--',
+    condition: 'Loading weather...',
+    location: 'Mumbai',
+  });
 
   // Calculate steps progress
   const stepsProgress = Math.round((dailySteps / stepsGoal) * 100);
@@ -261,6 +266,32 @@ const Dashboard = () => {
       console.error('Failed to create notification');
     }
   };
+
+  const fetchWeatherSummary = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('healance_token');
+      if (!token) return;
+
+      const { data } = await axios.get(`${API_URL}/forecast?city=mumbai`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const forecast = data?.forecast;
+      if (!forecast) return;
+
+      setWeatherSummary({
+        temperature: String(forecast.temperature ?? '--'),
+        condition: forecast.condition || 'Clear',
+        location: forecast.location || 'Mumbai',
+      });
+    } catch (err) {
+      setWeatherSummary({
+        temperature: '--',
+        condition: 'Weather unavailable',
+        location: 'Mumbai',
+      });
+    }
+  }, []);
 
   // Start water reminder
   const startWaterReminder = (intervalMinutes) => {
@@ -330,6 +361,7 @@ const Dashboard = () => {
   useEffect(() => {
     requestNotificationPermission();
     fetchHealthData();
+    fetchWeatherSummary();
 
     // Restore water reminder state
     const savedReminderActive = localStorage.getItem('waterReminderActive');
@@ -370,6 +402,7 @@ const Dashboard = () => {
             key="water"
             onSetReminder={() => waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true)}
             reminderActive={waterReminderActive}
+            reminderInterval={waterReminderInterval}
           />,
           <StatCard
             key="goals"
@@ -381,13 +414,13 @@ const Dashboard = () => {
             subtext="Track your progress"
           />,
           <StatCard
-            key="coins"
-            title="Walk & Earn"
-            value={coins.toString()}
-            unit="coins"
-            icon={Coins}
-            color="bg-yellow-500"
-            subtext="Redeemable for coupons"
+            key="weather"
+            title="Weather"
+            value={weatherSummary.temperature}
+            unit="°C"
+            icon={CloudSun}
+            color="bg-cyan-500"
+            subtext={`${weatherSummary.condition} • ${weatherSummary.location}`}
           />
         ].map((card, index) => (
           <motion.div

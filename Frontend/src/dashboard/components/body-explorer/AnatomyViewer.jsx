@@ -219,7 +219,7 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
             onHover={handleHover}
             onControlsReady={handleControlsReady}
             showLabels={showLabels}
-            onLabelAnchorsComputed={() => setIsLoaded(true)}
+            onLabelAnchorsComputed={() => setIsLoaded(false)}
           />
         </Suspense>
       </Canvas>

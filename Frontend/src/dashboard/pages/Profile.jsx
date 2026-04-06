@@ -97,7 +97,10 @@ const Profile = () => {
 
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setProfileError('Please select a valid image file.');
+      toast({ title: 'Please select a valid image file.', variant: 'error' });
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
       return;
     }
 
@@ -193,6 +196,19 @@ const Profile = () => {
                   disabled
                   className="dash-input !bg-[#e8eaf9] text-[#5f697a] cursor-not-allowed"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#0b1030] mb-1.5">Phone Number</label>
+                <input
+                  type="text"
+                  value={user?.whatsappNumber || 'Not available'}
+                  disabled
+                  className="dash-input !bg-[#e8eaf9] text-[#5f697a] cursor-not-allowed"
+                />
+                <p className="text-xs text-[#5f697a] mt-1">This number is linked to your login and cannot be edited.</p>
               </div>
             </div>
 
