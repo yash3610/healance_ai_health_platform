@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Droplets, Flame, Moon, Footprints, Plus, Edit2, Trash2, X, CheckCircle, AlertCircle, Loader2, TrendingUp, Calendar, Sparkles } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { useToast } from '../../context/ToastContext';
+import { API_URL } from '../../constants/config';
 
 const goalIcons = {
   steps: Footprints,
@@ -43,20 +44,20 @@ const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
   const dailyNeeded = daysLeft > 0 ? Math.round(remaining / daysLeft) : 0;
 
   return (
-    <div className="bg-white p-3 sm:p-6 rounded-2xl shadow-sm border border-slate-100 relative group">
+    <div className="dash-card relative group">
       {/* Action Buttons */}
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(goal)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
-          <Edit2 size={14} className="text-slate-500" />
+      <div className="absolute top-2 right-2 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <button onClick={() => onEdit(goal)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#f0f1fc] rounded-lg transition-colors" aria-label="Edit goal">
+          <Edit2 size={14} className="text-[#5f697a]" />
         </button>
-        <button onClick={() => onDelete(goal._id)} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
+        <button onClick={() => onDelete(goal._id)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-red-50 rounded-lg transition-colors" aria-label="Delete goal">
           <Trash2 size={14} className="text-red-500" />
         </button>
       </div>
 
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={`p-2 sm:p-3 rounded-xl ${color} bg-opacity-10`}>
-          <Icon size={18} className={`sm:w-6 sm:h-6 ${color.replace('bg-', 'text-')}`} />
+        <div className={`dash-icon-badge ${color}`}>
+          <Icon size={20} className="text-white" />
         </div>
         <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg ${
           progress >= 100 ? 'bg-green-100 text-green-600' : 
@@ -66,13 +67,13 @@ const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
         </span>
       </div>
       
-      <h3 className="font-bold text-sm sm:text-base text-slate-800 mb-1">{goal.title}</h3>
+      <h3 className="font-bold text-sm sm:text-base text-[#0b1030] mb-1">{goal.title}</h3>
       <div className="flex items-end gap-1 mb-2 sm:mb-3">
-        <span className="text-lg sm:text-2xl font-bold text-slate-900">{goal.current}</span>
-        <span className="text-[10px] sm:text-sm text-slate-500 mb-0.5 sm:mb-1">/ {goal.target} {goal.unit}</span>
+        <span className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030]">{goal.current}</span>
+        <span className="text-[10px] sm:text-sm text-[#5f697a] mb-0.5 sm:mb-1">/ {goal.target} {goal.unit}</span>
       </div>
-      
-      <div className="w-full bg-slate-100 h-1.5 sm:h-2 rounded-full overflow-hidden">
+
+      <div className="w-full bg-[#f0f1fc] h-1.5 sm:h-2 rounded-full overflow-hidden">
         <div 
           className={`h-full rounded-full transition-all duration-500 ${color}`} 
           style={{ width: `${progress}%` }}
@@ -80,13 +81,13 @@ const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
       </div>
       
       <div className="flex justify-between items-center mt-2 sm:mt-3">
-        <p className="text-[8px] sm:text-xs text-slate-500 flex items-center">
-          <Target size={10} className="mr-1 flex-shrink-0 sm:w-3 sm:h-3" /> 
+        <p className="text-[8px] sm:text-xs text-[#5f697a] flex items-center">
+          <Target size={10} className="mr-1 flex-shrink-0 sm:w-3 sm:h-3" />
           {dailyNeeded > 0 ? `${dailyNeeded} ${goal.unit}/day needed` : 'Goal reached!'}
         </p>
-        <button 
+        <button
           onClick={() => onLogProgress(goal)}
-          className="text-[10px] sm:text-xs font-medium text-primary-600 hover:text-primary-700"
+          className="text-[10px] sm:text-xs font-medium text-[#506cd7] hover:text-[#4753bf]"
         >
           + Log
         </button>
@@ -162,21 +163,21 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-100 p-4 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b1030]/50 backdrop-blur-sm">
+      <div className="bg-white rounded-[20px] w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide" style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}>
+        <div className="sticky top-0 bg-white border-b border-[#e8eaf9] p-4 flex justify-between items-center">
+          <h3 className="text-lg font-heading font-bold text-[#0b1030]">
             {goal ? 'Edit Goal' : 'Create New Goal'}
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg">
-            <X size={20} className="text-slate-500" />
+          <button onClick={onClose} className="p-1.5 hover:bg-[#f0f1fc] rounded-lg">
+            <X size={20} className="text-[#5f697a]" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Goal Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Goal Type</label>
+            <label className="block text-sm font-medium text-[#0b1030] mb-2">Goal Type</label>
             <div className="grid grid-cols-3 gap-2">
               {['steps', 'water', 'calories', 'sleep', 'weight', 'custom'].map((type) => {
                 const Icon = goalIcons[type];
@@ -186,12 +187,12 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
                     type="button"
                     onClick={() => handleTypeChange(type)}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
-                      formData.type === type 
-                        ? 'border-primary-500 bg-primary-50' 
-                        : 'border-slate-200 hover:border-slate-300'
+                      formData.type === type
+                        ? 'border-[#506cd7] bg-[#f0f1fc]'
+                        : 'border-[#e8eaf9] hover:border-[#506cd7]/40'
                     }`}
                   >
-                    <Icon size={20} className={formData.type === type ? 'text-primary-600' : 'text-slate-500'} />
+                    <Icon size={20} className={formData.type === type ? 'text-[#506cd7]' : 'text-[#5f697a]'} />
                     <span className="text-xs capitalize">{type}</span>
                   </button>
                 );
@@ -201,12 +202,12 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Goal Title</label>
+            <label className="block text-sm font-medium text-[#0b1030] mb-2">Goal Title</label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              className="dash-input"
               placeholder="Enter goal title"
               required
             />
@@ -215,23 +216,23 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
           {/* Current & Target */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Current</label>
+              <label className="block text-sm font-medium text-[#0b1030] mb-2">Current</label>
               <input
                 type="number"
                 value={formData.current}
                 onChange={(e) => setFormData({ ...formData, current: parseFloat(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                className="dash-input"
                 min="0"
                 step="0.1"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Target</label>
+              <label className="block text-sm font-medium text-[#0b1030] mb-2">Target</label>
               <input
                 type="number"
                 value={formData.target}
                 onChange={(e) => setFormData({ ...formData, target: parseFloat(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                className="dash-input"
                 min="1"
                 step="0.1"
                 required
@@ -241,12 +242,12 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 
           {/* Unit */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Unit</label>
+            <label className="block text-sm font-medium text-[#0b1030] mb-2">Unit</label>
             <input
               type="text"
               value={formData.unit}
               onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              className="dash-input"
               placeholder="e.g., steps, L, kcal"
               required
             />
@@ -254,12 +255,12 @@ const GoalModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 
           {/* End Date */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Target Date (Optional)</label>
+            <label className="block text-sm font-medium text-[#0b1030] mb-2">Target Date (Optional)</label>
             <input
               type="date"
               value={formData.endDate}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              className="dash-input"
               min={new Date().toISOString().split('T')[0]}
             />
           </div>
@@ -293,30 +294,30 @@ const LogProgressModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
   if (!isOpen || !goal) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b1030]/50 backdrop-blur-sm">
+      <div className="bg-white rounded-[20px] w-full max-w-sm p-6" style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-900">Log Progress</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg">
-            <X size={20} className="text-slate-500" />
+          <h3 className="text-lg font-heading font-bold text-[#0b1030]">Log Progress</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-[#f0f1fc] rounded-lg">
+            <X size={20} className="text-[#5f697a]" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">{goal.title}</label>
+            <label className="block text-sm font-medium text-[#0b1030] mb-2">{goal.title}</label>
             <div className="flex items-center gap-3">
               <input
                 type="number"
                 value={value}
                 onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
-                className="flex-1 px-4 py-3 text-lg font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none text-center"
+                className="dash-input flex-1 text-lg font-bold text-center"
                 step="0.1"
                 required
               />
-              <span className="text-slate-500 font-medium">{goal.unit}</span>
+              <span className="text-[#5f697a] font-medium">{goal.unit}</span>
             </div>
-            <p className="text-xs text-slate-500 mt-2 text-center">
+            <p className="text-xs text-[#5f697a] mt-2 text-center">
               Target: {goal.target} {goal.unit}
             </p>
           </div>
@@ -328,7 +329,7 @@ const LogProgressModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
                 key={increment}
                 type="button"
                 onClick={() => setValue(prev => prev + increment)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
+                className="px-3 py-1.5 bg-[#f0f1fc] hover:bg-[#e8eaf9] rounded-lg text-sm font-medium text-[#0b1030] transition-colors"
               >
                 +{increment}
               </button>
@@ -350,18 +351,18 @@ const LogProgressModal = ({ isOpen, onClose, goal, onSave, isLoading }) => {
 
 const ReversePlanner = () => {
   const { fetchHealthData } = useHealthData();
-  
+  const { toast } = useToast();
+
   const [goals, setGoals] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
+
   // Modals
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [goalToDelete, setGoalToDelete] = useState(null);
 
   // Fetch goals
   const fetchGoals = async () => {
@@ -374,7 +375,7 @@ const ReversePlanner = () => {
         setGoals(response.data.goals);
       }
     } catch (err) {
-      setError('Failed to load goals');
+      toast({ title: 'Failed to load goals', variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -453,35 +454,36 @@ const ReversePlanner = () => {
       }
       
       if (response.data.success) {
-        setSuccess(goalId ? 'Goal updated successfully!' : 'Goal created successfully!');
+        toast({ title: goalId ? 'Goal updated' : 'Goal created', variant: 'success' });
         fetchGoals();
-        fetchHealthData(); // Sync with global health data
+        fetchHealthData();
         setIsGoalModalOpen(false);
         setSelectedGoal(null);
-        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save goal');
+      toast({ title: err.response?.data?.message || 'Failed to save goal', variant: 'error' });
     } finally {
       setIsSaving(false);
     }
   };
 
   // Delete goal
-  const handleDeleteGoal = async (goalId) => {
-    if (!window.confirm('Are you sure you want to delete this goal?')) return;
-    
+  const handleDeleteGoal = (goalId) => setGoalToDelete(goalId);
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
     try {
       const token = localStorage.getItem('healance_token');
-      await axios.delete(`${API_URL}/goals/${goalId}`, {
+      await axios.delete(`${API_URL}/goals/${goalToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Goal deleted successfully!');
+      toast({ title: 'Goal deleted', variant: 'success' });
       fetchGoals();
-      fetchHealthData(); // Sync with global health data
-      setTimeout(() => setSuccess(''), 3000);
+      fetchHealthData();
     } catch (err) {
-      setError('Failed to delete goal');
+      toast({ title: 'Failed to delete goal', variant: 'error' });
+    } finally {
+      setGoalToDelete(null);
     }
   };
 
@@ -496,15 +498,14 @@ const ReversePlanner = () => {
       );
       
       if (response.data.success) {
-        setSuccess('Progress logged successfully!');
+        toast({ title: 'Progress logged', variant: 'success' });
         fetchGoals();
-        fetchHealthData(); // Sync with global health data
+        fetchHealthData();
         setIsLogModalOpen(false);
         setSelectedGoal(null);
-        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      setError('Failed to log progress');
+      toast({ title: 'Failed to log progress', variant: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -593,37 +594,31 @@ const ReversePlanner = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Reverse Health Planner</h2>
-          <p className="text-sm sm:text-base text-slate-600">Set your goals and let AI guide you backwards to achieve them.</p>
+          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Reverse Health Planner</h2>
+          <p className="text-sm sm:text-base text-[#5f697a]">Set your goals and let AI guide you backwards to achieve them.</p>
         </div>
         <Button className="w-full sm:w-auto" onClick={() => { setSelectedGoal(null); setIsGoalModalOpen(true); }}>
           <Plus size={18} className="mr-2" /> Add Goal
         </Button>
       </div>
 
-      {/* Messages */}
-      {success && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-          <CheckCircle size={20} className="text-green-500" />
-          <p className="text-green-700">{success}</p>
-        </div>
-      )}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-          <AlertCircle size={20} className="text-red-500" />
-          <p className="text-red-700">{error}</p>
-          <button onClick={() => setError('')} className="ml-auto">
-            <X size={18} className="text-red-500" />
-          </button>
-        </div>
-      )}
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={!!goalToDelete}
+        title="Delete this goal?"
+        description="This action cannot be undone. All progress data for this goal will be lost."
+        confirmLabel="Delete Goal"
+        variant="danger"
+        onConfirm={confirmDeleteGoal}
+        onClose={() => setGoalToDelete(null)}
+      />
 
       {/* Goals Grid */}
       {goals.length === 0 ? (
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 text-center">
-          <Target size={48} className="mx-auto text-slate-300 mb-4" />
-          <h3 className="text-lg font-bold text-slate-800 mb-2">No goals yet</h3>
-          <p className="text-slate-500 mb-4">Create your first health goal to start tracking your progress.</p>
+        <div className="dash-card-static text-center !p-8">
+          <Target size={48} className="mx-auto text-[#e8eaf9] mb-4" />
+          <h3 className="text-lg font-heading font-bold text-[#0b1030] mb-2">No goals yet</h3>
+          <p className="text-[#5f697a] mb-4">Create your first health goal to start tracking your progress.</p>
           <Button onClick={() => setIsGoalModalOpen(true)}>
             <Plus size={18} className="mr-2" /> Create First Goal
           </Button>
@@ -646,10 +641,12 @@ const ReversePlanner = () => {
       {goals.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Weekly Chart */}
-          <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="lg:col-span-2 dash-card-static">
             <div className="flex items-center gap-2 mb-4 sm:mb-6">
-              <TrendingUp size={18} className="text-primary-500" />
-              <h3 className="font-bold text-sm sm:text-base text-slate-800">Weekly Goal Completion</h3>
+              <div className="dash-icon-badge bg-[#506cd7]">
+                <TrendingUp size={20} className="text-white" />
+              </div>
+              <h3 className="dash-heading text-sm sm:text-base">Weekly Goal Completion</h3>
             </div>
             <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%" minHeight={192}>
@@ -659,7 +656,7 @@ const ReversePlanner = () => {
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} domain={[0, 100]} />
                   <Tooltip 
                     cursor={{fill: '#f8fafc'}}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                    contentStyle={{ borderRadius: '16px', border: '1px solid rgba(80, 108, 215, 0.12)', boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}
                     formatter={(value) => [`${value}%`, 'Progress']}
                   />
                   <Bar dataKey="progress" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
@@ -669,10 +666,12 @@ const ReversePlanner = () => {
           </div>
 
           {/* AI Suggestions */}
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="dash-card-static">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={18} className="text-amber-500" />
-              <h3 className="font-bold text-sm sm:text-base text-slate-800">AI Suggestions</h3>
+              <div className="dash-icon-badge bg-amber-500">
+                <Sparkles size={20} className="text-white" />
+              </div>
+              <h3 className="dash-heading text-sm sm:text-base">AI Suggestions</h3>
             </div>
             <div className="space-y-3 sm:space-y-4">
               {suggestions.map((suggestion, index) => (
@@ -683,12 +682,12 @@ const ReversePlanner = () => {
                       suggestion.priority === 'medium' ? 'text-amber-500' : 'text-green-500'
                     } />
                   </div>
-                  <p className="text-sm text-slate-700">{suggestion.text}</p>
+                  <p className="text-sm text-[#5f697a]">{suggestion.text}</p>
                 </div>
               ))}
               
               {suggestions.length === 0 && (
-                <p className="text-sm text-slate-500 text-center py-4">
+                <p className="text-sm text-[#5f697a] text-center py-4">
                   Complete some progress to get personalized suggestions!
                 </p>
               )}
@@ -696,19 +695,19 @@ const ReversePlanner = () => {
             
             {/* Estimated Completion */}
             {estimatedCompletion && (
-              <div className="mt-6 pt-6 border-t border-slate-100">
+              <div className="mt-6 pt-6 border-t border-[#e8eaf9]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar size={14} className="text-slate-500" />
-                  <span className="text-sm text-slate-600">Estimated Completion</span>
+                  <Calendar size={14} className="text-[#5f697a]" />
+                  <span className="text-sm text-[#5f697a]">Estimated Completion</span>
                 </div>
-                <span className="text-lg font-bold text-primary-600">{estimatedCompletion.date}</span>
-                <div className="w-full bg-slate-100 h-2 rounded-full mt-3">
+                <span className="text-lg font-heading font-bold text-[#506cd7]">{estimatedCompletion.date}</span>
+                <div className="w-full bg-[#f0f1fc] h-2 rounded-full mt-3">
                   <div 
                     className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-500" 
                     style={{ width: `${estimatedCompletion.progress}%` }}
                   />
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-[#5f697a] mt-2">
                   Overall progress: {estimatedCompletion.progress}%
                 </p>
               </div>

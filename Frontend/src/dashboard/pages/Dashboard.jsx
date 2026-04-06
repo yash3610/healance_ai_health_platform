@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+import { motion } from 'framer-motion';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { 
+import {
   Activity, Heart, TrendingUp, AlertCircle, Brain, Footprints, Droplets, Target, Coins, Calendar,
-  Bell, BellRing, X, Plus, Minus, Volume2
+  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle
 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
+import { SkeletonCard, SkeletonChart, SkeletonSchedule, SkeletonRiskCard } from '../../shared/ui/Skeleton';
+import EmptyState from '../../shared/ui/EmptyState';
+import DashReveal from '../../shared/ui/DashReveal';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL } from '../../constants/config';
 
 const data = [
   { name: 'Mon', score: 65, heart: 72 },
@@ -23,20 +26,20 @@ const data = [
 ];
 
 const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAction, actionLabel }) => (
-  <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 h-full">
+  <div className="dash-card h-full">
     <div className="flex justify-between items-start mb-3 sm:mb-4">
       <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm font-medium text-slate-500 truncate">{title}</p>
-        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-          {value} <span className="text-xs sm:text-sm font-normal text-slate-400">{unit}</span>
+        <p className="text-xs sm:text-sm font-medium text-[#5f697a] truncate">{title}</p>
+        <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030] mt-1">
+          {value} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">{unit}</span>
         </h3>
       </div>
-      <div className={`p-2 sm:p-3 rounded-xl ${color} flex-shrink-0`}>
-        <Icon size={18} className="text-white sm:w-5 sm:h-5" />
+      <div className={`dash-icon-badge ${color}`}>
+        <Icon size={20} className="text-white" />
       </div>
     </div>
     {subtext ? (
-      <div className="text-xs sm:text-sm text-slate-500">
+      <div className="text-xs sm:text-sm text-[#5f697a]">
         {subtext}
       </div>
     ) : (
@@ -44,13 +47,13 @@ const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAc
         <span className="text-green-500 font-medium flex items-center">
           <TrendingUp size={14} className="mr-1" /> {change}
         </span>
-        <span className="text-slate-400 ml-2">vs last week</span>
+        <span className="text-[#6a7283] ml-2">vs last week</span>
       </div>
     )}
     {onAction && (
-      <button 
+      <button
         onClick={onAction}
-        className="mt-3 w-full text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center justify-center gap-1 py-2 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+        className="mt-3 w-full text-xs font-medium text-[#506cd7] hover:text-[#4753bf] flex items-center justify-center gap-1 py-2 bg-[#f0f1fc] hover:bg-[#e8eaf9] rounded-lg transition-colors"
       >
         <Bell size={12} /> {actionLabel || 'Set Reminder'}
       </button>
@@ -89,25 +92,25 @@ const WaterTracker = ({ onSetReminder, reminderActive }) => {
   };
 
   return (
-    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="dash-card">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-2">
-          <div className="p-2 sm:p-3 rounded-xl bg-blue-500">
-            <Droplets size={18} className="text-white sm:w-5 sm:h-5" />
+          <div className="dash-icon-badge bg-blue-500">
+            <Droplets size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-medium text-slate-500">Water Intake</p>
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-              {waterIntake.toFixed(1)} <span className="text-xs sm:text-sm font-normal text-slate-400">/ 3 L</span>
+            <p className="text-xs sm:text-sm font-medium text-[#5f697a]">Water Intake</p>
+            <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
+              {waterIntake.toFixed(1)} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">/ 3 L</span>
             </h3>
           </div>
         </div>
         <button
           onClick={onSetReminder}
           className={`p-2 rounded-lg transition-colors ${
-            reminderActive 
-              ? 'bg-blue-100 text-blue-600' 
-              : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+            reminderActive
+              ? 'bg-blue-100 text-blue-600'
+              : 'bg-[#f0f1fc] hover:bg-[#e8eaf9] text-[#5f697a]'
           }`}
           title={reminderActive ? 'Reminder Active' : 'Set Water Reminder'}
         >
@@ -118,31 +121,33 @@ const WaterTracker = ({ onSetReminder, reminderActive }) => {
       {/* Glass Visualization */}
       <div className="flex flex-wrap gap-2 mb-4">
         {Array.from({ length: target }).map((_, i) => (
-          <div 
+          <div
             key={i}
             className={`w-6 h-8 rounded-md transition-all ${
-              i < glasses ? 'bg-blue-500' : 'bg-slate-100'
+              i < glasses ? 'bg-blue-500' : 'bg-[#f0f1fc]'
             }`}
           />
         ))}
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[#5f697a]">
           {remaining > 0 ? `${remaining} glasses remaining` : '🎉 Goal reached!'}
         </p>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={handleRemoveGlass}
             disabled={waterIntake <= 0}
-            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            aria-label="Remove one glass of water"
           >
-            <Minus size={16} className="text-slate-600" />
+            <Minus size={16} className="text-[#5f697a]" />
           </button>
-          <button 
+          <button
             onClick={handleAddGlass}
             disabled={waterIntake >= 3}
-            className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            aria-label="Add one glass of water"
           >
             <Plus size={16} className="text-blue-600" />
           </button>
@@ -166,28 +171,28 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b1030]/50 backdrop-blur-sm">
+      <div className="bg-white rounded-[20px] w-full max-w-sm p-6" style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <h3 className="text-lg font-heading font-bold text-[#0b1030] flex items-center gap-2">
             <Droplets className="text-blue-500" /> Water Reminder
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg">
-            <X size={20} className="text-slate-500" />
+          <button onClick={onClose} className="p-1.5 hover:bg-[#f0f1fc] rounded-lg">
+            <X size={20} className="text-[#5f697a]" />
           </button>
         </div>
 
-        <p className="text-sm text-slate-600 mb-4">
+        <p className="text-sm text-[#5f697a] mb-4">
           Set a reminder to drink water at regular intervals throughout the day.
         </p>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-slate-700 mb-2">Remind me every</label>
+          <label className="block text-sm font-medium text-[#0b1030] mb-2">Remind me every</label>
           <div className="flex items-center gap-3">
             <select
               value={interval}
               onChange={(e) => setInterval(Number(e.target.value))}
-              className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              className="dash-input flex-1"
             >
               <option value={15}>15 minutes</option>
               <option value={30}>30 minutes</option>
@@ -213,7 +218,7 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
 };
 
 const Dashboard = () => {
-  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData } = useHealthData();
+  const { dailySteps, stepsGoal, goalsCount, coins, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
   
   const [waterReminderActive, setWaterReminderActive] = useState(false);
   const [waterReminderInterval, setWaterReminderInterval] = useState(30);
@@ -344,44 +349,71 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Stats Grid */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <StatCard 
-          title="Daily Steps" 
-          value={stepsFormatted} 
-          unit={`/ ${stepsGoalFormatted}`} 
-          change="+12%" 
-          icon={Footprints} 
-          color="bg-orange-500" 
-          subtext={`${stepsProgress}% of daily goal`}
-        />
-        <WaterTracker 
-          onSetReminder={() => waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true)}
-          reminderActive={waterReminderActive}
-        />
-        <StatCard 
-          title="Active Goals" 
-          value={goalsCount.toString()} 
-          unit="ongoing" 
-          icon={Target} 
-          color="bg-purple-500" 
-          subtext="Track your progress"
-        />
-        <StatCard 
-          title="Walk & Earn" 
-          value={coins.toString()} 
-          unit="coins" 
-          icon={Coins} 
-          color="bg-yellow-500" 
-          subtext="Redeemable for coupons"
-        />
+        {[
+          <StatCard
+            key="steps"
+            title="Daily Steps"
+            value={stepsFormatted}
+            unit={`/ ${stepsGoalFormatted}`}
+            change="+12%"
+            icon={Footprints}
+            color="bg-orange-500"
+            subtext={`${stepsProgress}% of daily goal`}
+          />,
+          <WaterTracker
+            key="water"
+            onSetReminder={() => waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true)}
+            reminderActive={waterReminderActive}
+          />,
+          <StatCard
+            key="goals"
+            title="Active Goals"
+            value={goalsCount.toString()}
+            unit="ongoing"
+            icon={Target}
+            color="bg-purple-500"
+            subtext="Track your progress"
+          />,
+          <StatCard
+            key="coins"
+            title="Walk & Earn"
+            value={coins.toString()}
+            unit="coins"
+            icon={Coins}
+            color="bg-yellow-500"
+            subtext="Redeemable for coupons"
+          />
+        ].map((card, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.08 }}
+          >
+            {card}
+          </motion.div>
+        ))}
       </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+          <SkeletonChart />
+          <SkeletonSchedule />
+        </div>
+      ) : (
+      <DashReveal delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="lg:col-span-2 dash-card-static">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base">Weekly Health Trends</h3>
-            <select className="text-sm border-none bg-slate-50 rounded-lg px-3 py-1 text-slate-600 focus:ring-0">
+            <h3 className="dash-heading text-sm sm:text-base">Weekly Health Trends</h3>
+            <select className="text-sm border-none bg-[#f0f1fc] rounded-lg px-3 py-1 text-[#5f697a] focus:ring-0">
               <option>Last 7 Days</option>
               <option>Last Month</option>
             </select>
@@ -398,8 +430,21 @@ const Dashboard = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div className="bg-white px-4 py-3 rounded-2xl border border-[#e8eaf9]" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
+                        <p className="text-xs font-bold text-[#0b1030] mb-1">{label}</p>
+                        {payload.map((entry, i) => (
+                          <p key={i} className="text-sm text-[#5f697a]">
+                            <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: entry.color }} />
+                            Health Score: <span className="font-bold text-[#0b1030]">{entry.value}</span>
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  }}
                 />
                 <Area type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
               </AreaChart>
@@ -408,89 +453,97 @@ const Dashboard = () => {
         </div>
 
         {/* Health Calendar & Reminders */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+        <div className="dash-card-static flex flex-col">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <div className="bg-primary-100 p-2 rounded-lg">
-              <Calendar size={20} className="text-primary-600" />
+            <div className="dash-icon-badge bg-[#506cd7]">
+              <Calendar size={20} className="text-white" />
             </div>
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base">Today's Schedule</h3>
+            <h3 className="dash-heading text-sm sm:text-base">Today's Schedule</h3>
           </div>
 
           <div className="space-y-4 flex-1">
-            <div className="flex items-start gap-3 pb-4 border-b border-slate-50">
+            <div className="flex items-start gap-3 pb-4 border-b border-[#f0f1fc]">
               <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-slate-400">08:00</span>
-                <span className="text-xs text-slate-400">AM</span>
+                <span className="text-xs font-bold text-[#6a7283]">08:00</span>
+                <span className="text-xs text-[#6a7283]">AM</span>
               </div>
               <div className="bg-green-50 p-3 rounded-xl w-full border-l-4 border-green-500">
-                <h4 className="text-sm font-bold text-slate-800">Morning Medication</h4>
-                <p className="text-xs text-slate-600">Vitamin D & Calcium</p>
+                <h4 className="text-sm font-bold text-[#0b1030]">Morning Medication</h4>
+                <p className="text-xs text-[#5f697a]">Vitamin D & Calcium</p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 pb-4 border-b border-slate-50">
+            <div className="flex items-start gap-3 pb-4 border-b border-[#f0f1fc]">
               <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-slate-400">05:30</span>
-                <span className="text-xs text-slate-400">PM</span>
+                <span className="text-xs font-bold text-[#6a7283]">05:30</span>
+                <span className="text-xs text-[#6a7283]">PM</span>
               </div>
               <div className="bg-blue-50 p-3 rounded-xl w-full border-l-4 border-blue-500">
-                <h4 className="text-sm font-bold text-slate-800">Evening Walk</h4>
-                <p className="text-xs text-slate-600">Goal: 30 minutes</p>
+                <h4 className="text-sm font-bold text-[#0b1030]">Evening Walk</h4>
+                <p className="text-xs text-[#5f697a]">Goal: 30 minutes</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
               <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-slate-400">09:00</span>
-                <span className="text-xs text-slate-400">PM</span>
+                <span className="text-xs font-bold text-[#6a7283]">09:00</span>
+                <span className="text-xs text-[#6a7283]">PM</span>
               </div>
               <div className="bg-purple-50 p-3 rounded-xl w-full border-l-4 border-purple-500">
-                <h4 className="text-sm font-bold text-slate-800">Sleep Routine</h4>
-                <p className="text-xs text-slate-600">No screen time</p>
+                <h4 className="text-sm font-bold text-[#0b1030]">Sleep Routine</h4>
+                <p className="text-xs text-[#5f697a]">No screen time</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </DashReveal>
+      )}
 
       {/* Risk Summary & Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <SkeletonRiskCard />
+          <SkeletonRiskCard />
+        </div>
+      ) : (
+      <DashReveal delay={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
+      >
+        <div className="dash-card">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <div className="flex items-center gap-2">
-              <div className="bg-red-100 p-2 rounded-lg">
-                <Activity size={20} className="text-red-600" />
+              <div className="dash-icon-badge bg-red-500">
+                <Activity size={20} className="text-white" />
               </div>
-              <h3 className="font-bold text-slate-800 text-sm sm:text-base">Latest Risk Prediction</h3>
+              <h3 className="dash-heading text-sm sm:text-base">Latest Risk Prediction</h3>
             </div>
-            <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">Low Risk</span>
+            <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full inline-flex items-center gap-1"><CheckCircle size={12} /> Low Risk</span>
           </div>
-          
+
           <div className="space-y-4">
-             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-               <span className="text-sm text-slate-600">Heart Disease Risk</span>
-               <span className="font-bold text-slate-800">12%</span>
+             <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
+               <span className="text-sm text-[#5f697a]">Heart Disease Risk</span>
+               <span className="font-bold text-[#0b1030]">12%</span>
              </div>
-             <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-               <span className="text-sm text-slate-600">Diabetes Probability</span>
-               <span className="font-bold text-slate-800">5%</span>
+             <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
+               <span className="text-sm text-[#5f697a]">Diabetes Probability</span>
+               <span className="font-bold text-[#0b1030]">5%</span>
              </div>
-             <div className="mt-4 pt-4 border-t border-slate-100">
-               <p className="text-sm text-slate-500">
+             <div className="mt-4 pt-4 border-t border-[#e8eaf9]">
+               <p className="text-sm text-[#5f697a]">
                  Based on your latest vitals, your health metrics are stable. Continue your current workout routine.
                </p>
              </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="dash-card">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <div className="bg-purple-100 p-2 rounded-lg">
-              <Brain size={20} className="text-purple-600" />
+            <div className="dash-icon-badge bg-[#506cd7]">
+              <Brain size={20} className="text-white" />
             </div>
-            <h3 className="font-bold text-slate-800">AI Insights</h3>
+            <h3 className="dash-heading text-sm sm:text-base">AI Insights</h3>
           </div>
-          
+
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
               <div className="flex items-start gap-3">
@@ -498,8 +551,8 @@ const Dashboard = () => {
                   <Activity size={14} className="text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-800">Activity Recommendation</h4>
-                  <p className="text-xs text-slate-600 mt-1">Try to increase your daily steps by 2000 to improve cardiovascular health.</p>
+                  <h4 className="text-sm font-bold text-[#0b1030]">Activity Recommendation</h4>
+                  <p className="text-xs text-[#5f697a] mt-1">Try to increase your daily steps by 2000 to improve cardiovascular health.</p>
                 </div>
               </div>
             </div>
@@ -510,14 +563,15 @@ const Dashboard = () => {
                   <AlertCircle size={14} className="text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-800">Sleep Pattern</h4>
-                  <p className="text-xs text-slate-600 mt-1">Your average sleep duration is 6h 20m. Aim for 7-8 hours.</p>
+                  <h4 className="text-sm font-bold text-[#0b1030]">Sleep Pattern</h4>
+                  <p className="text-xs text-[#5f697a] mt-1">Your average sleep duration is 6h 20m. Aim for 7-8 hours.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </DashReveal>
+      )}
 
       {/* Water Reminder Modal */}
       <WaterReminderModal

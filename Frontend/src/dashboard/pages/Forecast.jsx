@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CloudSun, Wind, Droplets, Thermometer, MapPin, RefreshCw, Loader2, AlertCircle, Sun, Cloud, CloudRain, CloudSnow, Sunrise, Sunset, TrendingUp, Heart, Activity, Bike, PersonStanding } from 'lucide-react';
 import axios from 'axios';
 import Button from '../../shared/ui/Button';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import DashReveal from '../../shared/ui/DashReveal';
+import { API_URL } from '../../constants/config';
 
 const weatherIcons = {
   Sunny: Sun,
@@ -50,7 +50,6 @@ const Forecast = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isManualCitySelected = useRef(false);
 
-  // Get user location
   const getUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -62,27 +61,25 @@ const Forecast = () => {
           });
         },
         () => {
-          // Default to Mumbai if location denied
           setLocation({ city: 'Mumbai' });
         }
       );
     }
   };
 
-  // Fetch forecast data
   const fetchForecast = async () => {
     try {
       setIsRefreshing(true);
       setError('');
       const token = localStorage.getItem('healance_token');
-      const params = location.lat 
-        ? `lat=${location.lat}&lon=${location.lon}` 
+      const params = location.lat
+        ? `lat=${location.lat}&lon=${location.lon}`
         : `city=${location.city}`;
-      
+
       const response = await axios.get(`${API_URL}/forecast?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data.success) {
         setForecast(response.data.forecast);
       }
@@ -95,18 +92,17 @@ const Forecast = () => {
     }
   };
 
-  // Fetch weekly forecast
   const fetchWeeklyForecast = async () => {
     try {
       const token = localStorage.getItem('healance_token');
-      const params = location.lat 
-        ? `lat=${location.lat}&lon=${location.lon}` 
+      const params = location.lat
+        ? `lat=${location.lat}&lon=${location.lon}`
         : `city=${location.city}`;
-      
+
       const response = await axios.get(`${API_URL}/forecast/weekly?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data.success) {
         setWeeklyForecast(response.data.forecast);
       }
@@ -144,7 +140,7 @@ const Forecast = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 size={40} className="animate-spin text-primary-500" />
+        <Loader2 size={40} className="animate-spin text-[#506cd7]" />
       </div>
     );
   }
@@ -153,16 +149,17 @@ const Forecast = () => {
     <div className="space-y-6 sm:space-y-8">
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-[16px] flex items-center gap-3">
           <AlertCircle size={20} className="text-red-500" />
           <p className="text-red-700">{error}</p>
         </div>
       )}
 
       {/* Location Selector */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
-          <MapPin size={18} className="text-primary-500" /> Quick Location Select
+      <DashReveal>
+      <div className="dash-card-static">
+        <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
+          <MapPin size={18} className="text-[#506cd7]" /> Quick Location Select
         </h3>
         <div className="flex flex-wrap gap-2">
           {['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai', 'Hyderabad', 'Kolkata'].map((city) => (
@@ -172,7 +169,7 @@ const Forecast = () => {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 location.city === city
                   ? 'bg-primary-500 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-[#f0f1fc] text-[#0b1030] hover:bg-[#e8eaf9]'
               }`}
             >
               {city}
@@ -180,20 +177,22 @@ const Forecast = () => {
           ))}
         </div>
       </div>
+      </DashReveal>
 
       {/* Main Weather Card */}
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
+      <DashReveal delay={0.1}>
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-[20px] sm:rounded-[28px] p-5 sm:p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-white blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-24 h-24 rounded-full bg-white blur-2xl"></div>
         </div>
-        
+
         <div className="relative">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-1">Health Weather Forecast</h2>
+              <h2 className="text-2xl sm:text-3xl font-heading font-bold mb-1">Health Weather Forecast</h2>
               <p className="text-sm sm:text-base text-blue-100">Plan your outdoor activities based on air quality and weather.</p>
               <div className="flex items-center gap-2 mt-2">
                 <MapPin size={16} className="text-blue-200" />
@@ -204,11 +203,11 @@ const Forecast = () => {
               <div className="text-left sm:text-right">
                 <div className="flex items-center gap-3 justify-end">
                   <WeatherIcon size={40} className="text-yellow-300" />
-                  <p className="text-4xl sm:text-5xl font-bold">{forecast ? `${forecast.temperature}${forecast.temperatureUnit || '°C'}` : 'N/A'}</p>
+                  <p className="text-4xl sm:text-5xl font-heading font-bold">{forecast ? `${forecast.temperature}${forecast.temperatureUnit || '°C'}` : 'N/A'}</p>
                 </div>
                 <p className="text-blue-100 text-lg">{forecast?.condition || 'N/A'}</p>
               </div>
-              <button 
+              <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -252,31 +251,33 @@ const Forecast = () => {
         </div>
       </div>
 
+      </DashReveal>
+
       {/* Weekly Forecast */}
       {weeklyForecast.length > 0 && (
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
-            <TrendingUp size={18} className="text-primary-500" /> 7-Day Forecast
+        <div className="dash-card-static">
+          <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
+            <TrendingUp size={18} className="text-[#506cd7]" /> 7-Day Forecast
           </h3>
           <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {weeklyForecast.map((day, index) => {
               const DayIcon = weatherIcons[day.condition] || weatherIcons.default;
               return (
-                <div 
+                <div
                   key={index}
                   className={`text-center p-2 sm:p-3 rounded-xl transition-all ${
-                    day.isToday ? 'bg-primary-50 border-2 border-primary-200' : 'bg-slate-50 hover:bg-slate-100'
+                    day.isToday ? 'bg-[#f0f1fc] border-2 border-[#506cd7]' : 'bg-[#f0f1fc]/50 hover:bg-[#f0f1fc]'
                   }`}
                 >
-                  <p className={`text-xs sm:text-sm font-semibold ${day.isToday ? 'text-primary-600' : 'text-slate-600'}`}>
+                  <p className={`text-xs sm:text-sm font-semibold ${day.isToday ? 'text-[#506cd7]' : 'text-[#5f697a]'}`}>
                     {day.day}
                   </p>
                   <DayIcon size={20} className={`mx-auto my-2 ${
                     day.condition === 'Sunny' || day.condition === 'Clear' ? 'text-yellow-500' :
-                    day.condition === 'Rain' ? 'text-blue-500' : 'text-slate-400'
+                    day.condition === 'Rain' ? 'text-blue-500' : 'text-[#6a7283]'
                   }`} />
-                  <p className="text-sm sm:text-lg font-bold text-slate-800">{day.maxTemp ?? day.temp}°</p>
-                  <p className="text-[10px] text-slate-500">{day.minTemp ?? day.temp}° min</p>
+                  <p className="text-sm sm:text-lg font-bold text-[#0b1030]">{day.maxTemp ?? day.temp}°</p>
+                  <p className="text-[10px] text-[#5f697a]">{day.minTemp ?? day.temp}° min</p>
                   <p className="text-[10px] text-blue-500 font-medium">Rain {day.rainChance ?? day.humidity}%</p>
                 </div>
               );
@@ -287,31 +288,31 @@ const Forecast = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Activity Suitability */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
+        <div className="dash-card-static">
+          <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
             <Activity size={18} className="text-green-500" /> Activity Suitability
           </h3>
           <div className="space-y-3 sm:space-y-4">
             {(forecast?.activities || []).map((activity, index) => {
               const ActivityIcon = activityIcons[activity.name] || activityIcons.default;
               return (
-                <div 
+                <div
                   key={index}
-                  className={`flex items-center justify-between p-4 rounded-xl border ${
-                    suitabilityColors[activity.suitability] || 'bg-slate-50 border-slate-100'
+                  className={`flex items-center justify-between p-4 rounded-[16px] border ${
+                    suitabilityColors[activity.suitability] || 'bg-[#f0f1fc] border-[#e8eaf9]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <ActivityIcon size={20} className="text-slate-600" />
+                    <ActivityIcon size={20} className="text-[#5f697a]" />
                     <div>
-                      <span className="font-medium text-slate-800">{activity.name}</span>
+                      <span className="font-medium text-[#0b1030]">{activity.name}</span>
                       {activity.time && (
-                        <p className="text-xs text-slate-500">{activity.time}</p>
+                        <p className="text-xs text-[#5f697a]">{activity.time}</p>
                       )}
                     </div>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    suitabilityBadgeColors[activity.suitability] || 'bg-slate-200 text-slate-800'
+                    suitabilityBadgeColors[activity.suitability] || 'bg-[#e8eaf9] text-[#0b1030]'
                   }`}>
                     {activity.suitability}
                   </span>
@@ -319,27 +320,27 @@ const Forecast = () => {
               );
             })}
             {(!forecast?.activities || forecast.activities.length === 0) && (
-              <p className="text-sm text-slate-500">No live activity insights available right now.</p>
+              <p className="text-sm text-[#5f697a]">No live activity insights available right now.</p>
             )}
           </div>
         </div>
 
         {/* Health Tips */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h3 className="font-bold text-slate-800 mb-4 text-sm sm:text-base flex items-center gap-2">
+        <div className="dash-card-static">
+          <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
             <Heart size={18} className="text-red-500" /> Health Tips for Today
           </h3>
           <div className="space-y-3">
             {(forecast?.healthTips || []).map((tip, index) => (
-              <div key={index} className="flex gap-3 p-3 bg-slate-50 rounded-xl">
-                <div className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 text-sm font-bold">
+              <div key={index} className="flex gap-3 p-3 bg-[#f0f1fc] rounded-xl">
+                <div className="w-6 h-6 rounded-full bg-[#f0f1fc] text-[#506cd7] flex items-center justify-center flex-shrink-0 text-sm font-bold border border-[#e8eaf9]">
                   {index + 1}
                 </div>
-                <p className="text-sm text-slate-700">{tip}</p>
+                <p className="text-sm text-[#5f697a]">{tip}</p>
               </div>
             ))}
             {(!forecast?.healthTips || forecast.healthTips.length === 0) && (
-              <p className="text-sm text-slate-500">No live tips available right now.</p>
+              <p className="text-sm text-[#5f697a]">No live tips available right now.</p>
             )}
           </div>
         </div>

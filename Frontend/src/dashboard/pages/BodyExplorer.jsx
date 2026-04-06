@@ -90,16 +90,16 @@ const BodyExplorer = () => {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center gap-3 mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 truncate">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-heading font-bold text-[#0b1030] truncate">
           Interactive Body Explorer
         </h2>
-        <div className="bg-white p-0.5 sm:p-1 rounded-xl border border-slate-200 flex flex-shrink-0">
+        <div className="bg-white p-0.5 sm:p-1 rounded-xl border border-[#e8eaf9] flex flex-shrink-0">
           <button
             onClick={() => setGender('male')}
             className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
               ${gender === 'male'
                 ? 'bg-red-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-50'
+                : 'text-[#5f697a] hover:bg-[#f0f1fc]'
               }`}
           >
             Male
@@ -109,7 +109,7 @@ const BodyExplorer = () => {
             className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200
               ${gender === 'female'
                 ? 'bg-red-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-50'
+                : 'text-[#5f697a] hover:bg-[#f0f1fc]'
               }`}
           >
             Female
@@ -118,8 +118,9 @@ const BodyExplorer = () => {
       </div>
 
       {/* 3D Viewer */}
-      <div className="flex-1 bg-gradient-to-b from-slate-50 to-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100
-                      relative overflow-hidden min-h-[350px] sm:min-h-[450px] lg:min-h-[550px]">
+      <div className="flex-1 bg-gradient-to-b from-[#f0f1fc] to-white rounded-[20px] border border-[#e8eaf9]
+                      relative overflow-hidden min-h-[350px] sm:min-h-[450px] lg:min-h-[550px]"
+           style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
         <AnatomyViewer
           gender={gender}
           selectedPart={selectedPart}
@@ -135,11 +136,12 @@ const BodyExplorer = () => {
           onClose={handleCloseDetail}
         />
 
-        {/* Hint - hidden on very small screens to save space */}
+        {/* Hint */}
         <div className="absolute bottom-12 sm:bottom-14 left-3 sm:left-4 z-10
                         bg-white/80 backdrop-blur-md p-2 sm:p-3 rounded-lg sm:rounded-xl
-                        border border-slate-200/60 max-w-[150px] sm:max-w-[180px] shadow-sm">
-          <p className="text-[9px] sm:text-[10px] lg:text-xs text-slate-400 flex items-center">
+                        border border-[#e8eaf9] max-w-[150px] sm:max-w-[180px]"
+             style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
+          <p className="text-[9px] sm:text-[10px] lg:text-xs text-[#6a7283] flex items-center">
             <Activity size={10} className="mr-1 sm:mr-1.5 text-red-400 flex-shrink-0" />
             <span className="hidden sm:inline">Drag to rotate, scroll to zoom</span>
             <span className="sm:hidden">Drag & pinch</span>

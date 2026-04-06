@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Heart, Droplets, Loader2, Send } from 'lucide-react';
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
+import DashReveal from '../../shared/ui/DashReveal';
 
 const initialForm = {
   age: '',
@@ -129,33 +131,34 @@ const HeartDiabetesPrediction = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-7">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Heart & Diabetes ML Prediction</h2>
-        <p className="text-sm text-slate-600 mt-1">
+      <DashReveal>
+      <div className="dash-card-static">
+        <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Heart & Diabetes ML Prediction</h2>
+        <p className="text-sm text-[#5f697a] mt-1">
           Fill details and get instant risk prediction with BMI and smart suggestions.
         </p>
 
         <form className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handlePredict}>
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Age</span>
+            <span className="text-sm font-medium text-[#0b1030]">Age</span>
             <input
               name="age"
               type="number"
               value={formData.age}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="29"
             />
             {errors.age && <span className="text-xs text-red-600">{errors.age}</span>}
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Gender</span>
+            <span className="text-sm font-medium text-[#0b1030]">Gender</span>
             <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
             >
               <option>Male</option>
               <option>Female</option>
@@ -163,74 +166,74 @@ const HeartDiabetesPrediction = () => {
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Weight (kg)</span>
+            <span className="text-sm font-medium text-[#0b1030]">Weight (kg)</span>
             <input
               name="weight"
               type="number"
               value={formData.weight}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="70"
             />
             {errors.weight && <span className="text-xs text-red-600">{errors.weight}</span>}
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Height (cm)</span>
+            <span className="text-sm font-medium text-[#0b1030]">Height (cm)</span>
             <input
               name="height"
               type="number"
               value={formData.height}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="170"
             />
             {errors.height && <span className="text-xs text-red-600">{errors.height}</span>}
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Glucose level</span>
+            <span className="text-sm font-medium text-[#0b1030]">Glucose level</span>
             <input
               name="glucose"
               type="number"
               value={formData.glucose}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="115"
             />
             {errors.glucose && <span className="text-xs text-red-600">{errors.glucose}</span>}
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Blood Pressure</span>
+            <span className="text-sm font-medium text-[#0b1030]">Blood Pressure</span>
             <input
               name="bloodPressure"
               type="number"
               value={formData.bloodPressure}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="120"
             />
             {errors.bloodPressure && <span className="text-xs text-red-600">{errors.bloodPressure}</span>}
           </label>
 
           <label className="space-y-1">
-            <span className="text-sm font-medium text-slate-700">Cholesterol</span>
+            <span className="text-sm font-medium text-[#0b1030]">Cholesterol</span>
             <input
               name="cholesterol"
               type="number"
               value={formData.cholesterol}
               onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 outline-none focus:border-emerald-500"
+              className="dash-input"
               placeholder="180"
             />
             {errors.cholesterol && <span className="text-xs text-red-600">{errors.cholesterol}</span>}
           </label>
 
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 flex flex-col justify-center">
-            <span className="text-xs font-semibold uppercase text-emerald-700">Calculated BMI</span>
-            <span className="text-2xl font-bold text-emerald-800">{bmi || '--'}</span>
-            <span className="text-xs text-emerald-700">Category: {bmiCategory}</span>
+          <div className="rounded-[20px] border border-[#e8eaf9] bg-[#f0f1fc] px-4 py-3 flex flex-col justify-center">
+            <span className="text-xs font-semibold uppercase text-[#506cd7] tracking-wide">Calculated BMI</span>
+            <span className="text-2xl font-heading font-bold text-[#0b1030]">{bmi || '--'}</span>
+            <span className="text-xs text-[#5f697a]">Category: {bmiCategory}</span>
           </div>
 
           <div className="lg:col-span-3">
@@ -247,18 +250,24 @@ const HeartDiabetesPrediction = () => {
           </div>
         </form>
       </div>
+      </DashReveal>
 
       {results && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-7 space-y-5 animate-in fade-in duration-500">
+        <motion.div
+          className="dash-card-static space-y-5"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
-              className={`rounded-xl border p-4 ${
+              className={`rounded-[20px] border p-4 ${
                 results.diabetes === 'Risk' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
               }`}
             >
               <div className="flex items-center gap-2">
                 <Droplets size={18} className={results.diabetes === 'Risk' ? 'text-red-600' : 'text-green-600'} />
-                <h3 className="font-bold text-slate-900">Diabetes Risk</h3>
+                <h3 className="font-bold text-[#0b1030]">Diabetes Risk</h3>
               </div>
               <p className={`text-lg font-bold mt-2 ${results.diabetes === 'Risk' ? 'text-red-700' : 'text-green-700'}`}>
                 {results.diabetes === 'Risk' ? '❌ Risk' : '✅ No Risk'}
@@ -266,13 +275,13 @@ const HeartDiabetesPrediction = () => {
             </div>
 
             <div
-              className={`rounded-xl border p-4 ${
+              className={`rounded-[20px] border p-4 ${
                 results.heart === 'Risk' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
               }`}
             >
               <div className="flex items-center gap-2">
                 <Heart size={18} className={results.heart === 'Risk' ? 'text-red-600' : 'text-green-600'} />
-                <h3 className="font-bold text-slate-900">Heart Risk</h3>
+                <h3 className="font-bold text-[#0b1030]">Heart Risk</h3>
               </div>
               <p className={`text-lg font-bold mt-2 ${results.heart === 'Risk' ? 'text-red-700' : 'text-green-700'}`}>
                 {results.heart === 'Risk' ? '❤️ Risk' : '✅ Safe'}
@@ -280,9 +289,9 @@ const HeartDiabetesPrediction = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 p-4">
-            <h4 className="font-semibold text-slate-900">Health Suggestions</h4>
-            <ul className="mt-2 text-sm text-slate-600 list-disc pl-5 space-y-1">
+          <div className="rounded-[16px] border border-[#e8eaf9] p-4 bg-[#f0f1fc]">
+            <h4 className="font-semibold text-[#0b1030]">Health Suggestions</h4>
+            <ul className="mt-2 text-sm text-[#5f697a] list-disc pl-5 space-y-1">
               {results.suggestions.map((suggestion) => (
                 <li key={suggestion}>{suggestion}</li>
               ))}
@@ -304,10 +313,10 @@ const HeartDiabetesPrediction = () => {
               )}
             </Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {message && <p className="text-sm font-medium text-slate-700">{message}</p>}
+      {message && <p className="text-sm font-medium text-[#5f697a]">{message}</p>}
     </div>
   );
 };

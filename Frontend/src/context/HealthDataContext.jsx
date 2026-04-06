@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import { API_URL } from '../constants/config';
 
 const HealthDataContext = createContext();
 
@@ -33,6 +32,7 @@ export const HealthDataProvider = ({ children }) => {
   
   // Fetch state to prevent multiple simultaneous calls
   const [isFetching, setIsFetching] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Update water intake in localStorage whenever it changes
   useEffect(() => {
@@ -99,6 +99,7 @@ export const HealthDataProvider = ({ children }) => {
       console.error('Failed to fetch health data:', err);
     } finally {
       setIsFetching(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -178,6 +179,10 @@ export const HealthDataProvider = ({ children }) => {
     coins,
     setCoins,
     
+    // State
+    isFetching,
+    isInitialLoad,
+
     // Functions
     fetchHealthData,
     updateGoalProgress
