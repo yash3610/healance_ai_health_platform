@@ -367,10 +367,7 @@ const ReversePlanner = () => {
   // Fetch goals
   const fetchGoals = async () => {
     try {
-      const token = localStorage.getItem('healance_token');
-      const response = await axios.get(`${API_URL}/goals`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/goals`, { withCredentials: true });
       if (response.data.success) {
         setGoals(response.data.goals);
       }
@@ -384,10 +381,7 @@ const ReversePlanner = () => {
   // Fetch AI suggestions
   const fetchSuggestions = async () => {
     try {
-      const token = localStorage.getItem('healance_token');
-      const response = await axios.get(`${API_URL}/goals/suggestions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/goals/suggestions`, { withCredentials: true });
       if (response.data.success) {
         setSuggestions(response.data.suggestions);
       }
@@ -440,17 +434,12 @@ const ReversePlanner = () => {
     setIsSaving(true);
     setError('');
     try {
-      const token = localStorage.getItem('healance_token');
       let response;
       
       if (goalId) {
-        response = await axios.put(`${API_URL}/goals/${goalId}`, data, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        response = await axios.put(`${API_URL}/goals/${goalId}`, data, { withCredentials: true });
       } else {
-        response = await axios.post(`${API_URL}/goals`, data, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        response = await axios.post(`${API_URL}/goals`, data, { withCredentials: true });
       }
       
       if (response.data.success) {
@@ -473,10 +462,7 @@ const ReversePlanner = () => {
   const confirmDeleteGoal = async () => {
     if (!goalToDelete) return;
     try {
-      const token = localStorage.getItem('healance_token');
-      await axios.delete(`${API_URL}/goals/${goalToDelete}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_URL}/goals/${goalToDelete}`, { withCredentials: true });
       toast({ title: 'Goal deleted', variant: 'success' });
       fetchGoals();
       fetchHealthData();
@@ -491,10 +477,9 @@ const ReversePlanner = () => {
   const handleLogProgress = async (goalId, value) => {
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('healance_token');
       const response = await axios.post(`${API_URL}/goals/${goalId}/progress`, 
         { value },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       
       if (response.data.success) {

@@ -55,15 +55,10 @@ export const HealthDataProvider = ({ children }) => {
     if (isFetching) return;
     
     try {
-      const token = localStorage.getItem('healance_token');
-      if (!token) return;
-
       setIsFetching(true);
 
       // Fetch goals
-      const goalsResponse = await axios.get(`${API_URL}/goals`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const goalsResponse = await axios.get(`${API_URL}/goals`, { withCredentials: true });
       
       if (goalsResponse.data.success) {
         const goals = goalsResponse.data.goals;
@@ -85,9 +80,7 @@ export const HealthDataProvider = ({ children }) => {
 
       // Fetch walk & earn data
       try {
-        const walkEarnResponse = await axios.get(`${API_URL}/walk-earn/summary`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const walkEarnResponse = await axios.get(`${API_URL}/walk-earn/summary`, { withCredentials: true });
         if (walkEarnResponse.data.success) {
           setCoins(walkEarnResponse.data.totalCoins || 0);
         }
@@ -106,15 +99,12 @@ export const HealthDataProvider = ({ children }) => {
   // Update goal progress in backend
   const updateGoalProgress = async (goalType, value) => {
     try {
-      const token = localStorage.getItem('healance_token');
-      if (!token) return;
-
       const goal = activeGoals.find(g => g.type === goalType);
       if (goal) {
         await axios.post(
           `${API_URL}/goals/${goal._id}/progress`,
           { value },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { withCredentials: true }
         );
         
         // Update local state
@@ -134,11 +124,7 @@ export const HealthDataProvider = ({ children }) => {
 
   // Initialize data on mount
   useEffect(() => {
-    const token = localStorage.getItem('healance_token');
-    // Only fetch health data if user is logged in
-    if (token) {
-      fetchHealthData();
-    }
+    fetchHealthData();
     
     // Reset water intake at midnight
     const now = new Date();
