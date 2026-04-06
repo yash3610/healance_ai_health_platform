@@ -1,4 +1,4 @@
-import { Suspense, useRef, useCallback, useState, useEffect } from 'react';
+import React, { Suspense, useRef, useCallback, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,7 +7,6 @@ import AnatomyModel from './AnatomyModel';
 import AnatomyLabels from './AnatomyLabels';
 import ViewerControls from './ViewerControls';
 import LayerPanel from './LayerPanel';
-import PartLabel from './PartLabel';
 import LoadingOverlay from './LoadingOverlay';
 
 const DEFAULT_CAMERA = {
@@ -15,6 +14,38 @@ const DEFAULT_CAMERA = {
   target: [0, 0.85, 0],
   fov: 40,
 };
+
+class SceneErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error) {
+    this.props.onError?.(error);
+    console.error('Body Explorer failed to load 3D scene:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+const ModelErrorOverlay = () => (
+  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-white z-20 px-6 text-center">
+    <p className="text-base font-semibold text-slate-800">Could not load the 3D model</p>
+    <p className="text-sm text-slate-500 mt-2 max-w-md">
+      Please refresh the page. If the issue continues, check your connection and verify the model file is available.
+    </p>
+  </div>
+);
 
 function Scene({ gender, activeLayer, selectedPart, onPartClick, onHover, onControlsReady, showLabels, onLabelAnchorsComputed }) {
   const orbitRef = useRef();
@@ -110,22 +141,12 @@ function Scene({ gender, activeLayer, selectedPart, onPartClick, onHover, onCont
 
 const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer, onLayerChange }) => {
   const controlsRef = useRef(null);
-  const [labelInfo, setLabelInfo] = useState({ name: null, x: 0, y: 0 });
-  const [showLabels, setShowLabels] = useState(true);
+  const showLabels = false;
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasSceneError, setHasSceneError] = useState(false);
   const containerRef = useRef();
 
-  const handleHover = useCallback((bodyPartKey, displayName, pointer) => {
-    if (displayName && pointer) {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = ((pointer.x + 1) / 2) * rect.width;
-        const y = ((1 - pointer.y) / 2) * rect.height;
-        setLabelInfo({ name: displayName, x, y });
-      }
-    } else {
-      setLabelInfo({ name: null, x: 0, y: 0 });
-    }
+  const handleHover = useCallback((bodyPartKey) => {
     onHover?.(bodyPartKey);
   }, [onHover]);
 
@@ -192,7 +213,8 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
   return (
     <div ref={containerRef} className="absolute inset-0">
       {/* Loading overlay shown until model renders */}
-      {!isLoaded && <LoadingOverlay />}
+      {!isLoaded && !hasSceneError && <LoadingOverlay />}
+      {hasSceneError && <ModelErrorOverlay />}
 
       <Canvas
         dpr={[1, 1.5]}
@@ -210,18 +232,29 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
           gl.toneMappingExposure = 1.1;
         }}
       >
-        <Suspense fallback={null}>
-          <Scene
-            gender={gender}
-            activeLayer={activeLayer}
-            selectedPart={selectedPart}
-            onPartClick={onPartClick}
-            onHover={handleHover}
-            onControlsReady={handleControlsReady}
-            showLabels={showLabels}
-            onLabelAnchorsComputed={() => setIsLoaded(false)}
-          />
-        </Suspense>
+        <SceneErrorBoundary
+          fallback={null}
+          onError={() => {
+            setHasSceneError(true);
+            setIsLoaded(false);
+          }}
+        >
+          <Suspense fallback={null}>
+            <Scene
+              gender={gender}
+              activeLayer={activeLayer}
+              selectedPart={selectedPart}
+              onPartClick={onPartClick}
+              onHover={handleHover}
+              onControlsReady={handleControlsReady}
+              showLabels={showLabels}
+              onLabelAnchorsComputed={() => {
+                setIsLoaded(true);
+                setHasSceneError(false);
+              }}
+            />
+          </Suspense>
+        </SceneErrorBoundary>
       </Canvas>
 
       {/* Layer panel (left side) */}
@@ -232,12 +265,7 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
         onResetCamera={handleResetCamera}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        showLabels={showLabels}
-        onToggleLabels={() => setShowLabels(!showLabels)}
       />
-
-      {/* Cursor-following tooltip */}
-      <PartLabel name={labelInfo.name} x={labelInfo.x} y={labelInfo.y} />
     </div>
   );
 };

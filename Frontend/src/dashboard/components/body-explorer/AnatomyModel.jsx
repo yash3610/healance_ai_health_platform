@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { classifyAllMeshes } from './regionDetector';
 import { LAYER_PALETTES, MATERIAL_CONFIG, HIGHLIGHT_COLOR, SELECTED_COLOR } from './bodyGeometry';
 
-const MODEL_PATH = '/assets/models/Model.glb';
+const MODEL_PATH = `${import.meta.env.BASE_URL}assets/models/Model.glb`;
 const TARGET_HEIGHT = 1.7;
 
 const AnatomyModel = ({ gender, activeLayer = 'muscles', selectedPart, onPartClick, onHover, onHoveredGroupChange, onLabelAnchorsComputed }) => {
