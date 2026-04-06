@@ -18,11 +18,13 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 - Health data tracking and dashboard stats APIs
 - AI health assistant and medicine information chatbot
 - Risk analysis and recommendation APIs
+- Python ML integration for heart/diabetes and symptom-disease predictions
 - Goal management with progress logging
 - Walk-and-earn points and rewards redemption
 - Notification center and reminder APIs
 - Blog and bookmark APIs
 - Contact form and support ticket system with file attachments
+- SMS and WhatsApp OTP workflows
 
 ---
 
@@ -37,7 +39,9 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 | JWT | 9.x | Authentication |
 | bcryptjs | 2.4.x | Password hashing |
 | Multer | 1.4.x | Upload handling |
-| Nodemailer | 6.9.x | Emails |
+| Nodemailer | 8.0.x | Emails |
+| Twilio | 5.5.x | SMS and WhatsApp messaging |
+| OpenAI | 4.x | Optional chatbot enhancement |
 | Helmet | 7.x | Security headers |
 | express-rate-limit | 7.x | API rate limiting |
 
@@ -143,7 +147,7 @@ From `Backend/.env.example`:
 | `CLIENT_URL` | Yes | `http://localhost:5173` | CORS allowed frontend origin |
 | `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
-| `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Weather-based forecast |
+| `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Optional OpenWeather key (fallback to Open-Meteo) |
 | `OPENWEATHER_API_KEY` | No | empty | Alternate weather key variable name |
 | `WEATHER_API_BASE_URL` | No | `https://api.openweathermap.org/data/2.5` | Weather API base URL |
 | `WEATHER_UNITS` | No | `metric` | Units for weather temperature/speed |
@@ -152,8 +156,18 @@ From `Backend/.env.example`:
 | `EMAIL_USER` | No | `your-email@gmail.com` | SMTP user |
 | `EMAIL_PASS` | No | `your-app-password` | SMTP password/app password |
 | `ADMIN_EMAIL` | No | `agroreach01@gmail.com` | Admin alert email |
+| `WHATSAPP_ACCESS_TOKEN` | No | `your-whatsapp-access-token` | WhatsApp Cloud API access token |
+| `WHATSAPP_PHONE_NUMBER_ID` | No | `your-whatsapp-phone-number-id` | WhatsApp sender phone number ID |
+| `TWILIO_ACCOUNT_SID` | No | `your_twilio_account_sid` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | No | `your_twilio_auth_token` | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | No | `+12345678900` | Twilio sender number |
+| `PYTHON_BIN` | No | `python` (Windows) / `python3` (Unix) | Python executable path override for ML scripts |
 | `MAX_FILE_SIZE` | No | `10485760` | Upload size limit in bytes |
 | `UPLOAD_PATH` | No | `./uploads` | Upload path reference |
+
+---
+
+Forecast note: OpenWeather variables are optional. If unavailable, forecast endpoints automatically use Open-Meteo weather, air quality, and pollen services.
 
 ---
 
@@ -287,6 +301,8 @@ Base URL: `http://localhost:5000/api`
 | POST | `/walk-earn/redeem/:rewardId` | Protected | Redeem reward |
 | GET | `/walk-earn/redemptions` | Protected | Redemption history |
 
+Alias support: `/walkearn/*` is also mounted for backward compatibility.
+
 ### Forecast
 
 | Method | Endpoint | Auth | Description |
@@ -331,6 +347,36 @@ Base URL: `http://localhost:5000/api`
 | POST | `/notifications/activity` | Protected | Create activity notification |
 | PUT | `/notifications/:id/read` | Protected | Mark one notification as read |
 | DELETE | `/notifications/:id` | Protected | Delete one notification |
+
+### Predict (ML)
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/predict/diabetes` | Protected | Diabetes risk prediction |
+| POST | `/predict/heart` | Protected | Heart risk prediction |
+| POST | `/predict/all` | Protected | Combined heart + diabetes prediction |
+| POST | `/predict/symptoms-disease` | Protected | Symptom-to-disease prediction |
+| GET | `/predict/symptoms-history` | Protected | Symptom prediction history |
+| POST | `/predict/share-whatsapp` | Protected | Share heart/diabetes prediction on WhatsApp |
+| POST | `/predict/share-symptoms-whatsapp` | Protected | Share symptom prediction on WhatsApp |
+
+### SMS
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/sms/send` | Public | Send SMS |
+| POST | `/sms/test` | Public | Send test SMS |
+| POST | `/sms/send-login-otp` | Public | Send login OTP via SMS |
+| POST | `/sms/verify-login-otp` | Public | Verify login OTP via SMS |
+
+### WhatsApp
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/whatsapp/send-login-otp` | Public | Send login OTP via WhatsApp |
+| POST | `/whatsapp/verify-login-otp` | Public | Verify login OTP via WhatsApp |
+| POST | `/whatsapp/send-signup-otp` | Public | Send signup OTP via WhatsApp |
+| POST | `/whatsapp/verify-signup-otp` | Public | Verify signup OTP via WhatsApp |
 
 ---
 
@@ -510,6 +556,22 @@ This seeds:
 node tests/testFdaApi.js --detailed aspirin
 ```
 
+### Test Prediction APIs
+
+```bash
+# Optional when backend runs on 5000 (script fallback is 5001)
+# PowerShell: $env:API_BASE_URL="http://localhost:5000/api"
+# Unix/macOS: export API_BASE_URL="http://localhost:5000/api"
+
+# PowerShell
+$env:HEALANCE_TOKEN="your_jwt_token"
+node tests/testPredictApi.js
+
+# Unix/macOS
+export HEALANCE_TOKEN="your_jwt_token"
+node tests/testPredictApi.js
+```
+
 ---
 
 ## NPM Scripts
@@ -518,6 +580,7 @@ node tests/testFdaApi.js --detailed aspirin
 | ------ | ----------- |
 | `npm start` | Run production server |
 | `npm run dev` | Run development server with nodemon |
+| `npm run dev:clean` | Free port 5001 and restart dev server |
 | `npm run seed` | Seed initial demo data |
 
 ---
