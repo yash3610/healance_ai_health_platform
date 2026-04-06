@@ -98,13 +98,13 @@ export default function TestimonialsSection({ items, sectionClassName = 'section
         <div className="mx-auto max-w-3xl text-center">
           <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#5666d4]">
             <img src="/assets/images/icon-sub-heading.svg" alt="" className="h-4 w-4" />
-            <span>Testimonials</span>
+            <span>Member Stories</span>
           </p>
           <h2 className="mt-3 text-3xl font-semibold leading-tight text-[#0b1030] md:text-[3rem] md:leading-[1.08]">
-            Patient stories of care and recovery
+            Real progress from personalized daily plans
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base text-[#5f697a] md:text-lg">
-            Discover inspiring stories of recovery and healing from those we&apos;ve had the privilege to serve.
+            See how members improved hydration, activity, sleep, and consistency with AI-guided routines.
           </p>
         </div>
 
@@ -126,7 +126,7 @@ export default function TestimonialsSection({ items, sectionClassName = 'section
                 >
                   <p className="services-stars">★★★★★</p>
                   <p className="services-testimonial-text">
-                    My first appointment, but the staff was so welcoming. They took the time to listen to my concerns and made sure I felt comfortable.
+                    The daily planner kept me accountable. In just a few weeks, my sleep and hydration habits became consistent without feeling overwhelming.
                   </p>
                   <div className="services-testimonial-user">
                     <img src={item.image} alt={item.name} />

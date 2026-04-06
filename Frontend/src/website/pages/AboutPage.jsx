@@ -11,72 +11,72 @@ import { doctorItems } from '../data/siteData';
 const approachTabs = ['Our Vision', 'Our Mission', 'Our Value'];
 
 const approachPoints = [
-  'Quality healthcare for all.',
-  'Wellness through innovation.',
-  'Compassion at every step.',
-  'Building a healthier future.'
+  'Personalized health for every lifestyle.',
+  'Wellness powered by practical AI insights.',
+  'Human-first guidance at every step.',
+  'Building sustainable long-term habits.'
 ];
 
 const whyChoosePoints = [
-  'We offer flexible hours to fit your busy schedule.',
-  'Team is committed to making you feel comfortable.',
-  'We ensure you receive prompt and effective care.',
-  'Helping you manage your health at every stage of life.'
+  'Your plan adapts daily based on your logged progress.',
+  'Simple dashboards keep your priorities clear each day.',
+  'Predictive insights help you act before health risks rise.',
+  'Built for consistency, not short-term motivation spikes.'
 ];
 
 const whyChooseCards = [
   {
     icon: '/assets/images/icon-why-choose-1.svg',
-    title: '50+ Expert Doctor'
+    title: '50+ Expert Contributors'
   },
   {
     icon: '/assets/images/icon-why-choose-2.svg',
-    title: '24/7 Instant Support'
+    title: '24/7 AI Guidance'
   },
   {
     icon: '/assets/images/icon-why-choose-3.svg',
-    title: 'Expert Medical Team'
+    title: 'Data-Driven Health Team'
   }
 ];
 
 const workSteps = [
   { no: '01', title: 'Create Account', image: '/assets/images/work-step-img-1.jpg' },
-  { no: '02', title: 'Search Doctor', image: '/assets/images/work-step-img-2.jpg' },
-  { no: '03', title: 'Schedule Appointment', image: '/assets/images/work-step-img-3.jpg' },
-  { no: '04', title: 'Start Consultation', image: '/assets/images/work-step-img-4.jpg' }
+  { no: '02', title: 'Complete Health Profile', image: '/assets/images/work-step-img-2.jpg' },
+  { no: '03', title: 'Set Goals & Planner', image: '/assets/images/work-step-img-3.jpg' },
+  { no: '04', title: 'Track Daily Progress', image: '/assets/images/work-step-img-4.jpg' }
 ];
 
 const facilities = [
   {
     iconClass: 'fa-solid fa-laptop-medical',
-    title: 'Modern Equipment',
-    text: 'Our mission is to deliver modern equipment that ensures efficiency, reliability, and superior performance.'
+    title: 'Smart Health Stack',
+    text: 'AI models, daily tracking, and intuitive dashboards work together to simplify wellness decisions.'
   },
   {
     iconClass: 'fa-solid fa-user-doctor',
-    title: 'Highly Qualified Doctor',
-    text: 'We ensure patient care through highly qualified doctors, offering expertise, trust, and personalized attention.'
+    title: 'Expert-Backed Recommendations',
+    text: 'Our recommendations are designed with clinical thinking and practical lifestyle guidance.'
   },
   {
     iconClass: 'fa-solid fa-hand-holding-medical',
-    title: 'Pain-Free Treatment',
-    text: 'Experience pain-free treatment with advanced techniques and compassionate care, ensuring your comfort at every step.'
+    title: 'Habit-First Improvement',
+    text: 'Focus on sustainable routines that improve sleep, hydration, activity, and long-term risk trends.'
   }
 ];
 
 const faqs = [
-  'What should I bring to my first appointment?',
-  'How do I schedule an appointment?',
-  'What insurance plan do you accept?',
-  'Can I get a prescription refill without an appointment?',
-  'What should I expect during my first visit?',
-  'How are treatment plans customized for individual needs?'
+  'How does Healance personalize my health plan?',
+  'How often are recommendations updated?',
+  'Is my health data secure?',
+  'Can I track water, sleep, and activity daily?',
+  'How does Reverse Planner calculate daily targets?',
+  'How are risk predictions generated for my profile?'
 ];
 
 const testimonials = [
-  { name: 'Brooklyn Simmons', role: 'Orthodontics', image: '/assets/images/author-1.jpg' },
-  { name: 'Monika Roy', role: 'Dental Hygienist', image: '/assets/images/author-2.jpg' },
-  { name: 'Albert Flores', role: 'Senior Dentist', image: '/assets/images/author-3.jpg' }
+  { name: 'Brooklyn Simmons', role: 'Working Professional', image: '/assets/images/author-1.jpg' },
+  { name: 'Monika Roy', role: 'Fitness Enthusiast', image: '/assets/images/author-2.jpg' },
+  { name: 'Albert Flores', role: 'Wellness Program Member', image: '/assets/images/author-3.jpg' }
 ];
 
 export default function AboutPage() {
@@ -85,7 +85,7 @@ export default function AboutPage() {
 
   return (
     <>
-      <PageHeader title="About Us" />
+      <PageHeader title="About Healance AI" />
 
       <section className="section-block">
         <div className="container-shell">
@@ -102,8 +102,8 @@ export default function AboutPage() {
           <div>
             <SectionTitle
               kicker="Our Approach"
-              title="Providing personalized healthcare"
-              text="We focus on personalized care to meet your unique needs, combining innovation and compassion for a truly patient-centered approach."
+              title="Delivering personalized AI health guidance"
+              text="We blend data, behavior science, and expert input to create practical daily wellness guidance for each user."
             />
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -144,8 +144,8 @@ export default function AboutPage() {
             <div className="lg:col-span-7">
               <SectionTitle
                 kicker="Why Choose Us"
-                title="Why patients trust us with their care"
-                text="Our commitment to excellence, compassion, and personalized treatment has earned the trust of countless patients."
+                title="Why members trust Healance every day"
+                text="Our focus is measurable progress through personalized plans, proactive alerts, and simple execution."
               />
             </div>
             <div className="lg:col-span-5">
@@ -179,7 +179,7 @@ export default function AboutPage() {
                 <article key={item.title} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-white">
                   <img src={item.icon} alt={item.title} className="h-10 w-10" />
                   <h3 className="mt-3 text-lg font-semibold">{item.title}</h3>
-                  <p className="mt-2 text-sm text-slate-200">Our team includes over 50 highly skilled doctors.</p>
+                  <p className="mt-2 text-sm text-slate-200">Built to make health improvement clear, trackable, and consistent.</p>
                 </article>
               ))}
             </div>
@@ -196,8 +196,7 @@ export default function AboutPage() {
             </div>
             <h2 className="home-work-title">We work to achieve better health outcomes</h2>
             <p className="home-work-text">
-              We are committed to improving health outcomes through personalized care,
-              innovative treatments, and a focus on prevention.
+              We convert daily health inputs into personalized actions so your routine keeps moving in the right direction.
             </p>
 
             <div className="work-steps-box">
@@ -221,7 +220,7 @@ export default function AboutPage() {
 
                   <div className="work-step-content">
                     <h3>{step.title}</h3>
-                    <p>Join our community by creating an account today.</p>
+                    <p>Complete one guided action at a time and build momentum.</p>
                   </div>
                 </motion.article>
               ))}
@@ -233,9 +232,9 @@ export default function AboutPage() {
       <section className="section-block">
         <div className="container-shell">
           <SectionTitle
-            kicker="Team Members"
-            title="Compassionate experts you can trust"
-            text="Our team brings together a wealth of experience, passion, and a dedication to excellence in patient care."
+            kicker="Health Team"
+            title="Experts behind your personalized wellness journey"
+            text="Our cross-functional team combines medical insight, product thinking, and AI expertise."
           />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {doctorItems.slice(0, 4).map((doctor, index) => {
@@ -277,9 +276,9 @@ export default function AboutPage() {
       <section className="section-block bg-section">
         <div className="container-shell">
           <SectionTitle
-            kicker="About Us"
-            title="Professionals dedicated to your health"
-            text="Our team of skilled professionals is committed to providing personalized, compassionate care."
+            kicker="Platform Strengths"
+            title="Built for practical, sustainable health progress"
+            text="Everything in Healance is designed to help users stay consistent and informed every day."
           />
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -302,8 +301,8 @@ export default function AboutPage() {
           </div>
 
           <p className="mt-6 text-center text-slate-600">
-            <span className="font-semibold text-brand-600">FREE</span> Let&apos;s make something great work together.
-            <Link to="/contact" className="ml-2 font-semibold text-brand-600">Get Free Quote</Link>
+            <span className="font-semibold text-brand-600">START FREE</span> Begin your personalized health journey today.
+            <Link to="/contact" className="ml-2 font-semibold text-brand-600">Talk to our team</Link>
           </p>
         </div>
       </section>
@@ -332,18 +331,18 @@ export default function AboutPage() {
                   <img src="/assets/images/icon-sub-heading.svg" alt="FAQ" className="h-5 w-5" />
                   <span>Frequently Asked Questions</span>
                 </div>
-                <h2 className="mt-3 max-w-lg text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.7rem]">Helping you understand healthcare</h2>
+                <h2 className="mt-3 max-w-lg text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.7rem]">Helping you understand personalized AI health</h2>
                 <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600 md:text-lg">
-                  Here to make your experience as seamless as possible. Explore answers to common questions about our services, policies, and patient care.
+                  Explore answers to common questions about privacy, tracking, recommendations, and plan personalization.
                 </p>
 
                 <div className="mt-8 max-w-md rounded-[1.75rem] bg-white p-5 md:p-6">
                   <div className="flex items-center gap-4">
-                    <img src="/assets/images/icon-faq-cta.svg" alt="Emergency" className="h-11 w-11" />
+                    <img src="/assets/images/icon-faq-cta.svg" alt="Support" className="h-11 w-11" />
                     <div>
-                      <p className="text-base text-slate-600">We always take care of your smile</p>
-                      <p className="mt-1 text-2xl font-semibold text-ink">24/7 Emergency</p>
-                      <p className="mt-1 text-xl text-slate-500">659-888-589</p>
+                      <p className="text-base text-slate-600">We help you stay consistent with your wellness routine</p>
+                      <p className="mt-1 text-2xl font-semibold text-ink">24/7 AI Support</p>
+                      <p className="mt-1 text-xl text-slate-500">support@healance.ai</p>
                     </div>
                   </div>
                 </div>
@@ -392,7 +391,7 @@ export default function AboutPage() {
                               transition={{ duration: 0.24, ease: 'easeOut' }}
                               className="max-w-3xl overflow-hidden text-base leading-relaxed text-slate-600 md:text-lg"
                             >
-                              For your first visit, please bring a valid ID, your insurance card, any current medications or a list of them, and any relevant medical records.
+                              Create your profile, set a target, and start logging daily progress. Healance updates recommendations as your data changes.
                             </motion.p>
                           ) : null}
                         </AnimatePresence>

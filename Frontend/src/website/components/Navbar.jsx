@@ -8,23 +8,23 @@ gsap.registerPlugin(ScrollTrigger);
 
 const links = [
   { to: '/', label: 'Home' },
-  { to: '/about', label: 'About Us' },
-  { to: '/services', label: 'Services' },
-  { to: '/blog', label: 'Blog' }
+  { to: '/about', label: 'About' },
+  { to: '/services', label: 'Features' },
+  { to: '/blog', label: 'Insights' }
 ];
 
 const pageLinks = [
-  { to: '/service-single', label: 'Service Details' },
-  { to: '/blog-single', label: 'Blog Details' },
-  { to: '/doctors', label: 'Doctors' },
-  { to: '/doctor', label: 'Doctor' },
-  { to: '/doctor-single', label: 'Doctor Details' },
-  { to: '/case-study', label: 'Case Study' },
-  { to: '/case-study-single', label: 'Case Study Details' },
+  { to: '/service-single', label: 'Feature Details' },
+  { to: '/blog-single', label: 'Article Details' },
+  { to: '/doctors', label: 'Expert Team' },
+  { to: '/doctor', label: 'Expert Profile' },
+  { to: '/doctor-single', label: 'Expert Details' },
+  { to: '/case-study', label: 'Success Stories' },
+  { to: '/case-study-single', label: 'Story Details' },
   { to: '/image-gallery', label: 'Image Gallery' },
   { to: '/video-gallery', label: 'Video Gallery' },
-  { to: '/projects', label: 'Projects' },
-  { to: '/book-appointment', label: 'Book Appointment' },
+  { to: '/projects', label: 'Platform Highlights' },
+  { to: '/book-appointment', label: 'Get Started' },
   { to: '/index-image', label: 'Index Image' },
   { to: '/faqs', label: 'FAQs' },
   { to: '/404', label: '404 Page' }
@@ -132,7 +132,7 @@ export default function Navbar() {
               to={item.to}
              
               className={({ isActive }) =>
-                `py-2 text-base font-semibold transition ${isActive ? 'text-brand-600' : 'text-[#0b1030] hover:text-brand-600'}`
+                `whitespace-nowrap py-2 text-base font-semibold transition ${isActive ? 'text-brand-600' : 'text-[#0b1030] hover:text-brand-600'}`
               }
               onClick={() => {
                 setOpen(false);
@@ -197,14 +197,14 @@ export default function Navbar() {
             to="/contact"
            
             className={({ isActive }) =>
-              `py-2 text-base font-semibold transition ${isActive ? 'text-brand-600' : 'text-[#0b1030] hover:text-brand-600'}`
+              `whitespace-nowrap py-2 text-base font-semibold transition ${isActive ? 'text-brand-600' : 'text-[#0b1030] hover:text-brand-600'}`
             }
             onClick={() => {
               setOpen(false);
               setMobilePagesOpen(false);
             }}
           >
-            Contact Us
+            Contact
           </NavLink>
           {user ? (
             <Link to="/dashboard" className="btn-primary mt-3 lg:hidden" onClick={() => setOpen(false)}>

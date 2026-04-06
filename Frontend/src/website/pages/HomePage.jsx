@@ -11,53 +11,53 @@ gsap.registerPlugin(ScrollTrigger);
 
 const services = [
   {
-    title: 'Urology',
-    text: 'Our neurology department provides expert care for conditions affecting the brain, spine, and nervous system.',
+    title: 'AI Health Assessment',
+    text: 'Daily health scoring using your activity, hydration, sleep and symptom patterns.',
     image: '/assets/images/service-img-1.jpg'
   },
   {
-    title: 'Neurology',
-    text: 'Our neurology department provides expert care for conditions affecting the brain, spine, and nervous system.',
+    title: 'Risk Prediction',
+    text: 'Get early alerts for diabetes and heart risk with actionable daily recommendations.',
     image: '/assets/images/service-img-2.jpg'
   },
   {
-    title: 'Eye Care',
-    text: 'Our neurology department provides expert care for conditions affecting the brain, spine, and nervous system.',
+    title: 'Reverse Health Planner',
+    text: 'Set a target date and follow a personalized daily plan to reach your wellness goal.',
     image: '/assets/images/service-img-3.jpg'
   }
 ];
 
 const doctors = [
-  { name: 'Dr. Esther Howard', specialty: 'Ophthalmology', image: '/assets/images/team-1.jpg' },
-  { name: 'Dr. Jenny Wilson', specialty: 'Anesthesiology', image: '/assets/images/team-2.jpg' },
-  { name: 'Dr. Kristin Watson', specialty: 'Infectious Disease', image: '/assets/images/team-3.jpg' },
-  { name: 'Dr. Arlene McCoy', specialty: 'Cardiology', image: '/assets/images/team-4.jpg' }
+  { name: 'Dr. Esther Howard', specialty: 'Preventive Care Advisor', image: '/assets/images/team-1.jpg' },
+  { name: 'Dr. Jenny Wilson', specialty: 'Lifestyle Medicine Specialist', image: '/assets/images/team-2.jpg' },
+  { name: 'Dr. Kristin Watson', specialty: 'Clinical Data Reviewer', image: '/assets/images/team-3.jpg' },
+  { name: 'Dr. Arlene McCoy', specialty: 'Cardio-Metabolic Expert', image: '/assets/images/team-4.jpg' }
 ];
 
 const posts = [
-  { title: 'Research Breakthrough in Heart Disease Treatment', date: 'December 3, 2024', image: '/assets/images/post-1.jpg' },
-  { title: "Advanced Medical Solutions for Every Patient's Needs", date: 'December 1, 2024', image: '/assets/images/post-2.jpg' },
-  { title: 'Your Trusted Partner in Comprehensive Medical Care', date: 'November 30, 2024', image: '/assets/images/post-3.jpg' }
+  { title: 'How to Build a Daily Health Routine That Sticks', date: 'December 3, 2024', image: '/assets/images/post-1.jpg' },
+  { title: 'Understanding Your AI Risk Score', date: 'December 1, 2024', image: '/assets/images/post-2.jpg' },
+  { title: 'Personalized Wellness: One Plan Does Not Fit All', date: 'November 30, 2024', image: '/assets/images/post-3.jpg' }
 ];
 
 const workSteps = [
   { no: '01', title: 'Create Account', image: '/assets/images/work-step-img-1.jpg' },
-  { no: '02', title: 'Search Doctor', image: '/assets/images/work-step-img-2.jpg' },
-  { no: '03', title: 'Schedule Appointment', image: '/assets/images/work-step-img-3.jpg' },
-  { no: '04', title: 'Start Consultation', image: '/assets/images/work-step-img-4.jpg' }
+  { no: '02', title: 'Complete Health Profile', image: '/assets/images/work-step-img-2.jpg' },
+  { no: '03', title: 'Set Goals & Planner', image: '/assets/images/work-step-img-3.jpg' },
+  { no: '04', title: 'Track Daily Progress', image: '/assets/images/work-step-img-4.jpg' }
 ];
 
 const faqs = [
-  'What should I bring to my first appointment?',
-  'How do I schedule an appointment?',
-  'What insurance plan do you accept?',
-  'Can I get a prescription refill without an appointment?'
+  'How does Healance personalize my health plan?',
+  'Is my health data secure on the platform?',
+  'Can I use Healance for daily habit tracking?',
+  'How often are AI insights and recommendations updated?'
 ];
 
 const testimonials = [
-  { name: 'Brooklyn Simmons', role: 'Orthodontics', image: '/assets/images/author-1.jpg' },
-  { name: 'Monika Roy', role: 'Dental Hygienist', image: '/assets/images/author-2.jpg' },
-  { name: 'Albert Flores', role: 'Senior Dentist', image: '/assets/images/author-3.jpg' }
+  { name: 'Brooklyn Simmons', role: 'Working Professional', image: '/assets/images/author-1.jpg' },
+  { name: 'Monika Roy', role: 'Fitness Enthusiast', image: '/assets/images/author-2.jpg' },
+  { name: 'Albert Flores', role: 'Wellness Program Member', image: '/assets/images/author-3.jpg' }
 ];
 
 export default function HomePage() {
@@ -134,19 +134,19 @@ export default function HomePage() {
               <div className="hero-original-content">
                 <p className="hero-original-kicker gsap-hero-kicker">
                   <img src="/assets/images/icon-sub-heading.svg" alt="icon" className="h-5 w-5" />
-                  <span>Your Health Our Priority</span>
+                  <span>AI-Powered Personalized Health</span>
                 </p>
                 <h1 className="hero-original-title hero-title-fx gsap-hero-title">
-                  Expert medical care
+                  Your smart daily guide
                   <br />
-                  you can rely on
+                  to better health
                 </h1>
                 <p className="hero-original-text gsap-hero-text">
-                  Experience healthcare you can trust. Our dedicated team provides compassionate, high-quality care.
+                  Track habits, predict risks, and follow a personalized wellness plan built around your lifestyle.
                 </p>
                 <div className="hero-original-actions">
                   <Link to="/book-appointment" className="btn-primary">
-                    Book A Appointment
+                    Start Your Plan
                   </Link>
                   <Link
                     to="/about"
@@ -156,9 +156,9 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <div className="hero-original-rating gsap-hero-rating">
-                  <span>Google Rating 5.0</span>
+                  <span>Community Rating 5.0</span>
                   <span>★★★★★</span>
-                  <span>based on 500 reviews</span>
+                  <span>based on 500+ wellness journeys</span>
                 </div>
               </div>
 
@@ -189,7 +189,7 @@ export default function HomePage() {
                       <img key={id} src={`/assets/images/excerpt-doctor-img-${id}.jpg`} alt={`Doctor ${id}`} />
                     ))}
                   </div>
-                  <p>Talk to our <strong>48+</strong> Doctors</p>
+                  <p>Guided by <strong>48+</strong> health experts</p>
                 </motion.div>
 
                 <motion.div
@@ -201,7 +201,7 @@ export default function HomePage() {
                   </span>
                   <div>
                     <h3>{displayCount}+</h3>
-                    <p>satisfied clients</p>
+                    <p>active members</p>
                   </div>
                 </motion.div>
               </div>
@@ -220,7 +220,7 @@ export default function HomePage() {
         <div className="container-shell">
           <SectionTitle
             kicker="Our Services"
-            title="Comprehensive services for your health"
+            title="AI tools for everyday personalized health"
           />
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
@@ -242,9 +242,9 @@ export default function HomePage() {
       <section className="section-block reveal-on-scroll">
         <div className="container-shell">
           <SectionTitle
-            kicker="Team Members"
-            title="Compassionate experts you can trust"
-            text="Our team brings together a wealth of experience, passion, and dedication to patient care."
+            kicker="Health Team"
+            title="Experts behind your wellness journey"
+            text="Our care and product team works together to deliver practical and personalized health guidance."
           />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {doctors.map((doctor, index) => (
@@ -279,14 +279,14 @@ export default function HomePage() {
           <div>
             <SectionTitle
               kicker="Why Choose Us"
-              title="Why patients trust us with their care"
-              text="Our commitment to excellence, compassion, and personalized treatment has earned the trust of countless patients."
+              title="Why users trust Healance daily"
+              text="We combine medical logic with AI personalization so every recommendation is useful, simple, and actionable."
             />
             <ul className="space-y-3 text-slate-700">
-              <li>We offer flexible hours to fit your busy schedule.</li>
-              <li>Team is committed to making you feel comfortable.</li>
-              <li>We ensure you receive prompt and effective care.</li>
-              <li>Helping you manage your health at every stage of life.</li>
+                <li>Daily goals adapt to your real progress and routine.</li>
+                <li>AI insights help you make faster, smarter health decisions.</li>
+                <li>Risk prediction supports early preventive action.</li>
+                <li>One dashboard for water, sleep, activity, and symptoms.</li>
             </ul>
           </div>
           <div className="relative">
@@ -313,10 +313,9 @@ export default function HomePage() {
               <img src="/assets/images/icon-sub-heading.svg" alt="How We Work" className="h-5 w-5" />
               <span>How We Work</span>
             </div>
-            <h2 className="home-work-title">We work to achieve better health outcomes</h2>
+            <h2 className="home-work-title">A simple daily flow for measurable health progress</h2>
             <p className="home-work-text">
-              We are committed to improving health outcomes through personalized care,
-              innovative treatments, and a focus on prevention.
+              Healance turns your daily inputs into personalized action steps so healthy routines become easier to maintain.
             </p>
 
             <div className="work-steps-box">
@@ -340,7 +339,7 @@ export default function HomePage() {
 
                   <div className="work-step-content">
                     <h3>{step.title}</h3>
-                    <p>Join our community by creating an account today.</p>
+                    <p>Follow guided actions and keep building your streak.</p>
                   </div>
                 </motion.article>
               ))}
@@ -353,13 +352,13 @@ export default function HomePage() {
         <div className="container-shell">
           <SectionTitle
             kicker="Our Numbers"
-            title="By the numbers: excellence in health"
+            title="Personalized health impact in numbers"
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {['85%', '72%', '95%', '76%'].map((value) => (
               <div key={value} className="rounded-2xl bg-white p-6 text-center shadow-soft">
                 <h3 className="text-4xl font-bold text-brand-600">{value}</h3>
-                <p className="mt-2 text-slate-600">Of our members start with moderate to severe symptom</p>
+                <p className="mt-2 text-slate-600">of members improve one key health metric within the first month</p>
               </div>
             ))}
           </div>
@@ -386,18 +385,18 @@ export default function HomePage() {
                   <img src="/assets/images/icon-sub-heading.svg" alt="FAQ" className="h-5 w-5" />
                   <span>Frequently Asked Questions</span>
                 </div>
-                <h2 className="mt-3 max-w-lg text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.7rem]">Helping you understand healthcare</h2>
+                <h2 className="mt-3 max-w-lg text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.7rem]">Helping you understand personalized AI health</h2>
                 <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-600 md:text-lg">
-                  Here to make your experience as seamless as possible. Explore answers to common questions about our services, policies, and patient care.
+                  Explore common questions about recommendations, data privacy, tracking, and how your personalized plan evolves daily.
                 </p>
 
                 <div className="mt-8 max-w-md rounded-[1.75rem] bg-white p-5 md:p-6">
                   <div className="flex items-center gap-4">
-                    <img src="/assets/images/icon-faq-cta.svg" alt="Emergency" className="h-11 w-11" />
+                    <img src="/assets/images/icon-faq-cta.svg" alt="Support" className="h-11 w-11" />
                     <div>
-                      <p className="text-base text-slate-600">We always take care of your smile</p>
-                      <p className="mt-1 text-2xl font-semibold text-ink">24/7 Emergency</p>
-                      <p className="mt-1 text-xl text-slate-500">659-888-589</p>
+                      <p className="text-base text-slate-600">We help you stay consistent with your health goals</p>
+                      <p className="mt-1 text-2xl font-semibold text-ink">24/7 AI Support</p>
+                      <p className="mt-1 text-xl text-slate-500">support@healance.ai</p>
                     </div>
                   </div>
                 </div>
@@ -446,7 +445,7 @@ export default function HomePage() {
                               transition={{ duration: 0.24, ease: 'easeOut' }}
                               className="max-w-3xl overflow-hidden text-base leading-relaxed text-slate-600 md:text-lg"
                             >
-                              For your first visit, please bring a valid ID, your insurance card, any current medications or a list of them, and any relevant medical records.
+                              Start with your basic profile details and daily habits. Healance will generate a personalized plan and continuously refine it as you log progress.
                             </motion.p>
                           ) : null}
                         </AnimatePresence>
@@ -489,13 +488,13 @@ export default function HomePage() {
         <div className="container-shell">
           <SectionTitle
             kicker="Our Health"
-            title="Health is wealth, and the medical field"
-            text="Excellence in healthcare is our standard, and our numbers back it up."
+            title="Your health progress, made visible"
+            text="Track meaningful improvements through clear metrics, goals, and personalized guidance."
           />
           <div className="grid gap-6 lg:grid-cols-3">
             <article className="rounded-2xl bg-slate-50 p-6">
               <img src="/assets/images/icon-health-item-1.svg" alt="Health" className="h-10" />
-              <h3 className="mt-4 text-2xl font-semibold text-ink">Your Health, Our Priority in Wellcare</h3>
+              <h3 className="mt-4 text-2xl font-semibold text-ink">Personalized progress for your real lifestyle</h3>
               <img src="/assets/images/health-item-img-1.png" alt="Health" className="mt-4" />
             </article>
             <div className="image-anime overflow-hidden rounded-2xl">

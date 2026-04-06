@@ -16,41 +16,41 @@ export default function Footer() {
             <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.06 }}>
               <img src="/assets/images/footer-logo.svg" alt="Footer Logo" className="h-7" />
               <p className="mt-3 max-w-xs text-sm leading-snug text-white/95 md:text-base">
-                We offer a wide range of healthcare services to meet your needs.
+                Personalized AI health guidance to help you build better daily habits and reduce long-term risk.
               </p>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: 0.1 }}>
-              <h3 className="text-lg font-semibold text-white md:text-xl">Healthcare</h3>
+              <h3 className="text-lg font-semibold text-white md:text-xl">Platform</h3>
               <ul className="mt-3 space-y-1 text-sm text-white/90 md:text-base">
                 <li>
                   <Link to="/doctors" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Doctors</span>
+                    <span>Health Experts</span>
                   </Link>
                 </li>
                 <li>
                   <Link to="/services" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Diagnostics</span>
+                    <span>AI Assessment</span>
                   </Link>
                 </li>
                 <li>
                   <Link to="/services" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Caregiver</span>
+                    <span>Risk Prediction</span>
                   </Link>
                 </li>
                 <li>
                   <Link to="/services" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Hospitality</span>
+                    <span>Goal Planner</span>
                   </Link>
                 </li>
                 <li>
                   <Link to="/services" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Emergency</span>
+                    <span>Daily Tracking</span>
                   </Link>
                 </li>
               </ul>
@@ -86,7 +86,7 @@ export default function Footer() {
                 <li>
                   <Link to="/projects" className="group inline-flex items-center gap-3 hover:text-white">
                     <span className="h-2 w-2 rounded-full bg-[#4f5fd3] transition-all duration-300 group-hover:scale-125 group-hover:shadow-[0_0_0_4px_rgba(79,95,211,0.25)]" />
-                    <span>Facilities</span>
+                    <span>Success Stories</span>
                   </Link>
                 </li>
               </ul>
@@ -99,19 +99,19 @@ export default function Footer() {
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1a246f] text-xs">
                     <i className="fa-regular fa-envelope" />
                   </span>
-                  <span>info@domain.com</span>
+                  <span>support@healance.ai</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1a246f] text-xs">
                     <i className="fa-solid fa-phone" />
                   </span>
-                  <span>+1(213) 465 789</span>
+                  <span>+91 90000 12345</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1a246f] text-xs">
                     <i className="fa-solid fa-location-dot" />
                   </span>
-                  <span>2464 Royal Ln. Mesa, New Jersey</span>
+                  <span>Pune, Maharashtra, India</span>
                 </li>
               </ul>
             </motion.div>
@@ -134,7 +134,7 @@ export default function Footer() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-white/90 md:text-sm">
-            <p>Copyright © 2024 All Rights Reserved.</p>
+            <p>Copyright © 2026 Healance AI. All Rights Reserved.</p>
             <div className="flex items-center gap-2.5">
               <Link to="/" className="hover:text-white">Privacy Policy</Link>
               <span className="text-[#4753bf]">•</span>

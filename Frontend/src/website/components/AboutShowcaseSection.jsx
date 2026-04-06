@@ -4,18 +4,18 @@ import { Link } from 'react-router-dom';
 const features = [
   {
     icon: '/assets/images/icon-about-info-1.svg',
-    title: 'Patient-Centered Care',
-    text: 'Putting you at the heart of everything we do. Our patient-centered approach ensures personalized.'
+    title: 'Personalized Daily Guidance',
+    text: 'Every recommendation adapts to your goals, progress, and daily health behavior.'
   },
   {
     icon: '/assets/images/icon-about-info-2.svg',
-    title: 'Specialist Doctors',
-    text: 'Putting you at the heart of everything we do. Our patient-centered approach ensures personalized.'
+    title: 'Expert-Backed AI Logic',
+    text: 'Built with medical best practices to keep your wellness decisions practical and safe.'
   },
   {
     icon: '/assets/images/icon-about-info-3.svg',
-    title: '24 Hours Service',
-    text: 'Putting you at the heart of everything we do. Our patient-centered approach ensures personalized.'
+    title: '24/7 Smart Support',
+    text: 'Track and improve your health anytime with real-time insights and alerts.'
   }
 ];
 
@@ -25,11 +25,11 @@ export default function AboutShowcaseSection({ compact = false }) {
       <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45 }}>
         <p className="about-showcase-kicker">
           <img src="/assets/images/icon-sub-heading.svg" alt="About" className="h-5 w-5" />
-          <span>About Us</span>
+          <span>About Healance AI</span>
         </p>
-        <h2 className="about-showcase-title">Professionals dedicated to your health</h2>
+        <h2 className="about-showcase-title">Your personalized health companion, powered by AI</h2>
         <p className="about-showcase-text">
-          Our team of skilled professionals is committed to providing personalized, compassionate care. With a focus.
+          We combine behavior tracking, risk prediction, and guided planning so your wellness journey stays clear and consistent.
         </p>
 
         <div className="about-showcase-list">
@@ -48,7 +48,7 @@ export default function AboutShowcaseSection({ compact = false }) {
 
         {!compact ? (
           <Link to="/about" className="btn-primary mt-8">
-            view more about us
+            explore our approach
           </Link>
         ) : null}
       </motion.div>
@@ -66,7 +66,7 @@ export default function AboutShowcaseSection({ compact = false }) {
 
         <div className="about-overlay-image image-anime">
           <img src="/assets/images/about-img-2.jpg" alt="Video Call" />
-          <h3>video call support</h3>
+          <h3>smart wellness support</h3>
         </div>
 
         <motion.div
@@ -74,11 +74,11 @@ export default function AboutShowcaseSection({ compact = false }) {
           animate={{ x: [0, 14, 0] }}
           transition={{ duration: 3.1, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <h3>Opening hours</h3>
+          <h3>Platform availability</h3>
           <ul>
-            <li><span>Mon To Fri</span> <strong>09:30 - 07:30</strong></li>
-            <li><span>Saturday</span> <strong>10:30 - 5:00</strong></li>
-            <li><span>Sunday</span> <strong>Closed</strong></li>
+            <li><span>AI Dashboard</span> <strong>24/7</strong></li>
+            <li><span>Guided Planner</span> <strong>24/7</strong></li>
+            <li><span>Expert Support</span> <strong>Mon-Sat</strong></li>
           </ul>
           <figure>
             <i className="fa-solid fa-clock" />

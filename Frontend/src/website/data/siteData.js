@@ -1,37 +1,37 @@
 export const serviceItems = [
-  { title: 'Urology', text: 'Expert urinary tract and kidney care with modern diagnostics.', image: '/assets/images/service-img-1.jpg' },
-  { title: 'Neurology', text: 'Comprehensive treatment for brain, spine and nervous system disorders.', image: '/assets/images/service-img-2.jpg' },
-  { title: 'Eye Care', text: 'Vision protection and treatment with specialist support.', image: '/assets/images/service-img-3.jpg' },
-  { title: 'Cardiology', text: 'Heart health consultation and advanced cardiac monitoring.', image: '/assets/images/service-img-4.jpg' },
-  { title: 'Pediatrics', text: 'Care tailored for infants, children and adolescents.', image: '/assets/images/service-img-5.jpg' },
-  { title: 'Orthopedics', text: 'Bone and joint treatment plans for pain-free mobility.', image: '/assets/images/service-img-6.jpg' }
+  { title: 'AI Health Assessment', text: 'Smart health scoring and symptom insights based on your daily patterns.', image: '/assets/images/service-img-1.jpg' },
+  { title: 'Risk Prediction', text: 'Early diabetes and heart risk alerts so you can act before problems grow.', image: '/assets/images/service-img-2.jpg' },
+  { title: 'Body Explorer', text: 'Understand body regions, symptoms, and guidance in a visual interactive flow.', image: '/assets/images/service-img-3.jpg' },
+  { title: 'Reverse Planner', text: 'Personalized daily targets for steps, water, sleep, and long-term wellness goals.', image: '/assets/images/service-img-4.jpg' },
+  { title: 'AI Chat Support', text: '24/7 conversational health guidance for routine concerns and lifestyle questions.', image: '/assets/images/service-img-5.jpg' },
+  { title: 'Forecast & Alerts', text: 'Weather-aware wellness suggestions and proactive care reminders.', image: '/assets/images/service-img-6.jpg' }
 ];
 
 export const doctorItems = [
-  { title: 'Dr. Esther Howard', text: 'Ophthalmology', image: '/assets/images/team-1.jpg' },
-  { title: 'Dr. Jenny Wilson', text: 'Anesthesiology', image: '/assets/images/team-2.jpg' },
-  { title: 'Dr. Kristin Watson', text: 'Infectious Disease', image: '/assets/images/team-3.jpg' },
-  { title: 'Dr. Arlene McCoy', text: 'Cardiology', image: '/assets/images/team-4.jpg' },
-  { title: 'Dr. Wade Warren', text: 'Neurology', image: '/assets/images/team-5.jpg' },
-  { title: 'Dr. Courtney Henry', text: 'Pediatrics', image: '/assets/images/team-6.jpg' }
+  { title: 'Dr. Esther Howard', text: 'Preventive Care Advisor', image: '/assets/images/team-1.jpg' },
+  { title: 'Dr. Jenny Wilson', text: 'Lifestyle Medicine Specialist', image: '/assets/images/team-2.jpg' },
+  { title: 'Dr. Kristin Watson', text: 'Clinical Data Reviewer', image: '/assets/images/team-3.jpg' },
+  { title: 'Dr. Arlene McCoy', text: 'Cardio-Metabolic Expert', image: '/assets/images/team-4.jpg' },
+  { title: 'Dr. Wade Warren', text: 'Neurowellness Consultant', image: '/assets/images/team-5.jpg' },
+  { title: 'Dr. Courtney Henry', text: 'Family Health Coach', image: '/assets/images/team-6.jpg' }
 ];
 
 export const blogItems = [
-  { title: 'Research Breakthrough in Heart Disease Treatment', text: 'Latest findings and what they mean for patient outcomes.', meta: 'December 3, 2024', image: '/assets/images/post-1.jpg' },
-  { title: "Advanced Medical Solutions for Every Patient's Needs", text: 'How precision care is reshaping modern treatment plans.', meta: 'December 1, 2024', image: '/assets/images/post-2.jpg' },
-  { title: 'Your Trusted Partner in Comprehensive Medical Care', text: 'Building long-term health with integrated teams.', meta: 'November 30, 2024', image: '/assets/images/post-3.jpg' },
-  { title: 'Preventive Checkups That Save Lives', text: 'Routine screenings and their measurable impact.', meta: 'November 27, 2024', image: '/assets/images/post-4.jpg' },
-  { title: 'Nutrition and Recovery: A Clinical Perspective', text: 'How food and healing are deeply connected.', meta: 'November 24, 2024', image: '/assets/images/post-5.jpg' },
-  { title: 'Telemedicine in Daily Practice', text: 'Fast access to care with secure digital channels.', meta: 'November 20, 2024', image: '/assets/images/post-6.jpg' }
+  { title: 'How to Build a Daily Health Routine That Sticks', text: 'Simple behavior loops to improve sleep, hydration, and energy.', meta: 'December 3, 2024', image: '/assets/images/post-1.jpg' },
+  { title: 'Understanding Your AI Risk Score', text: 'What your score means and how to lower long-term health risk.', meta: 'December 1, 2024', image: '/assets/images/post-2.jpg' },
+  { title: 'Personalized Wellness: One Plan Does Not Fit All', text: 'Why tailored plans work better than generic fitness trends.', meta: 'November 30, 2024', image: '/assets/images/post-3.jpg' },
+  { title: 'Hydration, Sleep, and Stress: The Daily Trio', text: 'The three metrics that most influence your wellness progress.', meta: 'November 27, 2024', image: '/assets/images/post-4.jpg' },
+  { title: 'Nutrition Signals Hidden in Your Daily Logs', text: 'How food patterns show up in mood, energy, and recovery.', meta: 'November 24, 2024', image: '/assets/images/post-5.jpg' },
+  { title: 'Using AI Coaching for Better Habit Consistency', text: 'Get accountable with data-backed nudges and micro-goals.', meta: 'November 20, 2024', image: '/assets/images/post-6.jpg' }
 ];
 
 export const caseStudyItems = [
-  { title: 'Cardiac Recovery Program', text: 'A multidisciplinary approach that improved outcomes.', image: '/assets/images/case-study-img-1.jpg' },
-  { title: 'Stroke Rehabilitation Pathway', text: 'Restoring mobility with structured intervention.', image: '/assets/images/case-study-img-2.jpg' },
-  { title: 'Pediatric Asthma Support', text: 'Lower emergency visits with proactive care.', image: '/assets/images/case-study-img-3.jpg' },
-  { title: 'Diabetes Risk Reduction', text: 'Personalized counseling and long-term tracking.', image: '/assets/images/case-study-img-4.jpg' },
-  { title: 'Orthopedic Mobility Success', text: 'From pain to performance through guided recovery.', image: '/assets/images/case-study-img-5.jpg' },
-  { title: 'Vision Preservation Journey', text: 'Early diagnostics and accurate intervention.', image: '/assets/images/case-study-img-6.jpg' }
+  { title: '30-Day Water Consistency Win', text: 'Daily nudges improved hydration adherence across user cohorts.', image: '/assets/images/case-study-img-1.jpg' },
+  { title: 'Reverse Planner Goal Completion', text: 'Users hit weekly targets faster with adaptive goal pacing.', image: '/assets/images/case-study-img-2.jpg' },
+  { title: 'Stress and Sleep Improvement Track', text: 'Data-driven routine changes increased sleep quality scores.', image: '/assets/images/case-study-img-3.jpg' },
+  { title: 'Prediabetes Risk Stabilization', text: 'Early lifestyle interventions reduced projected risk trends.', image: '/assets/images/case-study-img-4.jpg' },
+  { title: 'Daily Movement Habit Uplift', text: 'Micro-step goals boosted average weekly activity consistency.', image: '/assets/images/case-study-img-5.jpg' },
+  { title: 'Symptom-to-Action Guidance Success', text: 'Faster triage and better follow-through with contextual prompts.', image: '/assets/images/case-study-img-6.jpg' }
 ];
 
 export const galleryImages = [
