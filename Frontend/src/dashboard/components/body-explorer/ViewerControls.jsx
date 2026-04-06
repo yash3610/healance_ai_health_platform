@@ -22,13 +22,18 @@ const ToolbarButton = ({ onClick, icon: Icon, label, active, className = '' }) =
 );
 
 const ViewerControls = ({ onResetCamera, onZoomIn, onZoomOut, showLabels, onToggleLabels }) => {
+  const hasLabelToggle = typeof onToggleLabels === 'function';
+
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20
                     flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2
                     bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-lg">
-      <ToolbarButton icon={Tag} label="Labels" onClick={onToggleLabels} active={showLabels} />
-
-      <div className="w-px h-5 bg-slate-200 mx-0.5" />
+      {hasLabelToggle && (
+        <>
+          <ToolbarButton icon={Tag} label="Labels" onClick={onToggleLabels} active={showLabels} />
+          <div className="w-px h-5 bg-slate-200 mx-0.5" />
+        </>
+      )}
 
       <ToolbarButton icon={ZoomIn} label="Zoom In" onClick={onZoomIn} />
       <ToolbarButton icon={ZoomOut} label="Zoom Out" onClick={onZoomOut} />
