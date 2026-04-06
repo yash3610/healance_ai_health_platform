@@ -432,14 +432,19 @@ const ReversePlanner = () => {
   // Create/Update goal
   const handleSaveGoal = async (data, goalId) => {
     setIsSaving(true);
-    setError('');
     try {
       let response;
+      const payload = {
+        ...data,
+        current: Number(data.current) || 0,
+        target: Number(data.target) || 0,
+        endDate: data.endDate || undefined,
+      };
       
       if (goalId) {
-        response = await axios.put(`${API_URL}/goals/${goalId}`, data, { withCredentials: true });
+        response = await axios.put(`${API_URL}/goals/${goalId}`, payload, { withCredentials: true });
       } else {
-        response = await axios.post(`${API_URL}/goals`, data, { withCredentials: true });
+        response = await axios.post(`${API_URL}/goals`, payload, { withCredentials: true });
       }
       
       if (response.data.success) {

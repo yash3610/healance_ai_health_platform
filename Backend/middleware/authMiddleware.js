@@ -9,9 +9,9 @@ export const protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
-  // Check cookie
-  else if (req.cookies?.token) {
-    token = req.cookies.token;
+  // Check cookie (new + legacy names)
+  else if (req.cookies?.accessToken || req.cookies?.token) {
+    token = req.cookies.accessToken || req.cookies.token;
   }
 
   if (!token) {

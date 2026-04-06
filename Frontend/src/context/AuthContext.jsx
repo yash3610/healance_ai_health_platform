@@ -3,11 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 
 const AuthContext = createContext();
+const AUTH_USER_STORAGE_KEY = 'healance_auth_user';
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +27,16 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  const setAuthUser = (nextUser) => {
+    setUser(nextUser);
+
+    if (nextUser) {
+      localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(nextUser));
+    } else {
+      localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    }
+  };
+
   const checkAuth = async () => {
     // Prevent multiple simultaneous auth checks
     if (isCheckingAuth) return;
@@ -26,9 +44,12 @@ export const AuthProvider = ({ children }) => {
     setIsCheckingAuth(true);
     try {
       const data = await authService.getMe();
-      setUser(data.user || null);
+      setAuthUser(data.user || null);
     } catch (error) {
-      setUser(null);
+      // Keep existing session on transient failures during dev restarts/network blips.
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setAuthUser(null);
+      }
     } finally {
       setIsCheckingAuth(false);
       setLoading(false);
@@ -39,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.register(userData);
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -61,7 +82,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.login({ email, password });
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -103,7 +124,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.verifyWhatsAppLoginOtp({ whatsappNumber, otp });
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -144,7 +165,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.verifySmsLoginOtp({ phoneNumber, otp });
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -185,7 +206,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.verifyWhatsAppSignupOtp({ email, otp });
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -209,7 +230,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setUser(null);
+      setAuthUser(null);
       navigate('/');
     }
   };
@@ -237,7 +258,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.resetPassword(resetToken, password);
-      setUser(data.user);
+      setAuthUser(data.user);
       navigate('/dashboard');
       return { success: true, message: 'Password reset successful!' };
     } catch (error) {
@@ -263,7 +284,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authService.socialLogin(userData);
-      setUser(data.user);
+      setAuthUser(data.user);
       setIsAuthModalOpen(false);
       navigate('/dashboard');
       return { success: true, user: data.user };
@@ -275,7 +296,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedUser) => {
-    setUser(updatedUser);
+    setAuthUser(updatedUser);
   };
 
   const openAuthModal = () => setIsAuthModalOpen(true);

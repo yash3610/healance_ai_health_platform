@@ -137,7 +137,9 @@ From `Backend/.env.example`:
 | `NODE_ENV` | No | `development` | Environment mode |
 | `MONGO_URI` | Yes | `mongodb://localhost:27017/healance_ai` | MongoDB connection string |
 | `JWT_SECRET` | Yes | `your_secret` | JWT signing secret |
-| `JWT_EXPIRE` | No | `30d` | JWT expiry |
+| `JWT_EXPIRE` | No | `15m` | Access token expiry |
+| `JWT_REFRESH_SECRET` | No | `your_refresh_secret` | Refresh token signing secret (falls back to `JWT_SECRET`) |
+| `JWT_REFRESH_EXPIRE` | No | `30d` | Refresh token expiry |
 | `CLIENT_URL` | Yes | `http://localhost:5173` | CORS allowed frontend origin |
 | `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
@@ -160,7 +162,8 @@ From `Backend/.env.example`:
 Protected routes use `protect` middleware and accept token from:
 
 - `Authorization: Bearer <token>`
-- `token` cookie (HTTP-only)
+- `accessToken` cookie (HTTP-only)
+- `token` cookie (legacy backward compatibility)
 
 Admin routes require:
 

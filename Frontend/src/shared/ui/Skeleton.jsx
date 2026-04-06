@@ -1,13 +1,13 @@
 import React from 'react';
-import { Shimmer } from 'shimmer-from-structure';
 
 const ShimmerBlock = ({ width = '100%', height = 20, radius = 8 }) => (
-  <Shimmer
+  <div
+    className="animate-pulse"
     style={{
       width: typeof width === 'number' ? `${width}px` : width,
       height: `${height}px`,
       borderRadius: `${radius}px`,
-      backgroundColor: '#f0f1fc',
+      backgroundColor: '#eef1ff',
     }}
   />
 );

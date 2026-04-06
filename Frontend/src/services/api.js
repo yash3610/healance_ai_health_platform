@@ -10,12 +10,45 @@ export const api = axios.create({
   withCredentials: true, // Send cookies with requests
 });
 
+let refreshRequest = null;
+
+const refreshAccessToken = async () => {
+  if (!refreshRequest) {
+    refreshRequest = api.post('/auth/refresh').finally(() => {
+      refreshRequest = null;
+    });
+  }
+
+  return refreshRequest;
+};
+
 // Response interceptor - Handle errors globally
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config || {};
+    const status = error.response?.status;
+    const requestUrl = originalRequest.url || '';
+
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/logout');
+
+    if (status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      originalRequest._retry = true;
+
+      try {
+        await refreshAccessToken();
+        return api(originalRequest);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
+    }
+
     // Handle rate limiting
-    if (error.response?.status === 429) {
+    if (status === 429) {
       console.error('Too many requests. Please wait a moment before trying again.');
       // You can dispatch a toast notification here
     }
@@ -78,6 +111,12 @@ export const authService = {
   // Logout user
   logout: async () => {
     await api.post('/auth/logout');
+  },
+
+  // Refresh session access token
+  refresh: async () => {
+    const response = await api.post('/auth/refresh');
+    return response.data;
   },
 
   // Get current user

@@ -1,7 +1,13 @@
 import User from '../models/User.js';
-import { generateToken, sendTokenResponse, getAuthCookieOptions } from '../utils/generateToken.js';
+import {
+  generateAccessToken,
+  sendTokenResponse,
+  getAccessCookieOptions,
+  getRefreshCookieOptions,
+} from '../utils/generateToken.js';
 import Notification from '../models/Notification.js';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
 import { normalizeWhatsAppNumber, isValidWhatsAppNumber } from '../utils/sendWhatsApp.js';
 
@@ -85,12 +91,58 @@ export const login = async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Private
 export const logout = (req, res) => {
-  res.cookie('token', '', {
-    ...getAuthCookieOptions(),
-    expires: new Date(0),
-    maxAge: 0,
+  const expired = { expires: new Date(0), maxAge: 0 };
+
+  res.cookie('accessToken', '', {
+    ...getAccessCookieOptions(),
+    ...expired,
   });
+  res.cookie('refreshToken', '', {
+    ...getRefreshCookieOptions(),
+    ...expired,
+  });
+  // Backward compatibility
+  res.cookie('token', '', {
+    ...getAccessCookieOptions(),
+    ...expired,
+  });
+
   res.json({ success: true, message: 'Logged out successfully' });
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public (requires refresh cookie)
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'No refresh token provided' });
+    }
+
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+    );
+
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const accessCookieOptions = getAccessCookieOptions();
+
+    res
+      .cookie('accessToken', accessToken, accessCookieOptions)
+      // Backward compatibility for existing middleware/client flows.
+      .cookie('token', accessToken, accessCookieOptions)
+      .json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Refresh token invalid or expired' });
+  }
 };
 
 // @desc    Get current logged-in user

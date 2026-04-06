@@ -95,11 +95,6 @@ const DashboardBlogs = () => {
     <div className="space-y-6 sm:space-y-8">
       {/* Header & Controls */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Health Knowledge Base</h2>
-          <p className="text-sm sm:text-base text-[#5f697a]">Curated articles to help you live healthier.</p>
-        </div>
-
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6a7283]" size={18} />
