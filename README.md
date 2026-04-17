@@ -8,6 +8,9 @@
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-FFB300?style=for-the-badge&logo=jsonwebtokens&logoColor=black)
 ![openFDA](https://img.shields.io/badge/openFDA-API-0A66C2?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=for-the-badge)
+![RxNav](https://img.shields.io/badge/RxNav-NIH-1E6091?style=for-the-badge)
+![OpenStreetMap](https://img.shields.io/badge/OpenStreetMap-Overpass-7EBC6F?style=for-the-badge&logo=openstreetmap&logoColor=white)
 
 A comprehensive full-stack health and wellness platform with AI-powered features.
 
@@ -18,6 +21,7 @@ A comprehensive full-stack health and wellness platform with AI-powered features
 ## Core Features
 
 - **AI-Powered Health Assistants:** Health Assistant Bot for symptoms, diet, exercise, and wellness guidance.
+- **AI Personal Health Assistant:** Upload medical reports (PDF/DOCX) for structured AI analysis (key findings, flags, suggested medications, suggested specialists), medicine explanations with drug-drug interaction checks against user medications, and nearby specialist lookup via seeded doctors + OpenStreetMap.
 - **Medicine Information Bot:** Real-time FDA-approved drug details using openFDA API, including dosage, warnings, side effects, interactions, and more.
 - **Health Dashboard:** Real-time health metrics, BMI/health score tracking, hydration/activity insights, and progress visualization.
 - **Goal Tracking & Achievements:** Personalized goals (weight, steps, calories, water), daily progress, badges, and reverse planning.
@@ -53,6 +57,13 @@ A comprehensive full-stack health and wellness platform with AI-powered features
 | Multer | 1.4.x | File upload |
 | Nodemailer | 8.0.x | Email service |
 | Twilio | 5.5.x | SMS/WhatsApp OTP |
+| Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
+| pdf-parse | 2.4.x | PDF text extraction for report analysis |
+| mammoth | 1.12.x | DOCX text extraction for report analysis |
+| openFDA | Public API | Drug label data (keyless) |
+| NIH RxNav | Public API | Drug normalization, class, and interaction matching (keyless) |
+| OpenStreetMap Overpass | Public API | Nearby hospitals/clinics lookup (keyless) |
+| Open-Meteo Geocoding | Public API | City -> lat/lon for specialist search (keyless) |
 | Python | 3.11+ recommended | ML services runtime |
 | scikit-learn | 1.6.x | ML model training/inference |
 
@@ -76,18 +87,31 @@ healance_ai_health_platform/
 |   +-- models/
 |   |   +-- User.js
 |   |   +-- HealthData.js
+|   |   +-- MedicalReport.js
 |   |   +-- ChatSession.js
+|   |   +-- Doctor.js
 |   |   +-- ...
 |   +-- routes/
 |   |   +-- authRoutes.js
 |   |   +-- healthRoutes.js
 |   |   +-- predictRoutes.js
 |   |   +-- riskRoutes.js
+|   |   +-- chatbotRoutes.js
 |   |   +-- ...
 |   +-- seeds/
+|   |   +-- seedData.js
+|   |   +-- seedDoctors.js
 |   +-- tests/
 |   +-- utils/
 |   |   +-- fdaApi.js
+|   |   +-- fdaTextCleaner.js
+|   |   +-- textExtractor.js
+|   |   +-- reportAnalyzer.js
+|   |   +-- groqClient.js
+|   |   +-- geminiClient.js
+|   |   +-- rxNavApi.js
+|   |   +-- osmOverpass.js
+|   |   +-- geocode.js
 |   |   +-- mlPredictor.js
 |   |   +-- sendEmail.js
 |   |   +-- sendSms.js
@@ -106,6 +130,14 @@ healance_ai_health_platform/
 |   |   +-- dashboard/
 |   |   |   +-- components/
 |   |   |   +-- pages/
+|   |   |   |   +-- AIChatbots.jsx
+|   |   |   |   +-- chatbot/
+|   |   |   |   |   +-- MessageDispatcher.jsx
+|   |   |   |   |   +-- ReportSummaryCard.jsx
+|   |   |   |   |   +-- MedicineCard.jsx
+|   |   |   |   |   +-- DoctorCard.jsx
+|   |   |   |   |   +-- DoctorGrid.jsx
+|   |   |   |   |   +-- LocationPermissionModal.jsx
 |   |   +-- context/
 |   |   +-- hooks/
 |   |   +-- shared/
@@ -173,6 +205,8 @@ CLIENT_URL=http://localhost:5173
 
 # Optional
 OPENAI_API_KEY=your_openai_key
+GROQ_API_KEY=your_groq_key           # free tier from console.groq.com/keys — powers report analysis
+GEMINI_API_KEY=                      # optional fallback LLM (aistudio.google.com/app/apikey)
 WEATHER_API_KEY=your_openweathermap_key
 OPENWEATHER_API_KEY=
 EMAIL_HOST=smtp.gmail.com
@@ -310,6 +344,10 @@ http://localhost:5000/api
 - `GET /api/chatbot/sessions` - Get chat sessions (Protected)
 - `GET /api/chatbot/sessions/:id` - Get messages by session (Protected)
 - `DELETE /api/chatbot/sessions/:id` - Delete session (Protected)
+- `POST /api/chatbot/analyze-report/:reportId` - AI analysis of an uploaded PDF/DOCX report (Protected)
+- `POST /api/chatbot/explain-medicine` - FDA + RxNav drug info with interaction check vs user meds (Protected)
+- `POST /api/chatbot/nearby-doctors` - Nearby specialists from seeded DB + OSM Overpass (Protected)
+- `POST /api/chatbot/geocode` - Resolve a city name to lat/lon via Open-Meteo (Protected)
 
 ### Health Data
 
@@ -357,6 +395,38 @@ node Backend/tests/testFdaApi.js --detailed aspirin
 ```
 
 Detailed API docs: [Backend README](./Backend/README.md)
+
+---
+
+## AI Personal Health Assistant
+
+The dashboard AI Chatbot page is a full personal health assistant. All new integrations are free and key-light — only `GROQ_API_KEY` is required.
+
+### Capabilities
+
+- **Report Analysis:** Upload a medical report (PDF/DOCX) through the chat paperclip. The backend extracts text (`pdf-parse` / `mammoth`), sends it to Groq Llama 3.3 70B with a strict JSON schema, and returns a structured payload: `reportType`, `summary`, `keyFindings[]`, `flags[]`, `recommendedActions[]`, `suggestedMedications[]`, `suggestedSpecialists[]`. The frontend renders a `ReportSummaryCard` with action buttons (Explain medications / Find nearby specialist).
+- **Medicine Explanation:** Any drug name is enriched with openFDA label fields (uses, dosage, side effects, warnings, interactions, contraindications) + RxNav drug class. `fdaTextCleaner.js` strips FDA cross-references like `[see Warnings and Precautions (5.1)]`, section prefixes, and duplicate sentences. Interactions are keyword-matched against the logged-in user's `profile.medications` and a red banner is shown for any hit.
+- **Nearby Specialists:** A seeded `Doctor` MongoDB collection (2dsphere index) is queried by `$geoNear`. If fewer than 4 seeded doctors match in the radius, OpenStreetMap Overpass is queried for `amenity=hospital|clinic|doctors`. Results are merged and rendered in a `DoctorGrid` with Call / Map / Book action buttons. Location comes from browser geolocation or a manual city input (geocoded via Open-Meteo).
+
+### Free data sources (no API key required)
+
+- **openFDA** — drug label data
+- **NIH RxNav** — drug normalization + ATC drug class
+- **OpenStreetMap Overpass** — nearby healthcare places
+- **Open-Meteo Geocoding** — city -> coordinates
+
+### Required key
+
+- `GROQ_API_KEY` from [console.groq.com/keys](https://console.groq.com/keys) — free tier powers report analysis.
+
+### Seed the doctor directory
+
+```bash
+cd Backend
+node seeds/seedDoctors.js
+```
+
+Seeds ~25 curated specialists across Mumbai, Delhi, Bengaluru, Pune, Chennai, and Hyderabad. Idempotent — safe to re-run.
 
 ---
 
@@ -475,8 +545,11 @@ dist/
 ## Acknowledgments
 
 - FDA openFDA API for medicine data
-- Open-Meteo APIs for weather, air-quality, and pollen data
+- NIH RxNav for drug normalization and drug-class data
+- OpenStreetMap Overpass for nearby healthcare places
+- Open-Meteo APIs for weather, air-quality, pollen, and geocoding data
 - OpenWeatherMap as optional weather provider
+- Groq (Llama 3.3) for free-tier report-analysis LLM
 - Tailwind CSS for frontend styling
 - React and Node.js communities
 

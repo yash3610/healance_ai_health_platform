@@ -6,8 +6,11 @@
 ![Mongoose](https://img.shields.io/badge/Mongoose-8.x-880000?style=for-the-badge&logo=mongoose&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-FFB300?style=for-the-badge&logo=jsonwebtokens&logoColor=black)
 ![openFDA](https://img.shields.io/badge/openFDA-Integrated-0A66C2?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=for-the-badge)
+![RxNav](https://img.shields.io/badge/RxNav-NIH-1E6091?style=for-the-badge)
+![OpenStreetMap](https://img.shields.io/badge/OpenStreetMap-Overpass-7EBC6F?style=for-the-badge&logo=openstreetmap&logoColor=white)
 
-Backend API for Healance AI, built with Express and MongoDB. It powers authentication, health tracking, AI chatbots, risk prediction, goals, walk-and-earn, notifications, blogs, and support workflows.
+Backend API for Healance AI, built with Express and MongoDB. It powers authentication, health tracking, AI chatbots, the AI Personal Health Assistant (report analysis, medicine enrichment, nearby specialists), risk prediction, goals, walk-and-earn, notifications, blogs, and support workflows.
 
 ---
 
@@ -17,6 +20,7 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 - Role-based access (`user`, `admin`)
 - Health data tracking and dashboard stats APIs
 - AI health assistant and medicine information chatbot
+- AI Personal Health Assistant: PDF/DOCX report analysis (Groq Llama 3.3), medicine explanation with drug-drug interaction checks (openFDA + NIH RxNav), nearby specialist lookup (seeded doctors + OpenStreetMap Overpass)
 - Risk analysis and recommendation APIs
 - Python ML integration for heart/diabetes and symptom-disease predictions
 - Goal management with progress logging
@@ -41,7 +45,14 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 | Multer | 1.4.x | Upload handling |
 | Nodemailer | 8.0.x | Emails |
 | Twilio | 5.5.x | SMS and WhatsApp messaging |
-| OpenAI | 4.x | Optional chatbot enhancement |
+| OpenAI | 4.x | Optional chatbot enhancement / Groq SDK compatibility |
+| Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
+| `@google/generative-ai` | 0.24.x | Optional Gemini fallback |
+| pdf-parse | 2.4.x | PDF text extraction |
+| mammoth | 1.12.x | DOCX text extraction |
+| NIH RxNav | Public API | Drug normalization, class, interaction matching |
+| OpenStreetMap Overpass | Public API | Nearby healthcare places |
+| Open-Meteo Geocoding | Public API | City -> coordinates |
 | Helmet | 7.x | Security headers |
 | express-rate-limit | 7.x | API rate limiting |
 
@@ -66,20 +77,32 @@ Backend/
 +-- models/
 |   +-- User.js
 |   +-- HealthData.js
+|   +-- MedicalReport.js
 |   +-- RiskPrediction.js
 |   +-- ChatSession.js
+|   +-- Doctor.js
 |   +-- ...
 +-- routes/
 |   +-- authRoutes.js
 |   +-- healthRoutes.js
 |   +-- riskRoutes.js
+|   +-- chatbotRoutes.js
 |   +-- ...
 +-- seeds/
 |   +-- seedData.js
+|   +-- seedDoctors.js
 +-- tests/
 |   +-- testFdaApi.js
 +-- utils/
 |   +-- fdaApi.js
+|   +-- fdaTextCleaner.js
+|   +-- textExtractor.js
+|   +-- reportAnalyzer.js
+|   +-- groqClient.js
+|   +-- geminiClient.js
+|   +-- rxNavApi.js
+|   +-- osmOverpass.js
+|   +-- geocode.js
 |   +-- generateToken.js
 |   +-- sendEmail.js
 +-- .env.example
@@ -146,6 +169,8 @@ From `Backend/.env.example`:
 | `JWT_REFRESH_EXPIRE` | No | `30d` | Refresh token expiry |
 | `CLIENT_URL` | Yes | `http://localhost:5173` | CORS allowed frontend origin |
 | `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
+| `GROQ_API_KEY` | No (Yes for report analysis) | `gsk_...` | Groq Llama 3.3 70B for `/chatbot/analyze-report` (free tier at console.groq.com/keys) |
+| `GEMINI_API_KEY` | No | `AIzaSy...` | Optional Gemini fallback LLM (aistudio.google.com/app/apikey) |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
 | `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Optional OpenWeather key (fallback to Open-Meteo) |
 | `OPENWEATHER_API_KEY` | No | empty | Alternate weather key variable name |
@@ -272,6 +297,10 @@ Base URL: `http://localhost:5000/api`
 | GET | `/chatbot/sessions` | Protected | Get chat sessions (`?botType=health|medicine`) |
 | GET | `/chatbot/sessions/:sessionId` | Protected | Get one session with messages |
 | DELETE | `/chatbot/sessions/:sessionId` | Protected | Delete one chat session |
+| POST | `/chatbot/analyze-report/:reportId` | Protected | Extract text + run Groq structured analysis on an uploaded report |
+| POST | `/chatbot/explain-medicine` | Protected | Enrich a drug with openFDA label + RxNav class + interaction check vs `userMedications` |
+| POST | `/chatbot/nearby-doctors` | Protected | `$geoNear` seeded doctors; OSM Overpass fallback when under the threshold |
+| POST | `/chatbot/geocode` | Protected | Resolve a city name to `{lat, lon, name}` via Open-Meteo |
 
 ### Body Explorer
 
@@ -479,6 +508,78 @@ Content-Type: application/json
 }
 ```
 
+### Analyze Uploaded Report
+
+```http
+POST /api/chatbot/analyze-report/:reportId
+Authorization: Bearer <token>
+```
+
+Response payload (simplified):
+
+```json
+{
+  "success": true,
+  "status": "ok",
+  "analysis": {
+    "reportType": "blood_test",
+    "summary": "Overall values within reference range except LDL cholesterol.",
+    "keyFindings": [{ "label": "LDL", "value": "142 mg/dL", "status": "high" }],
+    "flags": ["Elevated LDL cholesterol"],
+    "recommendedActions": ["Reduce saturated fat", "Re-test in 3 months"],
+    "suggestedMedications": [{ "name": "Atorvastatin" }],
+    "suggestedSpecialists": ["cardiologist"]
+  },
+  "disclaimer": "Not a medical diagnosis. Consult a healthcare professional."
+}
+```
+
+### Explain Medicine
+
+```http
+POST /api/chatbot/explain-medicine
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "atorvastatin",
+  "userMedications": ["warfarin"]
+}
+```
+
+### Nearby Doctors
+
+```http
+POST /api/chatbot/nearby-doctors
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "specialty": "cardiologist",
+  "lat": 19.076,
+  "lon": 72.8777,
+  "radius": 5000
+}
+```
+
+### Geocode a City
+
+```http
+POST /api/chatbot/geocode
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "city": "Mumbai"
+}
+```
+
 ### Create Goal
 
 ```http
@@ -550,6 +651,14 @@ This seeds:
 - rewards
 - sample goals
 
+### Seed Doctor Directory
+
+```bash
+node seeds/seedDoctors.js
+```
+
+Seeds ~25 curated specialists across Mumbai, Delhi, Bengaluru, Pune, Chennai, and Hyderabad with 2dsphere-indexed locations. Idempotent — safe to re-run.
+
 ### Test Medicine API Integration
 
 ```bash
@@ -606,6 +715,20 @@ node tests/testPredictApi.js
 
 - check `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`
 - use app password if using Gmail SMTP
+
+**Report analysis returns `ai-unavailable`**
+
+- ensure `GROQ_API_KEY` is set in `.env` and restart the server
+- free tier limit: 30 req/min — retry after a short wait
+
+**Report analysis returns `file-missing`**
+
+- the server resolves report paths relative to `Backend/uploads/`; verify the file exists and the `MedicalReport.filePath` field matches
+
+**Nearby doctors returns empty results**
+
+- run `node seeds/seedDoctors.js` to populate the `Doctor` collection
+- OSM Overpass is rate-limited (~1 req/sec) — brief outages are expected
 
 ---
 
