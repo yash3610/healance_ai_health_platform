@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import DashReveal from '../../shared/ui/DashReveal';
+import Avatar from '../../shared/ui/Avatar';
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -14,7 +15,7 @@ const Profile = () => {
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   const avatarSrc = user?.avatar
     ? (user.avatar.startsWith('http') ? user.avatar : `${backendBase}${user.avatar}`)
-    : 'https://via.placeholder.com/120';
+    : null;
 
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -135,10 +136,11 @@ const Profile = () => {
 
           <div className="mb-5 p-4 border border-[#e8eaf9] rounded-xl bg-[#f0f1fc]">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <img
+              <Avatar
                 src={avatarSrc}
-                alt="Profile avatar"
-                className="w-20 h-20 rounded-full object-cover border border-[#e8eaf9]"
+                name={user?.name}
+                size={80}
+                className="border border-[#e8eaf9]"
               />
               <div className="flex-1">
                 <p className="text-sm font-medium text-[#0b1030] mb-2">Profile Photo</p>

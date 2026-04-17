@@ -1,6 +1,18 @@
 import ChatSession from '../models/ChatSession.js';
+import Doctor, { DOCTOR_SPECIALTIES } from '../models/Doctor.js';
 import { searchDrugInfo, formatDrugResponse, getDrugNotFoundResponse } from '../utils/fdaApi.js';
+import { analyzeReportById } from '../utils/reportAnalyzer.js';
+import { normalizeDrug, getDrugClass, matchInteractionsInLabel } from '../utils/rxNavApi.js';
+import { cleanFdaText } from '../utils/fdaTextCleaner.js';
+import { findNearbyHealthcare } from '../utils/osmOverpass.js';
+import { resolveLocation } from '../utils/geocode.js';
 import OpenAI from 'openai';
+
+const MEDICINE_DISCLAIMER =
+  'Drug information is sourced from the US FDA drug label. This is general information only, not medical advice — consult your doctor or pharmacist before starting, stopping, or changing any medication.';
+
+const DOCTORS_DISCLAIMER =
+  'Results combine curated partner doctors and public OpenStreetMap data. Please verify credentials, availability and fees directly with the practice before booking.';
 
 // Function to get OpenAI client (lazy initialization)
 const getOpenAIClient = () => {
@@ -408,5 +420,342 @@ export const deleteSession = async (req, res) => {
     res.json({ success: true, message: 'Chat session deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Explain one medication using openFDA + RxNav + detect interactions with user's profile meds
+// @route   POST /api/chatbot/explain-medicine
+// @access  Private
+export const explainMedicine = async (req, res) => {
+  try {
+    const { name, userMedications = [] } = req.body || {};
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        status: 'bad-request',
+        message: 'Provide a medication name.',
+      });
+    }
+
+    const cleanName = name.trim();
+
+    // Run RxNav + openFDA in parallel — RxNav normalizes the name, openFDA
+    // fetches the authoritative drug label. If either fails we still try
+    // to respond with whatever we have.
+    const [norm, fdaResult] = await Promise.all([
+      normalizeDrug(cleanName).catch(() => null),
+      searchDrugInfo(cleanName).catch(() => ({ found: false })),
+    ]);
+
+    // Get drug class (best-effort) — only if we got an RxCUI
+    const classes = norm?.rxcui ? await getDrugClass(norm.rxcui).catch(() => []) : [];
+    const drugClass =
+      (classes.find((c) => c.classType === 'ATC1-4') || classes[0])?.className || null;
+
+    // If openFDA has nothing and RxNav also didn't normalize, we're stuck
+    if (!fdaResult?.found && !norm) {
+      return res.json({
+        success: false,
+        status: 'not-found',
+        name: cleanName,
+        message: `I couldn't find authoritative information for "${cleanName}". Please double-check the spelling.`,
+        disclaimer: MEDICINE_DISCLAIMER,
+      });
+    }
+
+    const fda = fdaResult?.data || null;
+
+    // Detect interactions against user's current meds by keyword-matching the
+    // FDA drug_interactions + contraindications text. Imperfect but useful.
+    // (Use the RAW label text for the match — cleaning happens after.)
+    const interactionText = [fda?.drugInteractions, fda?.contraindications]
+      .filter(Boolean)
+      .join(' ');
+    const safeUserMeds = Array.isArray(userMedications)
+      ? userMedications.filter((m) => typeof m === 'string').slice(0, 20)
+      : [];
+    const interactionMatches = interactionText
+      ? matchInteractionsInLabel(interactionText, safeUserMeds)
+      : [];
+
+    // Clean FDA label verbosity — strip section refs like "( 5.1 )" and
+    // dedupe repeated sentences before sending to the UI.
+    const clean = (t) => cleanFdaText(t) || null;
+
+    return res.json({
+      success: true,
+      status: 'ok',
+      medicine: {
+        name: fda?.brandName && fda.brandName !== 'N/A' ? fda.brandName : (norm?.name || cleanName),
+        genericName: fda?.genericName && fda.genericName !== 'N/A' ? fda.genericName : null,
+        rxcui: norm?.rxcui || null,
+        drugClass,
+        uses: clean(fda?.purpose),
+        dosage: clean(fda?.dosage),
+        sideEffects: clean(fda?.adverseReactions),
+        warnings: clean(fda?.warnings),
+        interactions: clean(fda?.drugInteractions),
+        contraindications: clean(fda?.contraindications),
+        matchedInteractions: interactionMatches, // [{ drug, evidence }]
+        source: 'US FDA drug label',
+      },
+      disclaimer: MEDICINE_DISCLAIMER,
+    });
+  } catch (err) {
+    console.error('[explainMedicine] fatal:', err.message);
+    if (err.stack) console.error(err.stack);
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Something went wrong while looking up that medication.',
+      detail: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};
+
+// @desc    Resolve a city name (or lat/lon) to coordinates via Open-Meteo
+// @route   POST /api/chatbot/geocode
+// @access  Private
+export const geocodeCity = async (req, res) => {
+  try {
+    const { city, lat, lon } = req.body || {};
+    const resolved = await resolveLocation({ city, lat, lon });
+    if (!resolved) {
+      return res.status(404).json({
+        success: false,
+        status: 'not-found',
+        message: `Could not resolve "${city}". Try a larger nearby city.`,
+      });
+    }
+    return res.json({ success: true, status: 'ok', ...resolved });
+  } catch (err) {
+    console.error('[geocodeCity] fatal:', err.message);
+    return res.status(500).json({ success: false, status: 'error', message: 'Geocoding failed' });
+  }
+};
+
+/**
+ * Map a free-text specialty (from the LLM or user input) to one of our
+ * canonical Doctor model enum values. Loose matching — tolerates synonyms.
+ */
+function canonicalizeSpecialty(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  const s = raw.trim().toLowerCase();
+  if (!s) return null;
+  // direct match
+  if (DOCTOR_SPECIALTIES.includes(s)) return s;
+  // synonym map
+  const synonyms = {
+    cardiology: 'cardiologist',
+    heart: 'cardiologist',
+    cardiac: 'cardiologist',
+    endocrinology: 'endocrinologist',
+    diabetes: 'endocrinologist',
+    diabetologist: 'endocrinologist',
+    hormone: 'endocrinologist',
+    gp: 'general physician',
+    'family doctor': 'general physician',
+    physician: 'general physician',
+    internist: 'general physician',
+    skin: 'dermatologist',
+    dermatology: 'dermatologist',
+    ortho: 'orthopedic',
+    orthopedics: 'orthopedic',
+    orthopaedic: 'orthopedic',
+    orthopedist: 'orthopedic',
+    bone: 'orthopedic',
+    neurology: 'neurologist',
+    neuro: 'neurologist',
+    pediatrics: 'pediatrician',
+    paediatric: 'pediatrician',
+    child: 'pediatrician',
+    obgyn: 'gynecologist',
+    'ob/gyn': 'gynecologist',
+    gynaecologist: 'gynecologist',
+    gynaecology: 'gynecologist',
+    obstetrician: 'gynecologist',
+    psychiatry: 'psychiatrist',
+    mental: 'psychiatrist',
+    urology: 'urologist',
+    ent: 'ent',
+    'ear nose throat': 'ent',
+    eye: 'ophthalmologist',
+    ophthalmology: 'ophthalmologist',
+    gastro: 'gastroenterologist',
+    gastroenterology: 'gastroenterologist',
+    pulmonology: 'pulmonologist',
+    lung: 'pulmonologist',
+    oncology: 'oncologist',
+    cancer: 'oncologist',
+  };
+  for (const key of Object.keys(synonyms)) {
+    if (s.includes(key)) return synonyms[key];
+  }
+  // fallback: try singular->plural / istrimming "ist"
+  const trimmed = s.replace(/\s+/g, ' ');
+  if (DOCTOR_SPECIALTIES.includes(trimmed)) return trimmed;
+  return null;
+}
+
+// @desc    Find nearby doctors (seeded DB + OSM Overpass fallback)
+// @route   POST /api/chatbot/nearby-doctors
+// @access  Private
+export const nearbyDoctors = async (req, res) => {
+  try {
+    const {
+      specialty: rawSpecialty,
+      lat,
+      lon,
+      city,
+      radius,
+    } = req.body || {};
+
+    const loc = await resolveLocation({ lat, lon, city });
+    if (!loc) {
+      return res.status(400).json({
+        success: false,
+        status: 'no-location',
+        message: 'Please provide a location (allow GPS or enter a city).',
+      });
+    }
+
+    const radiusMeters = Math.min(Math.max(parseInt(radius, 10) || 7000, 1000), 25000);
+    const canonical = canonicalizeSpecialty(rawSpecialty);
+
+    // 1. Seeded DB query — $geoNear limited by specialty (if recognised)
+    const seedQuery = {};
+    if (canonical) seedQuery.specialty = canonical;
+
+    let seeded = [];
+    try {
+      seeded = await Doctor.aggregate([
+        {
+          $geoNear: {
+            near: { type: 'Point', coordinates: [loc.lon, loc.lat] },
+            distanceField: 'distanceMeters',
+            maxDistance: radiusMeters * 10, // broaden seed search to cover major cities
+            spherical: true,
+            query: seedQuery,
+          },
+        },
+        { $limit: 8 },
+      ]);
+    } catch (err) {
+      console.warn('[nearbyDoctors] $geoNear failed:', err.message);
+      seeded = [];
+    }
+
+    const seededNormalized = seeded.map((d) => {
+      const [lonC, latC] = d.location?.coordinates || [];
+      return {
+        _id: String(d._id),
+        name: d.name,
+        specialty: d.specialty,
+        qualifications: d.qualifications || '',
+        experienceYears: d.experienceYears ?? null,
+        rating: d.rating ?? null,
+        reviewCount: d.reviewCount ?? null,
+        photo: d.photo || '',
+        clinicName: d.clinicName || '',
+        address: d.address || {},
+        phone: d.phone || '',
+        email: d.email || '',
+        website: d.website || '',
+        location: d.location,
+        distanceKm: typeof d.distanceMeters === 'number' ? Number((d.distanceMeters / 1000).toFixed(2)) : null,
+        googleMapUrl:
+          typeof latC === 'number' && typeof lonC === 'number'
+            ? `https://www.google.com/maps/search/?api=1&query=${latC},${lonC}`
+            : '',
+        verified: d.verified ?? true,
+        source: 'seed',
+      };
+    });
+
+    // 2. OSM Overpass fallback — always queried, but used only if we don't have
+    //    enough seeded results inside the user's actual requested radius.
+    const nearSeed = seededNormalized.filter(
+      (d) => typeof d.distanceKm === 'number' && d.distanceKm * 1000 <= radiusMeters
+    );
+
+    let osm = [];
+    if (nearSeed.length < 4) {
+      osm = await findNearbyHealthcare({
+        lat: loc.lat,
+        lon: loc.lon,
+        radius: radiusMeters,
+        keyword: canonical && canonical !== 'other' ? canonical : undefined,
+        limit: 6,
+      });
+    }
+
+    // Merge — seeded first (nearest first), then OSM. Dedupe by name.
+    const seen = new Set();
+    const merged = [...nearSeed, ...seededNormalized.filter((d) => !nearSeed.includes(d)), ...osm]
+      .filter((d) => {
+        const k = (d.name || '').toLowerCase();
+        if (!k || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      })
+      .slice(0, 10);
+
+    return res.json({
+      success: true,
+      status: 'ok',
+      location: loc,
+      specialty: canonical || (rawSpecialty ? String(rawSpecialty) : 'doctor'),
+      radius: radiusMeters,
+      doctors: merged,
+      sources: {
+        seed: nearSeed.length,
+        seedBroad: seededNormalized.length - nearSeed.length,
+        osm: osm.length,
+      },
+      disclaimer: DOCTORS_DISCLAIMER,
+    });
+  } catch (err) {
+    console.error('[nearbyDoctors] fatal:', err.message);
+    if (err.stack) console.error(err.stack);
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Something went wrong while searching for doctors.',
+      detail: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+};
+
+// @desc    Analyze an uploaded medical report (PDF/DOCX) with Gemini
+// @route   POST /api/chatbot/analyze-report/:reportId
+// @access  Private
+export const analyzeReport = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const userId = req.user._id;
+    const result = await analyzeReportById(reportId, userId);
+    const statusMap = {
+      'ok': 200,
+      'unsupported': 200,       // still 200 — UI renders friendly fallback
+      'empty': 200,
+      'ai-unavailable': 200,
+      'rate-limited': 200,
+      'not-found': 404,
+      'error': 500,
+    };
+    const httpStatus = statusMap[result.status] ?? 500;
+    return res.status(httpStatus).json({
+      success: result.status === 'ok',
+      ...result,
+    });
+  } catch (err) {
+    console.error('[analyzeReport] fatal:', err.message);
+    if (err.stack) console.error(err.stack);
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: 'Something went wrong while analyzing the report.',
+      detail: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
   }
 };

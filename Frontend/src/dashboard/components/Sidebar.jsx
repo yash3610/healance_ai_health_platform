@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cn } from '../../lib/utils';
+import Avatar from '../../shared/ui/Avatar';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
@@ -27,7 +28,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   const resolvedAvatar = user?.avatar
     ? (user.avatar.startsWith('http') ? user.avatar : `${backendBase}${user.avatar}`)
-    : 'https://via.placeholder.com/40';
+    : null;
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, end: true },
@@ -172,7 +173,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             isActive ? "bg-[#f0f1fc]" : "bg-[#f0f1fc]/50 hover:bg-[#f0f1fc]"
           )}
         >
-          <img src={resolvedAvatar} alt="User" className="w-10 h-10 rounded-full flex-shrink-0" />
+          <Avatar src={resolvedAvatar} name={user?.name} size={40} />
           <div className="ml-3 overflow-hidden flex-1 min-w-0">
             <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
             <p className="text-xs text-slate-500">Free Plan</p>

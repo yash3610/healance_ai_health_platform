@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Droplets, Loader2, Send } from 'lucide-react';
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
 import DashReveal from '../../shared/ui/DashReveal';
+import { useAuth } from '../../context/AuthContext';
 
 const initialForm = {
   age: '',
@@ -28,12 +29,28 @@ const getBmiCategory = (bmi) => {
 };
 
 const HeartDiabetesPrediction = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [results, setResults] = useState(null);
   const [message, setMessage] = useState('');
+
+  // Auto-fill baseline fields from user's saved medical profile
+  useEffect(() => {
+    if (!user?.profile) return;
+    const p = user.profile;
+    setFormData((prev) => ({
+      ...prev,
+      age: p.age != null ? String(p.age) : prev.age,
+      gender: p.gender === 'female' ? 'Female'
+            : p.gender === 'male' ? 'Male'
+            : prev.gender,
+      height: p.height != null ? String(p.height) : prev.height,
+      weight: p.weight != null ? String(p.weight) : prev.weight,
+    }));
+  }, [user]);
 
   const bmi = useMemo(() => {
     const weight = parseNumber(formData.weight);

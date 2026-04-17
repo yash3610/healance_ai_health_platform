@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, Pill, User, Info, Loader2, ShieldAlert } from 'lucide-react';
+import { Send, Bot, Pill, User, Info, Loader2, ShieldAlert, Paperclip } from 'lucide-react';
 import Button from '../../shared/ui/Button';
-import { chatbotService } from '../../services/api';
+import { chatbotService, healthService } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import MessageDispatcher from './chatbot/MessageDispatcher';
+import LocationPermissionModal from './chatbot/LocationPermissionModal';
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
 const TypingDots = () => (
   <div className="flex gap-1 items-center p-4">
@@ -16,11 +23,16 @@ const TypingDots = () => (
 );
 
 const AIChatbots = () => {
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('health');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [locationModal, setLocationModal] = useState({ open: false, specialty: null });
   const [messages, setMessages] = useState([
     { type: 'bot', text: 'Hello! I am your AI Health Assistant. How can I help you today?', botType: 'health' },
     { type: 'bot', text: 'I can provide detailed information about medicines using FDA database. Just type the medicine name (e.g., aspirin, ibuprofen, metformin).', botType: 'medicine' }
@@ -64,6 +76,250 @@ const AIChatbots = () => {
       }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReportUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate type
+    const isAllowedType =
+      ALLOWED_TYPES.includes(file.type) ||
+      /\.(pdf|png|jpe?g|docx)$/i.test(file.name);
+    if (!isAllowedType) {
+      toast({ title: 'Unsupported file type', description: 'Use PDF, image, or DOCX.', variant: 'error' });
+      e.target.value = '';
+      return;
+    }
+
+    // Validate size
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast({ title: 'File too large', description: 'Maximum size is 10MB.', variant: 'error' });
+      e.target.value = '';
+      return;
+    }
+
+    setUploading(true);
+
+    // 1. Show the user bubble immediately for responsive UX
+    setMessages((prev) => [
+      ...prev,
+      { type: 'user', text: `📎 Uploaded ${file.name}`, botType: activeTab },
+      { type: 'system', text: 'Uploading…', botType: activeTab },
+    ]);
+
+    let uploadedReport = null;
+    try {
+      const uploadResp = await healthService.uploadReport(file, {
+        title: file.name,
+        type: 'general',
+      });
+      uploadedReport = uploadResp?.report;
+      if (!uploadedReport?._id) throw new Error('Upload did not return a report id');
+
+      // Replace the "Uploading…" system message with "Analyzing…"
+      setMessages((prev) => {
+        const next = [...prev];
+        const idx = next.findLastIndex((m) => m.type === 'system' && m.text === 'Uploading…');
+        if (idx !== -1) next[idx] = { type: 'system', text: 'Analyzing report…', botType: activeTab };
+        return next;
+      });
+      toast({ title: 'Report uploaded', variant: 'success' });
+    } catch (err) {
+      // Upload failed — show an error message and bail
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => !(m.type === 'system' && m.text === 'Uploading…'));
+        return [
+          ...filtered,
+          {
+            type: 'bot-text',
+            text: 'I could not upload that file. Please try again.',
+            botType: activeTab,
+          },
+        ];
+      });
+      toast({
+        title: err.response?.data?.message || 'Upload failed',
+        variant: 'error',
+      });
+      setUploading(false);
+      if (e.target) e.target.value = '';
+      return;
+    }
+
+    // 2. Call analyze endpoint — happens AFTER upload success
+    try {
+      const analysis = await chatbotService.analyzeReport(uploadedReport._id);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => !(m.type === 'system' && m.text === 'Analyzing report…'));
+        return [
+          ...filtered,
+          {
+            type: 'bot-report-card',
+            payload: { ...analysis, fileName: uploadedReport.title || file.name },
+            reportId: uploadedReport._id,
+            botType: activeTab,
+          },
+        ];
+      });
+    } catch (err) {
+      // Analysis failed (network / server) — degrade gracefully
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => !(m.type === 'system' && m.text === 'Analyzing report…'));
+        return [
+          ...filtered,
+          {
+            type: 'bot-report-card',
+            payload: {
+              status: 'error',
+              fileName: uploadedReport.title || file.name,
+              message:
+                'Your report is uploaded, but I could not analyze it right now. You can still ask me questions about it.',
+              disclaimer:
+                'AI-generated analysis for educational purposes. Not a medical diagnosis.',
+            },
+            reportId: uploadedReport._id,
+            botType: activeTab,
+          },
+        ];
+      });
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Triggered when the user clicks "Explain medications" on a ReportSummaryCard.
+  // Fetches FDA + RxNav info for each suggested medication and appends the
+  // enriched results as a single bot-medicine-cards message.
+  const handleExplainMedications = async (suggestedMedications) => {
+    const list = Array.isArray(suggestedMedications) ? suggestedMedications : [];
+    const placeholderSet = new Set(['unknown', 'not specified', 'n/a', 'na', 'none', 'tbd']);
+    const names = list
+      .map((m) => (typeof m === 'string' ? m : m?.name))
+      .filter(
+        (n) =>
+          typeof n === 'string' &&
+          n.trim().length > 1 &&
+          !placeholderSet.has(n.trim().toLowerCase())
+      );
+
+    if (names.length === 0) {
+      toast({ title: 'No specific medications to look up', variant: 'info' });
+      return;
+    }
+
+    // Show a status pill so the user knows we're working
+    setMessages((prev) => [
+      ...prev,
+      { type: 'system', text: 'Looking up medications…', botType: activeTab },
+    ]);
+
+    const userMedications = Array.isArray(user?.profile?.medications)
+      ? user.profile.medications
+      : [];
+
+    try {
+      const results = await Promise.all(
+        names.slice(0, 5).map((name) =>
+          chatbotService
+            .explainMedicine({ name, userMedications })
+            .catch((err) => ({
+              status: 'error',
+              message: err?.response?.data?.message || 'Lookup failed',
+              medicine: null,
+            }))
+        )
+      );
+
+      setMessages((prev) => {
+        const filtered = prev.filter(
+          (m) => !(m.type === 'system' && m.text === 'Looking up medications…')
+        );
+        return [
+          ...filtered,
+          {
+            type: 'bot-medicine-cards',
+            payload: results,
+            botType: activeTab,
+          },
+        ];
+      });
+    } catch (err) {
+      setMessages((prev) =>
+        prev.filter((m) => !(m.type === 'system' && m.text === 'Looking up medications…'))
+      );
+      toast({
+        title: 'Could not load medication info',
+        description: 'Please try again in a moment.',
+        variant: 'error',
+      });
+    }
+  };
+
+  // Triggered when the user clicks "Find nearby <specialty>" on a ReportSummaryCard.
+  // Opens the location permission modal; actual search fires after resolve.
+  const handleFindSpecialist = (specialty) => {
+    setLocationModal({ open: true, specialty: specialty || 'specialist' });
+  };
+
+  // Called by LocationPermissionModal once it has either { lat, lon } or { city }.
+  const handleLocationResolved = async ({ lat, lon, city }) => {
+    const specialty = locationModal.specialty || 'doctor';
+    setLocationModal({ open: false, specialty: null });
+
+    setMessages((prev) => [
+      ...prev,
+      { type: 'system', text: `Searching for ${specialty}s nearby…`, botType: activeTab },
+    ]);
+
+    try {
+      const result = await chatbotService.getNearbyDoctors({
+        specialty,
+        lat,
+        lon,
+        city,
+        radius: 7000,
+      });
+
+      setMessages((prev) => {
+        const filtered = prev.filter(
+          (m) => !(m.type === 'system' && m.text.startsWith('Searching for'))
+        );
+        return [
+          ...filtered,
+          {
+            type: 'bot-doctor-grid',
+            payload: result,
+            botType: activeTab,
+          },
+        ];
+      });
+    } catch (err) {
+      setMessages((prev) => {
+        const filtered = prev.filter(
+          (m) => !(m.type === 'system' && m.text.startsWith('Searching for'))
+        );
+        return [
+          ...filtered,
+          {
+            type: 'bot-doctor-grid',
+            payload: {
+              status: 'error',
+              message:
+                err?.response?.data?.message ||
+                'Could not search for nearby doctors. Please try again.',
+            },
+            botType: activeTab,
+          },
+        ];
+      });
+      toast({
+        title: 'Could not load nearby doctors',
+        description: 'Please try again in a moment.',
+        variant: 'error',
+      });
     }
   };
 
@@ -130,22 +386,12 @@ const AIChatbots = () => {
       {/* Chat Area */}
       <div className="flex-1 p-3 sm:p-6 overflow-y-auto scrollbar-hide space-y-3 sm:space-y-4 bg-[#f3f3ff]">
         {filteredMessages.map((msg, idx) => (
-          <motion.div
+          <MessageDispatcher
             key={idx}
-            className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className={`flex max-w-[90%] sm:max-w-[85%] gap-2 sm:gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.type === 'user' ? 'bg-[#e8eaf9]' : 'bg-[#f0f1fc] text-[#506cd7]'}`}>
-                {msg.type === 'user' ? <User size={14} /> : (activeTab === 'health' ? <Bot size={14} /> : <Pill size={14} />)}
-              </div>
-              <div className={`p-3 sm:p-4 text-xs sm:text-sm ${msg.type === 'user' ? 'bg-primary-600 text-white rounded-2xl rounded-tr-none' : 'bg-white border border-[#e8eaf9] text-[#5f697a] rounded-[16px] rounded-tl-none'}`} style={msg.type !== 'user' ? { boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' } : {}}>
-                {renderMessage(msg.text)}
-              </div>
-            </div>
-          </motion.div>
+            message={msg}
+            onExplainMedications={handleExplainMedications}
+            onFindSpecialist={handleFindSpecialist}
+          />
         ))}
 
         {/* Typing indicator */}
@@ -166,21 +412,48 @@ const AIChatbots = () => {
 
       {/* Input Area */}
       <div className="p-3 sm:p-4 bg-white border-t border-[#e8eaf9]">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <input
+            type="file"
+            ref={fileInputRef}
+            hidden
+            accept=".pdf,.png,.jpg,.jpeg,.docx"
+            onChange={handleReportUpload}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading || uploading}
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            aria-label="Upload medical report"
+            title="Upload medical report"
+          >
+            {uploading
+              ? <Loader2 size={18} className="animate-spin text-[#506cd7]" />
+              : <Paperclip size={18} className="text-[#506cd7]" />}
+          </button>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !loading && handleSend()}
             placeholder={activeTab === 'health' ? "Ask about symptoms..." : "Enter medicine name..."}
-            disabled={loading}
-            className={`flex-1 dash-input ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={loading || uploading}
+            className={`flex-1 dash-input ${(loading || uploading) ? 'opacity-50 cursor-not-allowed' : ''}`}
           />
-          <Button onClick={handleSend} disabled={loading} className="px-3 sm:px-4">
+          <Button onClick={handleSend} disabled={loading || uploading} className="px-3 sm:px-4">
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </Button>
         </div>
       </div>
+
+      {/* Location permission modal for the "Find nearby specialist" flow */}
+      <LocationPermissionModal
+        isOpen={locationModal.open}
+        specialtyLabel={locationModal.specialty ? `${locationModal.specialty}s` : 'specialists'}
+        onClose={() => setLocationModal({ open: false, specialty: null })}
+        onResolved={handleLocationResolved}
+      />
     </div>
   );
 };

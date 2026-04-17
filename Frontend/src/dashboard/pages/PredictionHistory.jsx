@@ -1,6 +1,40 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Brain, CalendarClock, ChevronRight, Heart, ListChecks } from 'lucide-react';
+import { Activity, Brain, CalendarClock, ChevronRight, Heart, ListChecks, Loader2, FileDown } from 'lucide-react';
 import { riskService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import Button from '../../shared/ui/Button';
+
+// Lazy-load the PDF library + report components only when the user clicks Generate.
+// Keeps the main bundle lean and ensures zero initial-load breakage.
+const generatePdfBlob = async ({ heartPrediction, symptomsPrediction, user }) => {
+  const [{ pdf }, ReportModule] = await Promise.all([
+    import('@react-pdf/renderer'),
+    import('../components/reports/ReportDocument'),
+  ]);
+  const ReportDocument = ReportModule.default;
+  const { getReportFilename } = ReportModule;
+  const blob = await pdf(
+    <ReportDocument
+      heartPrediction={heartPrediction}
+      symptomsPrediction={symptomsPrediction}
+      user={user}
+    />
+  ).toBlob();
+  return { blob, filename: getReportFilename(user) };
+};
+
+const triggerDownload = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Defer revoke so the download has time to start
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -65,7 +99,7 @@ const HistoryList = ({ items, selectedId, onSelect, type }) => {
   }
 
   return (
-    <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+    <div className="space-y-2 max-h-[560px] overflow-y-auto scrollbar-hide pr-1">
       {items.map((item) => {
         const isActive = selectedId === item._id;
         const title = type === 'heart'
@@ -88,11 +122,11 @@ const HistoryList = ({ items, selectedId, onSelect, type }) => {
             }`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-[#0b1030]">{title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#0b1030] truncate">{title}</p>
                 <p className="text-xs text-[#5f697a] mt-1">{subline}</p>
               </div>
-              <ChevronRight size={16} className="text-[#9aa3b2] mt-0.5" />
+              <ChevronRight size={16} className="text-[#9aa3b2] mt-0.5 flex-shrink-0" />
             </div>
             <p className="text-xs text-[#6a7283] mt-2">{formatDate(item.createdAt)}</p>
           </button>
@@ -247,12 +281,50 @@ const SymptomsDetail = ({ item }) => {
 };
 
 const PredictionHistory = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('heart');
   const [loading, setLoading] = useState(true);
   const [heartPredictions, setHeartPredictions] = useState([]);
   const [symptomPredictions, setSymptomPredictions] = useState([]);
   const [selectedHeart, setSelectedHeart] = useState(null);
   const [selectedSymptom, setSelectedSymptom] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateReport = async () => {
+    if (isGenerating) return;
+    // Prefer the currently selected prediction of each type; fall back to latest (index 0)
+    const heartPrediction = selectedHeart || heartPredictions[0] || null;
+    const symptomsPrediction = selectedSymptom || symptomPredictions[0] || null;
+    if (!heartPrediction && !symptomsPrediction) {
+      toast({
+        title: 'No data to report',
+        description: 'Create a prediction first to generate a report.',
+        variant: 'info',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { blob, filename } = await generatePdfBlob({
+        heartPrediction,
+        symptomsPrediction,
+        user,
+      });
+      triggerDownload(blob, filename);
+      toast({ title: 'Report downloaded', variant: 'success' });
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast({
+        title: 'Could not generate report',
+        description: 'Please try again in a moment.',
+        variant: 'error',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAllHistory = async () => {
@@ -299,11 +371,30 @@ const PredictionHistory = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="dash-card">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarClock size={20} className="text-[#506cd7]" />
-          <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Prediction History</h2>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarClock size={20} className="text-[#506cd7]" />
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Prediction History</h2>
+            </div>
+            <p className="text-sm text-[#5f697a]">
+              View all saved predictions and tap any record to see complete details.
+              Generate a combined PDF covering both heart &amp; diabetes and symptoms analysis below.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleGenerateReport}
+            disabled={isGenerating || (!heartPredictions.length && !symptomPredictions.length)}
+            className="flex-shrink-0"
+          >
+            {isGenerating ? (
+              <><Loader2 size={14} className="mr-2 animate-spin" /> Generating…</>
+            ) : (
+              <><FileDown size={14} className="mr-2" /> Generate Complete Report</>
+            )}
+          </Button>
         </div>
-        <p className="text-sm text-[#5f697a]">View all saved predictions and tap any record to see complete details.</p>
       </div>
 
       <div className="dash-card">

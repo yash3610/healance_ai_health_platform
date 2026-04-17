@@ -190,6 +190,19 @@ export const healthService = {
     const response = await api.get('/health-data/latest');
     return response.data;
   },
+
+  // Upload a medical report file (PDF/image/docx)
+  uploadReport: async (file, meta = {}) => {
+    const formData = new FormData();
+    formData.append('report', file);
+    if (meta.title) formData.append('title', meta.title);
+    if (meta.type) formData.append('type', meta.type);
+
+    const response = await api.post('/health-data/reports', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 // ==================== BLOG SERVICES ====================
@@ -302,6 +315,39 @@ export const chatbotService = {
   // Delete session
   deleteSession: async (sessionId) => {
     const response = await api.delete(`/chatbot/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Analyze an uploaded medical report with Gemini.
+  // `reportId` comes from healthService.uploadReport().
+  analyzeReport: async (reportId) => {
+    const response = await api.post(`/chatbot/analyze-report/${reportId}`);
+    return response.data;
+  },
+
+  // Explain a single medication — returns FDA drug label info + class + interaction matches
+  // against the user's current medications.
+  explainMedicine: async ({ name, userMedications = [] }) => {
+    const response = await api.post('/chatbot/explain-medicine', { name, userMedications });
+    return response.data;
+  },
+
+  // Find nearby doctors (seeded partners + OSM fallback). Pass lat/lon when
+  // geolocation is granted, or city when the user enters one manually.
+  getNearbyDoctors: async ({ specialty, lat, lon, city, radius }) => {
+    const response = await api.post('/chatbot/nearby-doctors', {
+      specialty,
+      lat,
+      lon,
+      city,
+      radius,
+    });
+    return response.data;
+  },
+
+  // Resolve a city name to lat/lon (used when geolocation is denied).
+  geocode: async (city) => {
+    const response = await api.post('/chatbot/geocode', { city });
     return response.data;
   },
 };
