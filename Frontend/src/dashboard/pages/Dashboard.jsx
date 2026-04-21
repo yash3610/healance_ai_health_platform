@@ -288,7 +288,7 @@ const LatestSymptomsCard = ({ latest }) => {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/dashboard/risk-prediction')}
+            onClick={() => navigate('/dashboard/prediction-history')}
             className="w-full flex items-center justify-center gap-1 text-xs font-semibold text-[#506cd7] hover:text-[#4753bf] py-2 rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] transition-colors"
           >
             View full details <ArrowRight size={12} />
