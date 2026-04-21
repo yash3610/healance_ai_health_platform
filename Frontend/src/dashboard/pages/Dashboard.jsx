@@ -34,25 +34,25 @@ const EnhancedStatCard = ({
   title, value, unit, icon: Icon, iconClass, subtext, sparklineData,
   progressBars, activityChip, trendPct, onAction, actionLabel,
 }) => (
-  <div className="dash-card dash-card-glow h-full">
-    <div className="flex justify-between items-start mb-3 sm:mb-4">
+  <div className="dash-card dash-card-glow h-full !p-4 sm:!p-5">
+    <div className="flex justify-between items-start mb-2 sm:mb-4 gap-2">
       <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm font-medium text-[#5f697a] truncate">{title}</p>
-        <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030] mt-1">
-          {value} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">{unit}</span>
+        <p className="text-[11px] sm:text-sm font-medium text-[#5f697a] truncate">{title}</p>
+        <h3 className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030] mt-0.5 sm:mt-1 truncate">
+          {value} <span className="text-[10px] sm:text-sm font-normal text-[#6a7283]">{unit}</span>
         </h3>
       </div>
-      <div className={`dash-icon-badge ${iconClass}`}>
-        <Icon size={20} className="text-white" />
+      <div className={`dash-icon-badge ${iconClass} flex-shrink-0`} style={{ width: 36, height: 36 }}>
+        <Icon size={16} className="text-white" />
       </div>
     </div>
 
     {sparklineData && sparklineData.length > 0 && (
-      <div className="mb-2 flex items-end justify-between">
-        <Sparkline data={sparklineData} width={80} height={22} />
+      <div className="mb-2 flex items-end justify-between gap-2">
+        <Sparkline data={sparklineData} width={70} height={22} />
         {typeof trendPct === 'number' && (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-            <TrendingUp size={11} />
+          <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-emerald-600 flex-shrink-0">
+            <TrendingUp size={10} />
             +{Math.abs(trendPct)}%
           </span>
         )}
@@ -63,9 +63,9 @@ const EnhancedStatCard = ({
       <div className="space-y-2 mb-2">
         {progressBars.map((bar, i) => (
           <div key={i}>
-            <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="text-[#0b1030] font-medium truncate max-w-[140px]">{bar.label}</span>
-              <span className="text-[#6a7283] font-semibold">{bar.pct}%</span>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] mb-1 gap-2">
+              <span className="text-[#0b1030] font-medium truncate flex-1 min-w-0">{bar.label}</span>
+              <span className="text-[#6a7283] font-semibold flex-shrink-0">{bar.pct}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-[#f0f1fc] overflow-hidden">
               <div
@@ -130,16 +130,16 @@ const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
   };
 
   return (
-    <div className="dash-card dash-card-glow">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="dash-icon-badge dash-icon-badge--gradient-cyan">
-            <Droplets size={20} className="text-white" />
+    <div className="dash-card dash-card-glow !p-4 sm:!p-5">
+      <div className="flex justify-between items-start mb-3 gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="dash-icon-badge dash-icon-badge--gradient-cyan flex-shrink-0" style={{ width: 36, height: 36 }}>
+            <Droplets size={16} className="text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm font-medium text-[#5f697a] truncate">Water Intake</p>
-            <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
-              {waterIntake.toFixed(1)} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">/ 3 L</span>
+            <p className="text-[11px] sm:text-sm font-medium text-[#5f697a] truncate">Water Intake</p>
+            <h3 className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030]">
+              {waterIntake.toFixed(1)} <span className="text-[10px] sm:text-sm font-normal text-[#6a7283]">/ 3 L</span>
             </h3>
           </div>
         </div>
@@ -152,16 +152,16 @@ const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
           }`}
           title={reminderActive ? 'Reminder Active' : 'Set Water Reminder'}
         >
-          {reminderActive ? <BellRing size={18} /> : <Bell size={18} />}
+          {reminderActive ? <BellRing size={16} /> : <Bell size={16} />}
         </button>
       </div>
 
-      {/* Glass viz with gradient fills */}
-      <div className="grid grid-cols-6 gap-1.5 mb-3">
+      {/* Glass viz with gradient fills — responsive cell count per row */}
+      <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3">
         {Array.from({ length: target }).map((_, i) => (
           <div
             key={i}
-            className="h-7 rounded-md transition-all"
+            className="h-5 sm:h-7 rounded-md transition-all"
             style={{
               background:
                 i < glasses
@@ -173,26 +173,26 @@ const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-[#5f697a]">
-          {remaining > 0 ? `${remaining} glasses left · ${pct}%` : '🎉 Goal reached!'}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] sm:text-xs text-[#5f697a] truncate">
+          {remaining > 0 ? `${remaining} left · ${pct}%` : '🎉 Goal reached!'}
         </p>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           <button
             onClick={handleRemoveGlass}
             disabled={waterIntake <= 0}
-            className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            className="p-1.5 sm:p-2 min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
             aria-label="Remove one glass of water"
           >
-            <Minus size={14} className="text-[#5f697a]" />
+            <Minus size={12} className="text-[#5f697a]" />
           </button>
           <button
             onClick={handleAddGlass}
             disabled={waterIntake >= 3}
-            className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            className="p-1.5 sm:p-2 min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
             aria-label="Add one glass of water"
           >
-            <Plus size={14} className="text-blue-600" />
+            <Plus size={12} className="text-blue-600" />
           </button>
         </div>
       </div>
@@ -275,12 +275,12 @@ const LatestSymptomsCard = ({ latest }) => {
 
       {latest ? (
         <div className="space-y-3">
-          <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-            <span className="text-sm text-[#5f697a]">Predicted Disease</span>
-            <span className="font-bold text-[#0b1030] text-right">{latest.predictedDisease || 'N/A'}</span>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 p-3 bg-[#f0f1fc] rounded-xl">
+            <span className="text-xs sm:text-sm text-[#5f697a]">Predicted Disease</span>
+            <span className="font-bold text-[#0b1030] text-sm sm:text-base truncate">{latest.predictedDisease || 'N/A'}</span>
           </div>
-          <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-            <span className="text-sm text-[#5f697a]">Selected Symptoms</span>
+          <div className="flex justify-between items-center gap-2 p-3 bg-[#f0f1fc] rounded-xl">
+            <span className="text-xs sm:text-sm text-[#5f697a]">Selected Symptoms</span>
             <span className="font-bold text-[#0b1030]">{(latest.selectedSymptoms || []).length}</span>
           </div>
           <p className="text-sm text-[#5f697a] pt-1 line-clamp-3">
@@ -512,7 +512,7 @@ const Dashboard = () => {
   // =============================================================
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 1. Hero */}
       {isInitialLoad || !dashboardSummary ? (
         <SkeletonHero />
@@ -533,11 +533,11 @@ const Dashboard = () => {
 
       {/* 3. Stat Row */}
       {isInitialLoad ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
           {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
           {[
             <EnhancedStatCard
               key="steps"
@@ -588,12 +588,12 @@ const Dashboard = () => {
 
       {/* 4 + 5. Trends Chart + Today's Focus */}
       {isInitialLoad ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           <SkeletonChart />
           <SkeletonRiskCard />
         </div>
       ) : (
-        <DashReveal delay={0.12} className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        <DashReveal delay={0.12} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           <div className="lg:col-span-2">
             <WeeklyTrendsChart />
           </div>
@@ -603,12 +603,12 @@ const Dashboard = () => {
 
       {/* 6 + 7. Latest Symptoms + Smart Insights */}
       {isInitialLoad ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
           <SkeletonRiskCard />
           <SkeletonRiskCard />
         </div>
       ) : (
-        <DashReveal delay={0.18} className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+        <DashReveal delay={0.18} className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
           <LatestSymptomsCard latest={latestSymptomPrediction} />
           <SmartInsightsCard />
         </DashReveal>

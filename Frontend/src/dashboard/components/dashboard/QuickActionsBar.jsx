@@ -33,7 +33,7 @@ const QuickActionsBar = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4">
       {ACTIONS.map((action) => {
         const Icon = action.icon;
         return (
@@ -41,18 +41,18 @@ const QuickActionsBar = () => {
             key={action.key}
             type="button"
             onClick={() => navigate(action.href)}
-            className="dash-card dash-card-glow group flex items-center gap-3 text-left"
+            className="dash-card dash-card-glow group flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-3 text-center sm:text-left !p-3 sm:!p-5"
           >
-            <div className={`dash-icon-badge ${action.iconClass}`}>
-              <Icon size={20} className="text-white" />
+            <div className={`dash-icon-badge ${action.iconClass} flex-shrink-0`} style={{ width: 36, height: 36 }}>
+              <Icon size={16} className="text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[#0b1030] truncate">{action.label}</p>
-              <p className="text-xs text-[#6a7283] truncate">{action.subtitle}</p>
+            <div className="flex-1 min-w-0 w-full">
+              <p className="text-[11px] sm:text-sm font-bold text-[#0b1030] truncate leading-tight">{action.label}</p>
+              <p className="hidden sm:block text-xs text-[#6a7283] truncate">{action.subtitle}</p>
             </div>
             <ArrowRight
-              size={16}
-              className="text-[#506cd7] opacity-60 group-hover:opacity-100 transition-transform group-hover:translate-x-0.5 flex-shrink-0"
+              size={14}
+              className="hidden sm:block text-[#506cd7] opacity-60 group-hover:opacity-100 transition-transform group-hover:translate-x-0.5 flex-shrink-0"
             />
           </button>
         );

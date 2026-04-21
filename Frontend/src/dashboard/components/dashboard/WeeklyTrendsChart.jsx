@@ -40,25 +40,25 @@ const WeeklyTrendsChart = () => {
 
   return (
     <div className="dash-card-static">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
-        <div className="flex items-center gap-2">
-          <div className="dash-icon-badge dash-icon-badge--gradient-indigo">
-            <TrendingUp size={18} className="text-white" />
+      <div className="flex flex-row justify-between items-start sm:items-center gap-3 mb-5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="dash-icon-badge dash-icon-badge--gradient-indigo flex-shrink-0" style={{ width: 36, height: 36 }}>
+            <TrendingUp size={16} className="text-white" />
           </div>
-          <div>
-            <h3 className="dash-heading text-sm sm:text-base">Weekly Health Trends</h3>
-            <p className="text-[11px] text-[#6a7283]">Score composed of steps, water, and active goals</p>
+          <div className="min-w-0">
+            <h3 className="dash-heading text-sm sm:text-base truncate">Weekly Health Trends</h3>
+            <p className="hidden sm:block text-[11px] text-[#6a7283]">Score composed of steps, water, and active goals</p>
           </div>
         </div>
 
         {/* Pill toggle */}
-        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl">
+        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl flex-shrink-0">
           {RANGES.map((r) => (
             <button
               key={r.id}
               type="button"
               onClick={() => setRange(r.id)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-lg transition-all ${
                 range === r.id
                   ? 'bg-white text-[#506cd7] shadow-sm'
                   : 'text-[#6a7283] hover:text-[#0b1030]'
@@ -70,7 +70,7 @@ const WeeklyTrendsChart = () => {
         </div>
       </div>
 
-      <div className="h-56 sm:h-72">
+      <div className="h-48 sm:h-64 lg:h-72">
         <ResponsiveContainer width="100%" height="100%" minHeight={220}>
           <AreaChart data={days}>
             <defs>

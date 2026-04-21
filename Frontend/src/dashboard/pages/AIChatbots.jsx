@@ -362,23 +362,46 @@ const AIChatbots = () => {
   return (
     <div className="h-[calc(100vh-10rem)] sm:h-[calc(100vh-8rem)] flex flex-col dash-card-static overflow-hidden !p-0">
       {/* Tabs */}
-      <div className="flex border-b border-[#e8eaf9]">
+      <div className="flex border-b border-[#e8eaf9] bg-white">
         <button
           onClick={() => setActiveTab('health')}
-          className={`flex-1 py-3 sm:py-4 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 transition-colors ${activeTab === 'health' ? 'bg-[#f0f1fc] text-[#506cd7] border-b-2 border-[#506cd7]' : 'text-[#5f697a] hover:bg-[#f0f1fc]'}`}
+          className={`relative flex-1 py-3 sm:py-4 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 transition-colors ${
+            activeTab === 'health'
+              ? 'text-[#506cd7] bg-gradient-to-b from-[#f0f1fc] to-white'
+              : 'text-[#5f697a] hover:bg-[#f8f9ff]'
+          }`}
         >
-          <Bot size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="hidden xs:inline">Health</span> Assistant
+          <span className={`dash-icon-badge ${activeTab === 'health' ? 'dash-icon-badge--gradient-indigo' : 'bg-[#f0f1fc]'}`} style={{ width: 26, height: 26 }}>
+            <Bot size={13} className={activeTab === 'health' ? 'text-white' : 'text-[#506cd7]'} />
+          </span>
+          <span className="hidden xs:inline">Health</span> Assistant
+          {activeTab === 'health' && (
+            <span className="absolute bottom-0 left-4 right-4 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg, #506cd7, #0ea5e9)' }} />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('medicine')}
-          className={`flex-1 py-3 sm:py-4 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 transition-colors ${activeTab === 'medicine' ? 'bg-[#f0f1fc] text-[#506cd7] border-b-2 border-[#506cd7]' : 'text-[#5f697a] hover:bg-[#f0f1fc]'}`}
+          className={`relative flex-1 py-3 sm:py-4 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 transition-colors ${
+            activeTab === 'medicine'
+              ? 'text-[#506cd7] bg-gradient-to-b from-[#f0f1fc] to-white'
+              : 'text-[#5f697a] hover:bg-[#f8f9ff]'
+          }`}
         >
-          <Pill size={16} className="sm:w-[18px] sm:h-[18px]" /> <span className="hidden xs:inline">Medicine</span> Info
+          <span className={`dash-icon-badge ${activeTab === 'medicine' ? 'dash-icon-badge--gradient-rose' : 'bg-[#f0f1fc]'}`} style={{ width: 26, height: 26 }}>
+            <Pill size={13} className={activeTab === 'medicine' ? 'text-white' : 'text-[#506cd7]'} />
+          </span>
+          <span className="hidden xs:inline">Medicine</span> Info
+          {activeTab === 'medicine' && (
+            <span className="absolute bottom-0 left-4 right-4 h-[3px] rounded-full" style={{ background: 'linear-gradient(90deg, #e74c4c, #fb7185)' }} />
+          )}
         </button>
       </div>
 
       {/* Medical Disclaimer */}
-      <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+      <div
+        className="px-4 py-2 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2"
+        style={{ background: 'linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%)' }}
+      >
         <ShieldAlert size={14} className="flex-shrink-0" />
         <span>This AI provides general health information only. Always consult a healthcare professional for medical advice.</span>
       </div>
@@ -398,8 +421,8 @@ const AIChatbots = () => {
         {loading && (
           <div className="flex justify-start">
             <div className="flex max-w-[80%] gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#f0f1fc] text-[#506cd7]">
-                {activeTab === 'health' ? <Bot size={16} /> : <Pill size={16} />}
+              <div className={`dash-icon-badge ${activeTab === 'health' ? 'dash-icon-badge--gradient-indigo' : 'dash-icon-badge--gradient-rose'} flex-shrink-0`} style={{ width: 32, height: 32 }}>
+                {activeTab === 'health' ? <Bot size={14} className="text-white" /> : <Pill size={14} className="text-white" />}
               </div>
               <div className="rounded-[16px] bg-white border border-[#e8eaf9] rounded-tl-none" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
                 <TypingDots />

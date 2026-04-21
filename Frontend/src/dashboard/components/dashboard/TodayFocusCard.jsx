@@ -77,15 +77,15 @@ const TodayFocusCard = () => {
             return (
               <div
                 key={goal._id}
-                className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50/70 transition-colors"
+                className="group flex items-center gap-2.5 sm:gap-3 p-2 sm:p-2.5 rounded-xl hover:bg-slate-50/70 transition-colors"
               >
-                <div className={`dash-icon-badge ${style.iconClass}`} style={{ width: 36, height: 36 }}>
-                  <Icon size={16} className="text-white" />
+                <div className={`dash-icon-badge ${style.iconClass} flex-shrink-0`} style={{ width: 32, height: 32 }}>
+                  <Icon size={14} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold text-[#0b1030] truncate">{goal.title}</p>
-                    <span className="text-[11px] text-[#6a7283] flex-shrink-0">
+                    <p className="text-xs sm:text-sm font-semibold text-[#0b1030] truncate">{goal.title}</p>
+                    <span className="text-[10px] sm:text-[11px] text-[#6a7283] flex-shrink-0">
                       {formatNumber(goal.current)} / {formatNumber(goal.target)} {goal.unit}
                     </span>
                   </div>
@@ -103,14 +103,14 @@ const TodayFocusCard = () => {
                   <button
                     type="button"
                     onClick={() => handleBump(goal)}
-                    className="flex-shrink-0 p-2 rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] text-[#506cd7] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    className="flex-shrink-0 p-1.5 sm:p-2 rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] text-[#506cd7] transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100"
                     aria-label={`Add progress to ${goal.title}`}
                   >
-                    <Plus size={14} />
+                    <Plus size={12} />
                   </button>
                 )}
                 {reached && (
-                  <span className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                  <span className="flex-shrink-0 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                     Done
                   </span>
                 )}

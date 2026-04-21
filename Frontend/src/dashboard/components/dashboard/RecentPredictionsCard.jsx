@@ -81,19 +81,19 @@ const RecentPredictionsCard = ({ symptomPredictions = [], riskPredictions = [] }
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <div className="dash-icon-badge dash-icon-badge--gradient-rose">
-            <History size={18} className="text-white" />
+          <div className="dash-icon-badge dash-icon-badge--gradient-rose flex-shrink-0" style={{ width: 36, height: 36 }}>
+            <History size={16} className="text-white" />
           </div>
           <h3 className="dash-heading text-sm sm:text-base">Recent Activity</h3>
         </div>
 
-        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl self-start sm:self-auto">
+        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl self-stretch sm:self-auto overflow-x-auto scrollbar-hide">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-lg transition-all ${
+              className={`flex-1 sm:flex-none whitespace-nowrap px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-lg transition-all ${
                 tab === t.id
                   ? 'bg-white text-[#506cd7] shadow-sm'
                   : 'text-[#6a7283] hover:text-[#0b1030]'

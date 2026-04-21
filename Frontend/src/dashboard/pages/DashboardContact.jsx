@@ -102,9 +102,9 @@ const DashboardContact = () => {
       <DashReveal className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Left Column: Support Form */}
         <div className="lg:col-span-2">
-          <div className="dash-card-static h-full">
+          <div className="dash-card-static dash-card-accent h-full" style={{ '--accent-stripe': '#506cd7' }}>
             <h3 className="dash-heading text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-2">
-              <div className="dash-icon-badge bg-[#506cd7]">
+              <div className="dash-icon-badge dash-icon-badge--gradient-indigo">
                 <MessageSquare size={20} className="text-white" />
               </div>
               Submit a Request
@@ -181,12 +181,15 @@ const DashboardContact = () => {
                 />
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-[#e8eaf9] rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center text-center hover:bg-[#f0f1fc] transition-colors cursor-pointer"
+                  className="group border-2 border-dashed border-[#e8eaf9] rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-[#506cd7]/50"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(240, 241, 252, 0.4), rgba(253, 242, 245, 0.4))',
+                  }}
                 >
-                  <div className="dash-icon-badge bg-[#f0f1fc] text-[#506cd7] mb-2 sm:mb-3">
-                    <UploadCloud size={22} />
+                  <div className="dash-icon-badge dash-icon-badge--gradient-indigo mb-2 sm:mb-3 transition-transform group-hover:scale-110">
+                    <UploadCloud size={22} className="text-white" />
                   </div>
-                  <p className="text-xs sm:text-sm font-medium text-[#0b1030]">Click to upload or drag and drop</p>
+                  <p className="text-xs sm:text-sm font-semibold text-[#0b1030]">Click to upload or drag and drop</p>
                   <p className="text-[10px] sm:text-xs text-[#6a7283] mt-1">SVG, PNG, JPG or PDF (max. 10MB each, up to 5 files)</p>
                 </div>
 
@@ -194,12 +197,18 @@ const DashboardContact = () => {
                 {attachments.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {attachments.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-[#f0f1fc] px-3 py-2 rounded-lg">
-                        <span className="text-sm text-[#0b1030] truncate max-w-[200px]">{file.name}</span>
+                      <div key={index} className="flex items-center justify-between gap-2 bg-white border border-[#e8eaf9] px-3 py-2 rounded-lg hover:border-[#506cd7]/30 transition-colors">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="dash-icon-badge dash-icon-badge--gradient-indigo flex-shrink-0" style={{ width: 24, height: 24 }}>
+                            <UploadCloud size={12} className="text-white" />
+                          </span>
+                          <span className="text-sm text-[#0b1030] truncate">{file.name}</span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeAttachment(index)}
-                          className="text-[#6a7283] hover:text-red-500 transition-colors"
+                          className="text-[#6a7283] hover:text-red-500 transition-colors p-1"
+                          aria-label="Remove attachment"
                         >
                           <X size={16} />
                         </button>
@@ -230,9 +239,9 @@ const DashboardContact = () => {
         {/* Right Column: Contact Info & Map */}
         <div className="space-y-4 sm:space-y-6">
           {/* Contact Details Card */}
-          <div className="dash-card-static">
+          <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#0ea5e9' }}>
             <h3 className="dash-heading text-base sm:text-lg mb-4 sm:mb-6 flex items-center gap-2">
-              <div className="dash-icon-badge bg-[#506cd7]">
+              <div className="dash-icon-badge dash-icon-badge--gradient-cyan">
                 <Headphones size={20} className="text-white" />
               </div>
               Support Details
@@ -240,8 +249,8 @@ const DashboardContact = () => {
 
             <div className="space-y-5">
               <div className="flex items-start gap-4">
-                <div className="bg-[#f0f1fc] p-2.5 rounded-lg text-[#506cd7] mt-0.5">
-                  <Mail size={18} />
+                <div className="dash-icon-badge dash-icon-badge--gradient-indigo flex-shrink-0" style={{ width: 38, height: 38 }}>
+                  <Mail size={16} className="text-white" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#6a7283] uppercase tracking-wide">Email Support</p>
@@ -251,8 +260,8 @@ const DashboardContact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-[#f0f1fc] p-2.5 rounded-lg text-[#506cd7] mt-0.5">
-                  <Phone size={18} />
+                <div className="dash-icon-badge dash-icon-badge--gradient-emerald flex-shrink-0" style={{ width: 38, height: 38 }}>
+                  <Phone size={16} className="text-white" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#6a7283] uppercase tracking-wide">Phone Support</p>
@@ -262,8 +271,8 @@ const DashboardContact = () => {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="bg-[#f0f1fc] p-2.5 rounded-lg text-[#506cd7] mt-0.5">
-                  <Clock size={18} />
+                <div className="dash-icon-badge dash-icon-badge--gradient-amber flex-shrink-0" style={{ width: 38, height: 38 }}>
+                  <Clock size={16} className="text-white" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[#6a7283] uppercase tracking-wide">Working Hours</p>

@@ -126,24 +126,40 @@ const Profile = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashReveal className="grid grid-cols-1 gap-6">
-        <div className="dash-card-static">
+        <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#506cd7' }}>
           <h3 className="dash-heading text-base sm:text-lg mb-5 flex items-center gap-2">
-            <div className="dash-icon-badge bg-[#506cd7]">
+            <div className="dash-icon-badge dash-icon-badge--gradient-indigo">
               <User size={20} className="text-white" />
             </div>
-            Personal Information
+            <span>Personal Information</span>
           </h3>
 
-          <div className="mb-5 p-4 border border-[#e8eaf9] rounded-xl bg-[#f0f1fc]">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <Avatar
-                src={avatarSrc}
-                name={user?.name}
-                size={80}
-                className="border border-[#e8eaf9]"
-              />
+          <div
+            className="mb-5 p-5 rounded-[20px] relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #f5f7ff 0%, #ffffff 55%, #fdf2f5 100%)',
+              border: '1px solid rgba(226, 232, 240, 0.9)',
+              boxShadow: '0 8px 28px rgba(80, 108, 215, 0.10)',
+            }}
+          >
+            <div
+              className="absolute -top-20 -right-20 w-52 h-52 rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(closest-side, rgba(80, 108, 215, 0.10), transparent 70%)' }}
+            />
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="p-1.5 rounded-full" style={{ background: 'linear-gradient(135deg, #506cd7, #0ea5e9)' }}>
+                <div className="p-1 bg-white rounded-full">
+                  <Avatar
+                    src={avatarSrc}
+                    name={user?.name}
+                    size={80}
+                    className=""
+                  />
+                </div>
+              </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-[#0b1030] mb-2">Profile Photo</p>
+                <p className="text-xs uppercase tracking-wider font-semibold text-[#506cd7] mb-0.5">Profile Photo</p>
+                <p className="text-sm text-[#5f697a] mb-2">PNG or JPG, max 5MB</p>
                 <input
                   ref={avatarInputRef}
                   type="file"

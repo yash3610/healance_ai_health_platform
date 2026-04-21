@@ -18,6 +18,7 @@ import {
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
 import DashReveal from '../../shared/ui/DashReveal';
+import CircularGauge from '../../shared/ui/CircularGauge';
 import { useAuth } from '../../context/AuthContext';
 import AdaptiveQuestions, { NOT_SURE, isAnswered } from './risk/AdaptiveQuestions';
 
@@ -54,11 +55,11 @@ const PredictionRow = ({ item, index }) => {
   const [open, setOpen] = useState(false);
   const hasReasoning = typeof item.reasoning === 'string' && item.reasoning.trim().length > 0;
   return (
-    <div className="rounded-xl border border-[#e8eaf9] overflow-hidden">
+    <div className="rounded-xl border border-[#e8eaf9] overflow-hidden hover:border-[#506cd7]/30 hover:shadow-sm transition-all">
       <div className="flex items-center justify-between px-3 py-2 bg-white">
         <span className="text-sm font-medium text-[#0b1030] truncate pr-2">{item.disease}</span>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs font-semibold text-[#506cd7]">{confidenceText(item.confidence)}</span>
+          <span className="text-xs font-bold text-[#506cd7] bg-[#f0f1fc] px-2 py-0.5 rounded-full">{confidenceText(item.confidence)}</span>
           {hasReasoning && (
             <button
               type="button"
@@ -301,12 +302,19 @@ const RiskPrediction = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <DashReveal>
-      <div className="dash-card-static">
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Symptoms Disease Prediction</h2>
-          <p className="text-sm sm:text-base text-[#5f697a]">
-            Select symptoms and the AI model will suggest the most likely disease along with diet, workout, precautions, and medications.
-          </p>
+      <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#506cd7' }}>
+        <div className="mb-6 sm:mb-8 flex items-start gap-3">
+          <div className="dash-icon-badge dash-icon-badge--gradient-indigo hidden sm:inline-flex">
+            <Stethoscope size={20} className="text-white" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
+              <span className="dash-gradient-text">Symptoms Disease Prediction</span>
+            </h2>
+            <p className="text-sm sm:text-base text-[#5f697a] mt-1">
+              Select symptoms and the AI model will suggest the most likely disease along with diet, workout, precautions, and medications.
+            </p>
+          </div>
         </div>
 
         <form className="space-y-5" onSubmit={handleContinue}>
@@ -395,37 +403,43 @@ const RiskPrediction = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="bg-blue-50 border border-blue-100 p-4 sm:p-6 rounded-[20px] flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="dash-icon-badge bg-blue-600">
-              <Stethoscope size={22} className="text-white" />
+          <div className="dash-card-hero flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="flex-shrink-0">
+              <CircularGauge
+                value={Math.round((result.confidence || 0) * 100)}
+                size={120}
+                stroke={10}
+                label="Confidence"
+                suffix="%"
+              />
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base sm:text-lg font-heading font-bold text-[#0b1030]">
-                  Predicted Disease: {result.predictedDisease}
-                </h3>
-                {result.refinementApplied && (
-                  <span
-                    title={(result.refinementReasons && result.refinementReasons.length)
-                      ? result.refinementReasons.join(' • ')
-                      : 'Adjusted using your follow-up answers'}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#506cd7] bg-[#f0f1fc] rounded-full px-2 py-0.5"
-                  >
-                    <Sparkles size={12} />
-                    Refined with your answers
-                  </span>
-                )}
-              </div>
-              <p className="text-sm sm:text-base text-[#394162]">
-                Confidence: <span className="font-semibold">{confidenceText(result.confidence)}</span>
+            <div className="min-w-0 flex-1 relative z-10">
+              <p className="text-xs uppercase tracking-[0.25em] font-semibold text-[#506cd7]">
+                Predicted Disease
               </p>
+              <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030] mt-1">
+                {result.predictedDisease}
+              </h3>
+              {result.refinementApplied && (
+                <span
+                  title={(result.refinementReasons && result.refinementReasons.length)
+                    ? result.refinementReasons.join(' • ')
+                    : 'Adjusted using your follow-up answers'}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#506cd7] bg-white/80 rounded-full px-2 py-1 mt-2"
+                >
+                  <Sparkles size={12} />
+                  Refined with your answers
+                </span>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <Activity size={18} className="text-[#506cd7]" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-indigo" style={{ width: 32, height: 32 }}>
+                  <Activity size={14} className="text-white" />
+                </span>
                 Description
               </h4>
               <p className="text-sm text-[#5f697a]">
@@ -433,9 +447,11 @@ const RiskPrediction = () => {
               </p>
             </div>
 
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <AlertTriangle size={18} className="text-[#f59e0b]" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-amber" style={{ width: 32, height: 32 }}>
+                  <AlertTriangle size={14} className="text-white" />
+                </span>
                 Top Predictions
               </h4>
               <div className="space-y-2">
@@ -452,9 +468,11 @@ const RiskPrediction = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <ShieldCheck size={18} className="text-green-600" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-emerald" style={{ width: 32, height: 32 }}>
+                  <ShieldCheck size={14} className="text-white" />
+                </span>
                 Precautions
               </h4>
               <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
@@ -464,9 +482,11 @@ const RiskPrediction = () => {
               </ul>
             </div>
 
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <Pill size={18} className="text-[#ef4444]" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-rose" style={{ width: 32, height: 32 }}>
+                  <Pill size={14} className="text-white" />
+                </span>
                 Medications
               </h4>
               <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
@@ -476,9 +496,11 @@ const RiskPrediction = () => {
               </ul>
             </div>
 
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <Soup size={18} className="text-orange-500" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-amber" style={{ width: 32, height: 32 }}>
+                  <Soup size={14} className="text-white" />
+                </span>
                 Diet Plan
               </h4>
               <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">
@@ -488,9 +510,11 @@ const RiskPrediction = () => {
               </ul>
             </div>
 
-            <div className="dash-card-static space-y-3">
+            <div className="dash-card dash-card-glow space-y-3">
               <h4 className="dash-heading text-sm sm:text-base flex items-center gap-2">
-                <Dumbbell size={18} className="text-blue-500" />
+                <span className="dash-icon-badge dash-icon-badge--gradient-cyan" style={{ width: 32, height: 32 }}>
+                  <Dumbbell size={14} className="text-white" />
+                </span>
                 Workout Plan
               </h4>
               <ul className="space-y-2 text-sm text-[#5f697a] list-disc pl-5">

@@ -48,15 +48,32 @@ const formatDate = (value) => {
 };
 
 const Badge = ({ children, tone = 'default' }) => {
-  const toneMap = {
-    default: 'bg-[#f0f1fc] text-[#506cd7]',
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-amber-100 text-amber-700',
-    danger: 'bg-red-100 text-red-700',
+  const toneStyles = {
+    default: {
+      background: 'linear-gradient(135deg, rgba(80, 108, 215, 0.12), rgba(14, 165, 233, 0.12))',
+      color: '#506cd7',
+    },
+    success: {
+      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.15))',
+      color: '#047857',
+    },
+    warning: {
+      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 191, 36, 0.15))',
+      color: '#b45309',
+    },
+    danger: {
+      background: 'linear-gradient(135deg, rgba(231, 76, 76, 0.15), rgba(251, 113, 133, 0.15))',
+      color: '#b91c1c',
+    },
   };
 
+  const style = toneStyles[tone] || toneStyles.default;
+
   return (
-    <span className={`text-xs font-medium px-2 py-1 rounded-full ${toneMap[tone] || toneMap.default}`}>
+    <span
+      className="text-xs font-bold px-2.5 py-1 rounded-full"
+      style={style}
+    >
       {children}
     </span>
   );
@@ -110,25 +127,36 @@ const HistoryList = ({ items, selectedId, onSelect, type }) => {
           ? `Heart ${typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'} • Diabetes ${typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}`
           : `Confidence ${typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}`;
 
+        const iconClass = type === 'heart'
+          ? 'dash-icon-badge--gradient-rose'
+          : 'dash-icon-badge--gradient-indigo';
+        const Icon = type === 'heart' ? Heart : Brain;
+
         return (
           <button
             key={item._id}
             type="button"
             onClick={() => onSelect(item)}
-            className={`w-full text-left rounded-xl border p-3 transition-colors ${
+            className={`group w-full text-left rounded-xl border p-3 transition-all ${
               isActive
-                ? 'border-[#506cd7] bg-[#f3f5ff]'
-                : 'border-[#e8eaf9] bg-white hover:bg-[#f9faff]'
+                ? 'border-[#506cd7] bg-[#f3f5ff] shadow-sm'
+                : 'border-[#e8eaf9] bg-white hover:bg-[#f9faff] hover:border-[#506cd7]/30'
             }`}
           >
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2.5">
+              <div className={`dash-icon-badge ${iconClass} flex-shrink-0`} style={{ width: 32, height: 32 }}>
+                <Icon size={14} className="text-white" />
+              </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[#0b1030] truncate">{title}</p>
-                <p className="text-xs text-[#5f697a] mt-1">{subline}</p>
+                <p className="text-xs text-[#5f697a] mt-0.5">{subline}</p>
+                <p className="text-[10px] text-[#9aa3b2] mt-1.5">{formatDate(item.createdAt)}</p>
               </div>
-              <ChevronRight size={16} className="text-[#9aa3b2] mt-0.5 flex-shrink-0" />
+              <ChevronRight
+                size={16}
+                className="text-[#9aa3b2] mt-2 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+              />
             </div>
-            <p className="text-xs text-[#6a7283] mt-2">{formatDate(item.createdAt)}</p>
           </button>
         );
       })}
@@ -370,17 +398,21 @@ const PredictionHistory = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="dash-card">
+      <div className="dash-card dash-card-accent" style={{ '--accent-stripe': '#506cd7' }}>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <CalendarClock size={20} className="text-[#506cd7]" />
-              <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Prediction History</h2>
+          <div className="min-w-0 flex-1 flex items-start gap-3">
+            <div className="dash-icon-badge dash-icon-badge--gradient-indigo hidden sm:inline-flex">
+              <CalendarClock size={20} className="text-white" />
             </div>
-            <p className="text-sm text-[#5f697a]">
-              View all saved predictions and tap any record to see complete details.
-              Generate a combined PDF covering both heart &amp; diabetes and symptoms analysis below.
-            </p>
+            <div>
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">
+                <span className="dash-gradient-text">Prediction History</span>
+              </h2>
+              <p className="text-sm text-[#5f697a] mt-1">
+                View all saved predictions and tap any record to see complete details.
+                Generate a combined PDF covering both heart &amp; diabetes and symptoms analysis below.
+              </p>
+            </div>
           </div>
           <Button
             size="sm"
@@ -398,23 +430,29 @@ const PredictionHistory = () => {
       </div>
 
       <div className="dash-card">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('heart')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'heart' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'heart'
+                ? 'bg-white text-[#506cd7] shadow-sm'
+                : 'text-[#5f697a] hover:text-[#0b1030]'
             }`}
           >
+            <Heart size={14} className={activeTab === 'heart' ? 'text-rose-500' : 'text-[#6a7283]'} />
             Heart & Diabetes ({heartPredictions.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('symptoms')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'symptoms' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'symptoms'
+                ? 'bg-white text-[#506cd7] shadow-sm'
+                : 'text-[#5f697a] hover:text-[#0b1030]'
             }`}
           >
+            <Brain size={14} className={activeTab === 'symptoms' ? 'text-indigo-500' : 'text-[#6a7283]'} />
             Symptoms Disease ({symptomPredictions.length})
           </button>
         </div>
