@@ -26,6 +26,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import whatsappRoutes from './routes/whatsappRoutes.js';
 import smsRoutes from './routes/smsRoutes.js';
 import predictRoutes from './routes/predictRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 dotenv.config();
 
@@ -107,6 +108,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/predict', predictRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ==================== ERROR HANDLING ====================
 

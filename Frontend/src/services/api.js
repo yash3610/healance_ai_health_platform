@@ -400,6 +400,12 @@ export const goalService = {
 // ==================== WALK & EARN SERVICES ====================
 
 export const walkEarnService = {
+  // Summary including 7-day weeklyData, coins, today's steps
+  getSummary: async () => {
+    const response = await api.get('/walk-earn/summary');
+    return response.data;
+  },
+
   // Get rewards catalog
   getRewards: async () => {
     const response = await api.get('/walk-earn/rewards');
@@ -485,6 +491,28 @@ export const bodyExplorerService = {
   // Meta: distinct systems available in the catalog (for filter UI)
   listSystems: async () => {
     const response = await api.get('/body-explorer/meta/systems');
+    return response.data;
+  },
+};
+
+// ==================== DASHBOARD SERVICES ====================
+
+export const dashboardService = {
+  // Composite summary: healthScore, streak, today totals, next action
+  getSummary: async () => {
+    const response = await api.get('/dashboard/summary');
+    return response.data;
+  },
+
+  // Per-day series for the trends chart. range = '7d' | '30d'
+  getTrends: async (range = '7d') => {
+    const response = await api.get('/dashboard/trends', { params: { range } });
+    return response.data;
+  },
+
+  // LLM-backed insights (with rule-based fallback server-side)
+  getInsights: async () => {
+    const response = await api.get('/dashboard/insights');
     return response.data;
   },
 };
