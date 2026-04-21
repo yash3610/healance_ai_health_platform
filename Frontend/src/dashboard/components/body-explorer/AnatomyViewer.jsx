@@ -267,7 +267,6 @@ const AnatomyViewer = ({
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
       onKeyDown={handleKeyDown}
-      style={{ outline: isFocused ? '2px solid rgba(80, 108, 215, 0.4)' : 'none', outlineOffset: '-2px' }}
     >
       {/* Loading overlay shown until model renders */}
       {!isLoaded && !hasSceneError && <LoadingOverlay />}

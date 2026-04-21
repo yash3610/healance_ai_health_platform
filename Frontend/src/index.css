@@ -1470,23 +1470,23 @@ canvas {
 /* ── Dashboard design-system bridge ── */
 .dash-card {
   @apply bg-white p-5 sm:p-6;
-  border-radius: 20px;
+  border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 10px 35px rgba(2, 6, 23, 0.08);
+  box-shadow: 0 10px 35px rgba(2, 6, 23, 0.026);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-.dash-card:hover {
+/* .dash-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 22px 38px rgba(11, 16, 48, 0.11);
   border-color: rgba(80, 108, 215, 0.25);
-}
+} */
 
 .dash-card-static {
   @apply bg-white p-5 sm:p-6;
-  border-radius: 20px;
+  border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 10px 35px rgba(2, 6, 23, 0.08);
+  box-shadow: 0 10px 35px rgba(2, 6, 23, 0.026);
 }
 
 .dash-icon-badge {

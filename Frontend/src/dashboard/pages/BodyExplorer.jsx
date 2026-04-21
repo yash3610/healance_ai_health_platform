@@ -5,10 +5,6 @@ import PartDetailCard from '../components/body-explorer/PartDetailCard';
 import PartSearchBar from '../components/body-explorer/PartSearchBar';
 import { bodyExplorerService } from '../../services/api';
 
-// The 3D canvas exposes ~7 clickable regions (Brain, Heart, Lungs, Shoulders,
-// Hands, Legs, Feet). The backend catalog is much richer (~34 parts). When
-// the user picks something from search that isn't one of the canvas regions
-// (e.g. "Pancreas"), we still show the detail card but skip the camera fly.
 const CANVAS_REGIONS = new Set(['Brain', 'Heart', 'Lungs', 'Shoulders', 'Hands', 'Legs', 'Feet']);
 
 const BodyExplorer = () => {
@@ -26,8 +22,7 @@ const BodyExplorer = () => {
   const [partLoading, setPartLoading] = useState(false);
   const [partError, setPartError] = useState('');
 
-  // Load catalog on mount and when gender changes so gender-only parts
-  // (ovaries/uterus for female, prostate for male) are filtered correctly.
+
   useEffect(() => {
     let cancelled = false;
     setCatalogLoading(true);
@@ -50,8 +45,6 @@ const BodyExplorer = () => {
     };
   }, [gender]);
 
-  // When a part is selected (by click or search), hydrate its details from
-  // the already-fetched catalog if present; otherwise fetch individually.
   useEffect(() => {
     if (!selectedPart) {
       setPartInfo(null);
@@ -94,8 +87,6 @@ const BodyExplorer = () => {
   }, []);
 
   const handleSearchSelect = useCallback((partName) => {
-    // If the search pick isn't clickable on the canvas, we still show its
-    // detail card — the camera won't fly, but the user gets the info.
     setSelectedPart(partName);
   }, []);
 
@@ -111,10 +102,6 @@ const BodyExplorer = () => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Clear the detail card when the user switches to a different system and
-  // the currently-selected part doesn't belong to the new system. Keeps
-  // the UI internally consistent (no "Knees info" while viewing
-  // Cardiovascular).
   useEffect(() => {
     if (activeSystem === 'all' || !selectedPart) return;
     const entry = catalog[selectedPart];

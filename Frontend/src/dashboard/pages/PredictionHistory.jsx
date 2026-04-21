@@ -427,7 +427,7 @@ const PredictionHistory = () => {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           <div className="xl:col-span-1">
-            <div className="dash-card h-full">
+            <div className="dash-card h-auto">
               <h3 className="dash-heading text-sm sm:text-base mb-3">All Records</h3>
               <HistoryList
                 items={currentList}
