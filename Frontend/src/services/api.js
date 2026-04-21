@@ -274,6 +274,11 @@ export const riskService = {
     return response.data;
   },
 
+  getAdaptiveQuestions: async (payload) => {
+    const response = await api.post('/predict/adaptive-questions', payload);
+    return response.data;
+  },
+
   getSymptomsPredictionHistory: async (options = 5) => {
     const params = typeof options === 'number' ? { limit: options } : options;
     const response = await api.get('/predict/symptoms-history', { params });

@@ -1,19 +1,25 @@
-import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
   Dumbbell,
   Loader2,
   MessageCircle,
   Pill,
   ShieldCheck,
   Soup,
+  Sparkles,
   Stethoscope,
 } from 'lucide-react';
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
 import DashReveal from '../../shared/ui/DashReveal';
+import { useAuth } from '../../context/AuthContext';
+import AdaptiveQuestions, { NOT_SURE, isAnswered } from './risk/AdaptiveQuestions';
 
 const SYMPTOM_LABELS = {
   fever: 'Fever',
@@ -44,7 +50,58 @@ const confidenceText = (value) => {
   return `${Math.round(value * 100)}%`;
 };
 
+const PredictionRow = ({ item, index }) => {
+  const [open, setOpen] = useState(false);
+  const hasReasoning = typeof item.reasoning === 'string' && item.reasoning.trim().length > 0;
+  return (
+    <div className="rounded-xl border border-[#e8eaf9] overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-white">
+        <span className="text-sm font-medium text-[#0b1030] truncate pr-2">{item.disease}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-xs font-semibold text-[#506cd7]">{confidenceText(item.confidence)}</span>
+          {hasReasoning && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-controls={`reasoning-${index}`}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#506cd7] hover:text-[#4753bf] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#506cd7] focus-visible:ring-offset-2 rounded-md px-1.5 py-0.5"
+            >
+              {open ? (
+                <>
+                  Hide <ChevronUp size={12} />
+                </>
+              ) : (
+                <>
+                  Why this? <ChevronDown size={12} />
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+      <AnimatePresence initial={false}>
+        {open && hasReasoning && (
+          <motion.div
+            id={`reasoning-${index}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <p className="text-xs text-[#5f697a] leading-relaxed bg-[#f9faff] px-3 py-2 border-t border-[#e8eaf9]">
+              {item.reasoning}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const RiskPrediction = () => {
+  const { user } = useAuth();
   const [symptoms, setSymptoms] = useState(initialSymptoms);
   const [isLoading, setIsLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -52,13 +109,52 @@ const RiskPrediction = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  // phase: 'select' | 'questions' | 'result'
+  const [phase, setPhase] = useState('select');
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState('');
+  const [questionsVersion, setQuestionsVersion] = useState(null);
+  const questionsSectionRef = useRef(null);
+
   const selectedSymptoms = useMemo(
     () => Object.entries(symptoms).filter(([, enabled]) => enabled).map(([key]) => key),
     [symptoms]
   );
 
+  // If any selected symptom is removed, purge answers for questions that
+  // depend on it so stale answers don't get sent to the backend.
+  const pruneAnswersForSymptoms = useCallback((currentQuestions, nextSelectedKeys) => {
+    const keep = new Set(nextSelectedKeys.concat(['general', 'personalized']));
+    const stillValid = new Set(
+      currentQuestions.filter((q) => keep.has(q.symptom)).map((q) => q.id)
+    );
+    setAnswers((prev) => {
+      const next = {};
+      for (const [k, v] of Object.entries(prev)) {
+        if (stillValid.has(k)) next[k] = v;
+      }
+      return next;
+    });
+  }, []);
+
   const toggleSymptom = (key) => {
-    setSymptoms((prev) => ({ ...prev, [key]: !prev[key] }));
+    setSymptoms((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      // Reset phase back to 'select' if user edits after moving on.
+      if (phase !== 'select') {
+        setPhase('select');
+        setQuestions([]);
+        setQuestionsError('');
+        const nextSelected = Object.entries(next)
+          .filter(([, v]) => v)
+          .map(([k]) => k);
+        pruneAnswersForSymptoms(questions, nextSelected);
+      }
+      return next;
+    });
+    if (result) setResult(null);
   };
 
   const resetAll = () => {
@@ -66,10 +162,49 @@ const RiskPrediction = () => {
     setResult(null);
     setError('');
     setMessage('');
+    setPhase('select');
+    setQuestions([]);
+    setAnswers({});
+    setQuestionsError('');
+    setQuestionsVersion(null);
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const buildProfilePayload = useCallback(() => {
+    const p = user?.profile || {};
+    return {
+      age: Number.isFinite(p.age) ? p.age : null,
+      gender: p.gender || null,
+      medicalConditions: Array.isArray(p.medicalConditions) ? p.medicalConditions : [],
+      medications: Array.isArray(p.medications) ? p.medications : [],
+    };
+  }, [user]);
+
+  const fetchQuestions = useCallback(async () => {
+    setQuestionsLoading(true);
+    setQuestionsError('');
+    try {
+      const response = await riskService.getAdaptiveQuestions({
+        symptoms: selectedSymptoms,
+        profile: buildProfilePayload(),
+      });
+      if (response?.success && Array.isArray(response.questions)) {
+        setQuestions(response.questions);
+        setQuestionsVersion(response.version || null);
+      } else {
+        setQuestions([]);
+      }
+    } catch (apiError) {
+      setQuestionsError(
+        apiError?.response?.data?.message
+          || 'We could not load follow-up questions right now.'
+      );
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, [selectedSymptoms, buildProfilePayload]);
+
+  const handleContinue = async (event) => {
+    event?.preventDefault?.();
     setError('');
     setMessage('');
     setResult(null);
@@ -79,16 +214,53 @@ const RiskPrediction = () => {
       return;
     }
 
+    setPhase('questions');
+    await fetchQuestions();
+    // Bring the new card into view on mobile.
+    window.requestAnimationFrame(() => {
+      questionsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
+  const handleBackToSymptoms = () => {
+    setPhase('select');
+  };
+
+  const handleAnswerChange = (questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const buildContextualPayload = () => {
+    const out = {};
+    for (const q of questions) {
+      const v = answers[q.id];
+      if (!isAnswered(v)) continue;
+      if (v === NOT_SURE) {
+        out[q.id] = null;
+        continue;
+      }
+      out[q.id] = v;
+    }
+    return out;
+  };
+
+  const runPrediction = async ({ withContext = true } = {}) => {
     try {
       setIsLoading(true);
+      setError('');
       const payload = Object.keys(symptoms).reduce((acc, key) => {
         acc[key] = symptoms[key];
         return acc;
       }, {});
+      if (withContext) {
+        payload.contextualAnswers = buildContextualPayload();
+        if (questionsVersion) payload.adaptiveQuestionsVersion = questionsVersion;
+      }
 
       const response = await riskService.predictSymptomsDisease(payload);
       if (response.success) {
         setResult(response);
+        setPhase('result');
       }
     } catch (apiError) {
       setError(apiError.response?.data?.message || 'Prediction failed. Please try again.');
@@ -96,6 +268,9 @@ const RiskPrediction = () => {
       setIsLoading(false);
     }
   };
+
+  const handlePredict = () => runPrediction({ withContext: true });
+  const handlePredictWithout = () => runPrediction({ withContext: false });
 
   const handleShareWhatsapp = async () => {
     if (!result) return;
@@ -134,14 +309,18 @@ const RiskPrediction = () => {
           </p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <form className="space-y-5" onSubmit={handleContinue}>
+          <motion.div
+            layout
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+          >
             {Object.entries(SYMPTOM_LABELS).map(([key, label]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => toggleSymptom(key)}
-                className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors text-left ${
+                aria-pressed={symptoms[key]}
+                className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors text-left active:scale-[0.97] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#506cd7] focus-visible:ring-offset-2 ${
                   symptoms[key]
                     ? 'bg-[#506cd7] text-white border-[#506cd7]'
                     : 'bg-white text-[#0b1030] border-[#e8eaf9] hover:bg-[#f0f1fc]'
@@ -150,7 +329,7 @@ const RiskPrediction = () => {
                 {label}
               </button>
             ))}
-          </div>
+          </motion.div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p className="text-sm text-[#5f697a]">
@@ -160,18 +339,28 @@ const RiskPrediction = () => {
               <Button type="button" variant="secondary" onClick={resetAll}>
                 Reset
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
+              <Button
+                type="submit"
+                disabled={questionsLoading || selectedSymptoms.length < 2}
+              >
+                {questionsLoading ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 size={16} className="animate-spin" />
-                    Predicting...
+                    Loading follow-ups…
                   </span>
                 ) : (
-                  'Predict Disease'
+                  <span className="inline-flex items-center gap-2">
+                    Continue to follow-up questions
+                    <ArrowRight size={16} />
+                  </span>
                 )}
               </Button>
             </div>
           </div>
+
+          {selectedSymptoms.length > 0 && selectedSymptoms.length < 2 && (
+            <p className="text-xs text-[#6a7283]">Select at least 2 symptoms to continue.</p>
+          )}
 
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -181,6 +370,23 @@ const RiskPrediction = () => {
         </form>
       </div>
       </DashReveal>
+
+      {phase !== 'select' && (
+        <div ref={questionsSectionRef}>
+          <AdaptiveQuestions
+            questions={questions}
+            answers={answers}
+            loading={questionsLoading}
+            loadError={questionsError}
+            submitting={isLoading}
+            onChange={handleAnswerChange}
+            onBack={handleBackToSymptoms}
+            onSubmit={handlePredict}
+            onRetry={fetchQuestions}
+            onPredictWithout={handlePredictWithout}
+          />
+        </div>
+      )}
 
       {result && (
         <motion.div
@@ -193,10 +399,23 @@ const RiskPrediction = () => {
             <div className="dash-icon-badge bg-blue-600">
               <Stethoscope size={22} className="text-white" />
             </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-heading font-bold text-[#0b1030]">
-                Predicted Disease: {result.predictedDisease}
-              </h3>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base sm:text-lg font-heading font-bold text-[#0b1030]">
+                  Predicted Disease: {result.predictedDisease}
+                </h3>
+                {result.refinementApplied && (
+                  <span
+                    title={(result.refinementReasons && result.refinementReasons.length)
+                      ? result.refinementReasons.join(' • ')
+                      : 'Adjusted using your follow-up answers'}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#506cd7] bg-[#f0f1fc] rounded-full px-2 py-0.5"
+                  >
+                    <Sparkles size={12} />
+                    Refined with your answers
+                  </span>
+                )}
+              </div>
               <p className="text-sm sm:text-base text-[#394162]">
                 Confidence: <span className="font-semibold">{confidenceText(result.confidence)}</span>
               </p>
@@ -220,16 +439,15 @@ const RiskPrediction = () => {
                 Top Predictions
               </h4>
               <div className="space-y-2">
-                {(result.topPredictions || []).map((item) => (
-                  <div
-                    key={item.disease}
-                    className="flex items-center justify-between rounded-xl border border-[#e8eaf9] px-3 py-2"
-                  >
-                    <span className="text-sm font-medium text-[#0b1030]">{item.disease}</span>
-                    <span className="text-xs font-semibold text-[#506cd7]">{confidenceText(item.confidence)}</span>
-                  </div>
+                {(result.topPredictions || []).map((item, idx) => (
+                  <PredictionRow key={`${item.disease}-${idx}`} item={item} index={idx} />
                 ))}
               </div>
+              {result.topPredictions?.some((p) => p.reasoning) && (
+                <p className="text-[11px] text-[#6a7283] italic pt-1">
+                  Tap "Why this?" on any prediction to see the clinical reasoning.
+                </p>
+              )}
             </div>
           </div>
 
