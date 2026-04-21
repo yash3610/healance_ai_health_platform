@@ -3,12 +3,19 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { classifyAllMeshes } from './regionDetector';
-import { LAYER_PALETTES, MATERIAL_CONFIG, HIGHLIGHT_COLOR, SELECTED_COLOR } from './bodyGeometry';
+import {
+  SYSTEM_PALETTES,
+  SYSTEM_ACCENTS,
+  SYSTEM_CANVAS_REGIONS,
+  MATERIAL_CONFIG,
+  HIGHLIGHT_COLOR,
+  SELECTED_COLOR,
+} from './bodyGeometry';
 
 const MODEL_PATH = `${import.meta.env.BASE_URL}assets/models/Model.glb`;
 const TARGET_HEIGHT = 1.7;
 
-const AnatomyModel = ({ gender, activeLayer = 'muscles', selectedPart, onPartClick, onHover, onHoveredGroupChange, onLabelAnchorsComputed }) => {
+const AnatomyModel = ({ gender, activeSystem = 'all', selectedPart, onPartClick, onHover, onHoveredGroupChange, onLabelAnchorsComputed }) => {
   const { scene } = useGLTF(MODEL_PATH);
   const [hoveredRegion, setHoveredRegion] = useState(null);
   const targetEmissive = useRef(new Map());
@@ -18,19 +25,22 @@ const AnatomyModel = ({ gender, activeLayer = 'muscles', selectedPart, onPartCli
   const { clonedScene, meshRegionMap, labelAnchors } = useMemo(() => {
     const clone = scene.clone(true);
 
-    // Replace all materials with fresh MeshStandardMaterial
+    // Replace all materials with fresh MeshStandardMaterial. Start fully
+    // opaque + depthWrite=true; the palette effect re-enables transparency
+    // only for layers that need it, avoiding overlap/ghost artifacts.
     clone.traverse((child) => {
       if (child.isMesh) {
         const newMat = new THREE.MeshStandardMaterial({
-          color: '#D4726A',
+          color: '#D07068',
           roughness: MATERIAL_CONFIG.roughness,
           metalness: MATERIAL_CONFIG.metalness,
           envMapIntensity: MATERIAL_CONFIG.envMapIntensity,
           emissive: new THREE.Color(0x000000),
           emissiveIntensity: 0,
           side: THREE.DoubleSide,
-          transparent: true,
+          transparent: false,
           opacity: 1.0,
+          depthWrite: true,
         });
 
         if (child.material) {
@@ -67,24 +77,29 @@ const AnatomyModel = ({ gender, activeLayer = 'muscles', selectedPart, onPartCli
     };
   }, [scene]);
 
-  // Apply layer colors when activeLayer changes
+  // Apply the system palette when activeSystem changes.
+  // Each system maps to ONE flat base colour applied to every mesh — this
+  // means no per-region variation, no seams, and no misclassification
+  // patches from the spatial bbox classifier. The selected system's
+  // signature colour (e.g. red for cardiovascular, blue for nervous) tints
+  // the whole body so the user gets immediate visual feedback that their
+  // filter is active.
   useEffect(() => {
-    const palette = LAYER_PALETTES[activeLayer] || LAYER_PALETTES.muscles;
+    const palette = SYSTEM_PALETTES[activeSystem] || SYSTEM_PALETTES.all;
+    const hex = palette.base || palette.fallback || '#D07068';
+    const opacity = palette.opacity ?? 1.0;
+    const needsTransparent = opacity < 1.0;
 
-    for (const [mesh, region] of meshRegionMap.entries()) {
-      const colors = palette[region.bodyPart];
-      if (colors) {
-        const baseColor = new THREE.Color(colors.base);
-        const accentColor = new THREE.Color(colors.accent);
-        const t = Math.random() * 0.3;
-        mesh.material.color.copy(baseColor).lerp(accentColor, t);
-      }
+    for (const [mesh] of meshRegionMap.entries()) {
+      mesh.material.color.set(hex);
       mesh.material.roughness = palette.roughness ?? MATERIAL_CONFIG.roughness;
       mesh.material.metalness = palette.metalness ?? MATERIAL_CONFIG.metalness;
-      mesh.material.opacity = palette.opacity ?? 1.0;
-      mesh.material.transparent = (palette.opacity ?? 1.0) < 1.0;
+      mesh.material.opacity = opacity;
+      mesh.material.transparent = needsTransparent;
+      mesh.material.depthWrite = !needsTransparent;
+      mesh.material.needsUpdate = true;
     }
-  }, [activeLayer, meshRegionMap]);
+  }, [activeSystem, meshRegionMap]);
 
   // Report label anchors
   useEffect(() => {
@@ -104,18 +119,29 @@ const AnatomyModel = ({ gender, activeLayer = 'muscles', selectedPart, onPartCli
   const highlightedRegion = hoveredRegion;
   const selectedRegion = selectedPart;
 
-  // Update target emissive
+  // Update target emissive. Three states, highest priority first:
+  //   1. hover / select → full HIGHLIGHT/SELECTED glow (cyan/teal, intense)
+  //   2. system filter active → system accent glow on matching canvas
+  //      regions (red for cardiovascular, blue for nervous, etc. — subtle
+  //      so the base body stays readable underneath)
+  //   3. otherwise → no glow
   useEffect(() => {
+    const activeRegionsForSystem = new Set(SYSTEM_CANVAS_REGIONS[activeSystem] || []);
+    const accentHex = SYSTEM_ACCENTS[activeSystem];
+    const accentColor = accentHex ? new THREE.Color(accentHex) : null;
+
     for (const [mesh, region] of meshRegionMap.entries()) {
       if (region.bodyPart === selectedRegion) {
         targetEmissive.current.set(mesh, { color: SELECTED_COLOR, intensity: 0.4 });
       } else if (region.bodyPart === highlightedRegion) {
         targetEmissive.current.set(mesh, { color: HIGHLIGHT_COLOR, intensity: 0.3 });
+      } else if (accentColor && activeRegionsForSystem.has(region.bodyPart)) {
+        targetEmissive.current.set(mesh, { color: accentColor, intensity: 0.28 });
       } else {
         targetEmissive.current.set(mesh, { color: null, intensity: 0 });
       }
     }
-  }, [highlightedRegion, selectedRegion, meshRegionMap]);
+  }, [highlightedRegion, selectedRegion, meshRegionMap, activeSystem]);
 
   // Smooth emissive + entrance
   useFrame((_, delta) => {

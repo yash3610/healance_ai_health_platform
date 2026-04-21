@@ -467,4 +467,26 @@ export const contactService = {
   },
 };
 
+// ==================== BODY EXPLORER SERVICES ====================
+
+export const bodyExplorerService = {
+  // List all body parts, with optional fuzzy search / system filter / gender
+  listParts: async (params = {}) => {
+    const response = await api.get('/body-explorer', { params });
+    return response.data;
+  },
+
+  // Fetch a single body part by name (e.g. "Heart")
+  getPart: async (partName) => {
+    const response = await api.get(`/body-explorer/${encodeURIComponent(partName)}`);
+    return response.data;
+  },
+
+  // Meta: distinct systems available in the catalog (for filter UI)
+  listSystems: async () => {
+    const response = await api.get('/body-explorer/meta/systems');
+    return response.data;
+  },
+};
+
 export default api;
