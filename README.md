@@ -23,12 +23,13 @@ A comprehensive full-stack health and wellness platform with AI-powered features
 - **AI-Powered Health Assistants:** Health Assistant Bot for symptoms, diet, exercise, and wellness guidance.
 - **AI Personal Health Assistant:** Upload medical reports (PDF/DOCX) for structured AI analysis (key findings, flags, suggested medications, suggested specialists), medicine explanations with drug-drug interaction checks against user medications, and nearby specialist lookup via seeded doctors + OpenStreetMap.
 - **Medicine Information Bot:** Real-time FDA-approved drug details using openFDA API, including dosage, warnings, side effects, interactions, and more.
-- **Health Dashboard:** Real-time health metrics, BMI/health score tracking, hydration/activity insights, and progress visualization.
+- **Health Dashboard:** Animated Health Score hero (composite of steps, water, goals, prediction recency) with streak counter and rule-based Next Action, AI-generated Smart Insights (LLM with rule-based fallback), real 7/30-day Weekly Health Trends chart, live Today's Focus panel driven from goals, unified Recent Activity timeline (dedupes symptom history), Quick Actions bar, and fully responsive layout from 375px mobile to desktop.
 - **Goal Tracking & Achievements:** Personalized goals (weight, steps, calories, water), daily progress, badges, and reverse planning.
 - **Walk & Earn Rewards:** Convert steps into points, unlock rewards, and join challenges.
-- **3D Body Explorer:** Interactive 3D anatomy model with body system insights and organ-level details.
+- **3D Body Explorer:** Interactive 3D anatomy model with 34 body parts across 12 systems, functional system filter panel (Cardiovascular, Respiratory, Digestive, Nervous, Musculoskeletal) with locked 224px panel width, subtle emissive glow on active-system regions (neutral body preserved), in-panel parts list, client-side fuzzy search (`/` shortcut), and condition/ICD-10 level details.
 - **Health Forecast:** Weather-based recommendations with air-quality and pollen awareness.
-- **Risk & Disease Prediction:** **Heart** and diabetes risk prediction, plus symptom-based disease prediction with recommendations.
+- **Risk & Disease Prediction:** **Heart** and diabetes risk prediction with gradient result cards and animated BMI indicator; symptom-based disease prediction with adaptive follow-up questions, LLM refinement, top-K alternatives with "Why this?" reasoning, and structured recommendations (description, precautions, medications, diet, workout, risk factors).
+- **Unified Prediction History:** Tabbed (All / Symptoms / Heart & Diabetes) history timeline with icon-differentiated rows, dedupes consecutive identical symptom entries, tone-mapped risk badges (info/warn/critical), and PDF export covering both report types.
 - **Health Blog & News:** Curated wellness content with search/filter support.
 - **Secure Authentication:** JWT auth, password reset by email, social login, and role-based access.
 
@@ -58,6 +59,7 @@ A comprehensive full-stack health and wellness platform with AI-powered features
 | Nodemailer | 8.0.x | Email service |
 | Twilio | 5.5.x | SMS/WhatsApp OTP |
 | Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
+| OpenAI GPT-3.5-turbo | via `openai` SDK | Dashboard Smart Insights generator (15-min in-memory cache, rule-based fallback) |
 | pdf-parse | 2.4.x | PDF text extraction for report analysis |
 | mammoth | 1.12.x | DOCX text extraction for report analysis |
 | openFDA | Public API | Drug label data (keyless) |
@@ -82,6 +84,8 @@ healance_ai_health_platform/
 |   |   +-- predictController.js
 |   |   +-- riskController.js
 |   |   +-- healthController.js
+|   |   +-- dashboardController.js    (summary, trends, insights)
+|   |   +-- bodyExplorerController.js (34 parts / 12 systems)
 |   |   +-- ...
 |   +-- middleware/
 |   +-- models/
@@ -97,6 +101,8 @@ healance_ai_health_platform/
 |   |   +-- predictRoutes.js
 |   |   +-- riskRoutes.js
 |   |   +-- chatbotRoutes.js
+|   |   +-- dashboardRoutes.js
+|   |   +-- bodyExplorerRoutes.js
 |   |   +-- ...
 |   +-- seeds/
 |   |   +-- seedData.js
@@ -129,8 +135,31 @@ healance_ai_health_platform/
 |   |   |   +-- pages/
 |   |   +-- dashboard/
 |   |   |   +-- components/
+|   |   |   |   +-- dashboard/
+|   |   |   |   |   +-- HealthScoreHero.jsx        (circular gauge + streak + Next Action)
+|   |   |   |   |   +-- QuickActionsBar.jsx        (Symptoms / Walk / Goal pills)
+|   |   |   |   |   +-- WeeklyTrendsChart.jsx      (multi-series area, 7d/30d toggle)
+|   |   |   |   |   +-- TodayFocusCard.jsx         (live goals with gradient progress)
+|   |   |   |   |   +-- SmartInsightsCard.jsx      (LLM + rule-based insights)
+|   |   |   |   |   +-- RecentPredictionsCard.jsx  (unified tabbed history)
+|   |   |   |   +-- body-explorer/
+|   |   |   |   |   +-- LayerPanel.jsx             (224 px fixed system filter)
+|   |   |   |   |   +-- AnatomyViewer.jsx
+|   |   |   |   |   +-- AnatomyModel.jsx
+|   |   |   |   |   +-- PartSearchBar.jsx
+|   |   |   |   |   +-- bodyGeometry.js            (SYSTEM_META, palettes, accents)
 |   |   |   +-- pages/
+|   |   |   |   +-- Dashboard.jsx
+|   |   |   |   +-- RiskPrediction.jsx
+|   |   |   |   +-- HeartDiabetesPrediction.jsx
 |   |   |   |   +-- AIChatbots.jsx
+|   |   |   |   +-- BodyExplorer.jsx
+|   |   |   |   +-- ReversePlanner.jsx
+|   |   |   |   +-- Forecast.jsx
+|   |   |   |   +-- DashboardBlogs.jsx
+|   |   |   |   +-- DashboardContact.jsx
+|   |   |   |   +-- Profile.jsx
+|   |   |   |   +-- PredictionHistory.jsx
 |   |   |   |   +-- chatbot/
 |   |   |   |   |   +-- MessageDispatcher.jsx
 |   |   |   |   |   +-- ReportSummaryCard.jsx
@@ -141,7 +170,15 @@ healance_ai_health_platform/
 |   |   +-- context/
 |   |   +-- hooks/
 |   |   +-- shared/
+|   |   |   +-- ui/
+|   |   |   |   +-- CircularGauge.jsx       (SVG ring with gradient stroke + count-up)
+|   |   |   |   +-- Sparkline.jsx           (7-point SVG trend with gradient fill)
+|   |   |   |   +-- useCountUp.js           (animated number transitions hook)
+|   |   |   |   +-- Skeleton.jsx            (SkeletonHero, SkeletonQuickActions, etc.)
+|   |   |   |   +-- EmptyState.jsx
+|   |   |   |   +-- DashReveal.jsx
 |   |   +-- services/
+|   |   |   +-- api.js                      (dashboardService: getSummary, getTrends, getInsights)
 |   |   +-- constants/
 |   |   +-- App.jsx
 |   |   +-- main.jsx
@@ -302,10 +339,43 @@ Creates demo users, blog posts, rewards, and sample health goals.
 ## UI & Design
 
 - Clean and modern Tailwind CSS based interface
-- Responsive layout for desktop, tablet, and mobile
-- Smooth animation with Framer Motion
+- Responsive layout for desktop, tablet, and mobile (tested down to 375 px)
+- Smooth animation with Framer Motion + GSAP
 - Reusable component-driven frontend architecture
 - Focused, health-centric UX across modules
+
+### Design system extensions
+
+The `.dash-*` utility family in `Frontend/src/index.css` was extended with:
+
+- `.dash-card-hero` - 20 px radius card with indigo -> white -> rose gradient background and glow blobs, used for Health Score hero
+- `.dash-card-accent` - per-section 3 px colored left stripe (`--accent-stripe`) so each card reads as a distinct zone
+- `.dash-card-glow` - re-enabled hover lift (`translateY(-3px)` + accent-ring shadow) for interactive cards
+- `.dash-gradient-text` - indigo -> cyan background-clip text used for hero score and section titles
+- `.dash-icon-badge--gradient-{indigo|rose|emerald|amber|cyan|violet}` - 6 gradient icon-badge variants with color-matched lifted shadow
+- `.dash-chip`, `.dash-chip--ai` - pill badges used by Smart Insights header
+
+### Shared UI primitives
+
+- `CircularGauge` (SVG ring with animated gradient stroke + count-up) - used by Health Score hero and Risk Prediction confidence display
+- `Sparkline` (7-point inline SVG with gradient fill) - used by the Daily Steps stat card
+- `useCountUp` hook - tweens numbers from previous value over 800 ms on any change (Hero score, streak, goal %)
+- `SkeletonHero` / `SkeletonQuickActions` added to `Skeleton.jsx`
+
+### Page-by-page polish (every dashboard page)
+
+Every dashboard route now uses the extended design system consistently:
+
+- `Dashboard.jsx` - Hero -> Quick Actions -> enhanced stat row -> Weekly Trends + Today's Focus -> Latest Symptoms + Smart Insights -> Recent Activity
+- `RiskPrediction.jsx` - gradient-text title, `CircularGauge` on result hero, gradient icon badges on all 6 detail cards
+- `HeartDiabetesPrediction.jsx` - gradient-tinted risk result cards (rose for elevated, emerald for safe), gradient BMI panel, accent-stripe suggestions card
+- `AIChatbots.jsx` - gradient tab indicators (indigo for health, rose for medicine), gradient typing avatar
+- `ReversePlanner.jsx` - 6-color gradient progress bars per goal type, gradient bar chart, priority-tinted AI suggestions
+- `Forecast.jsx` - gradient pill for active city, gradient "today" day cell, gradient icon badges on all section headers, gradient numbered health tips
+- `DashboardBlogs.jsx` - `.dash-card-glow` blog cards, gradient category badges, amber "Trending" ribbon, brand-gradient Saved Articles CTA
+- `DashboardContact.jsx` - color-coded gradient icon badges (indigo email / emerald phone / amber hours), gradient hover on upload dropzone
+- `Profile.jsx` - avatar wrapped in gradient ring frame, glass gradient background on profile-photo panel
+- `PredictionHistory.jsx` - gradient tone badges, icon-prefixed history list rows, pill-toggle tabs with gradient icons
 
 ---
 
@@ -355,6 +425,12 @@ http://localhost:5000/api
 - `GET /api/health-data/today` - Get today health record (Protected)
 - `GET /api/health-data/dashboard` - Get dashboard summary (Protected)
 
+### Dashboard
+
+- `GET /api/dashboard/summary` - Composite health score, streak, today totals, next-action rule (Protected)
+- `GET /api/dashboard/trends?range=7d|30d` - Per-day stepsPct/waterPct/goalsPct/healthScore series (Protected)
+- `GET /api/dashboard/insights` - LLM-generated insights with 15-min per-user cache + rule-based fallback (Protected)
+
 ### Additional Modules
 
 - Goals: `/api/goals`
@@ -365,7 +441,7 @@ http://localhost:5000/api
 - Forecast: `/api/forecast`
 - Contact: `/api/contact`
 - Notifications: `/api/notifications`
-- Body Explorer (Public): `/api/body-explorer`
+- Body Explorer (Public): `/api/body-explorer` - 34 parts, 12 systems, `?search=` / `?system=` / `?gender=` filters, `/meta/systems` for filter UI
 - SMS OTP: `/api/sms`
 - WhatsApp OTP: `/api/whatsapp`
 
@@ -395,6 +471,26 @@ node Backend/tests/testFdaApi.js --detailed aspirin
 ```
 
 Detailed API docs: [Backend README](./Backend/README.md)
+
+---
+
+## Dashboard Experience
+
+The main dashboard at `/dashboard` was rebuilt top-to-bottom to show only real data. The composition is:
+
+1. **Health Score Hero** - animated circular gauge driven by a composite formula (30% steps %, 25% water %, 25% active-goal completion avg, 20% prediction recency), streak counter that walks back day-by-day counting days with `stepsPct >= 50 || waterPct >= 50`, and a rule-based **Next Action** CTA (`steps < 50%` -> "Take a walk", `water < 75%` -> "Drink water", no prediction in 7 d -> "Check symptoms", else "You're on track").
+2. **Quick Actions bar** - three gradient pill buttons: Run Symptoms Check, Start Walking, Add a Goal. Full 3-col grid on mobile with icon-over-label layout; row layout on desktop.
+3. **Enhanced stat row** - Daily Steps with 7-point sparkline + trend chip, Water Intake glass grid with gradient fills and radial goal indicator, Active Goals showing top-2 mini progress bars, Weather tied to `forecast.activities[0]` for a health-aware "Great for a walk" chip.
+4. **Weekly Health Trends** (real data) - multi-series area chart: healthScore (indigo -> cyan gradient fill), stepsPct (orange line), waterPct (cyan dashed line). Pill-toggle for 7 d / 30 d range, legend strip with current values, tooltip showing all three metrics per day.
+5. **Today's Focus** - pulled from the user's real goals, one row per goal with gradient progress bar matching the goal type (water=cyan, steps=amber, sleep=indigo, etc.), one-tap `+` button that calls `POST /goals/:id/progress`.
+6. **Latest Symptoms Prediction** - violet accent card with direct "View full details" link to the symptoms page.
+7. **Smart Insights** - calls `GET /api/dashboard/insights` which sends today's context (steps, water, goals, latest predictions) to OpenAI `gpt-3.5-turbo` (JSON response, max 400 tokens, 15-min in-memory cache per user). Each insight has a severity-tinted icon (info=blue, warn=amber, critical=rose). Automatic fallback to a rule-based generator if the LLM is unavailable.
+8. **Recent Activity** - single card that unifies symptoms + heart/diabetes history, tabbed with All / Symptoms / Heart & Diabetes, dedupes consecutive identical symptom rows with a `x2` chip, each row icon-differentiated and clickable through to its detail page.
+
+### Required environment for the dashboard
+
+- `OPENAI_API_KEY` - powers Smart Insights LLM; if missing the card automatically shows rule-based tips instead (no broken state).
+- No other config needed - all data flows from existing `WalkEarn`, `HealthData`, `Goal`, `SymptomPrediction`, and `RiskPrediction` models.
 
 ---
 

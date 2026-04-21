@@ -19,10 +19,12 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 - JWT auth with secure HTTP-only cookie support
 - Role-based access (`user`, `admin`)
 - Health data tracking and dashboard stats APIs
+- Dashboard aggregator: composite health score, streak counter, next-action picker, multi-metric trends series, and LLM-backed Smart Insights with in-memory cache and rule-based fallback
 - AI health assistant and medicine information chatbot
 - AI Personal Health Assistant: PDF/DOCX report analysis (Groq Llama 3.3), medicine explanation with drug-drug interaction checks (openFDA + NIH RxNav), nearby specialist lookup (seeded doctors + OpenStreetMap Overpass)
 - Risk analysis and recommendation APIs
 - Python ML integration for heart/diabetes and symptom-disease predictions
+- Body Explorer catalog: 34 parts across 12 systems with search, system filter, gender filter, and systems-meta endpoint
 - Goal management with progress logging
 - Walk-and-earn points and rewards redemption
 - Notification center and reminder APIs
@@ -47,6 +49,7 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 | Twilio | 5.5.x | SMS and WhatsApp messaging |
 | OpenAI | 4.x | Optional chatbot enhancement / Groq SDK compatibility |
 | Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
+| OpenAI GPT-3.5-turbo | via `openai` SDK | Dashboard Smart Insights (15-min per-user cache, rule-based fallback) |
 | `@google/generative-ai` | 0.24.x | Optional Gemini fallback |
 | pdf-parse | 2.4.x | PDF text extraction |
 | mammoth | 1.12.x | DOCX text extraction |
@@ -69,6 +72,8 @@ Backend/
 |   +-- healthController.js
 |   +-- riskController.js
 |   +-- chatbotController.js
+|   +-- dashboardController.js    (summary, trends, insights; LLM + cache + fallback)
+|   +-- bodyExplorerController.js (34 parts / 12 systems catalog + systems meta)
 |   +-- ...
 +-- middleware/
 |   +-- authMiddleware.js
@@ -87,6 +92,8 @@ Backend/
 |   +-- healthRoutes.js
 |   +-- riskRoutes.js
 |   +-- chatbotRoutes.js
+|   +-- dashboardRoutes.js
+|   +-- bodyExplorerRoutes.js
 |   +-- ...
 +-- seeds/
 |   +-- seedData.js
@@ -168,7 +175,7 @@ From `Backend/.env.example`:
 | `JWT_REFRESH_SECRET` | No | `your_refresh_secret` | Refresh token signing secret (falls back to `JWT_SECRET`) |
 | `JWT_REFRESH_EXPIRE` | No | `30d` | Refresh token expiry |
 | `CLIENT_URL` | Yes | `http://localhost:5173` | CORS allowed frontend origin |
-| `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
+| `OPENAI_API_KEY` | No (Yes for dashboard Smart Insights) | `sk-...` | Powers `/dashboard/insights` LLM generator (falls back to rule-based tips when missing) and optional chatbot enhancement |
 | `GROQ_API_KEY` | No (Yes for report analysis) | `gsk_...` | Groq Llama 3.3 70B for `/chatbot/analyze-report` (free tier at console.groq.com/keys) |
 | `GEMINI_API_KEY` | No | `AIzaSy...` | Optional Gemini fallback LLM (aistudio.google.com/app/apikey) |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
@@ -302,12 +309,21 @@ Base URL: `http://localhost:5000/api`
 | POST | `/chatbot/nearby-doctors` | Protected | `$geoNear` seeded doctors; OSM Overpass fallback when under the threshold |
 | POST | `/chatbot/geocode` | Protected | Resolve a city name to `{lat, lon, name}` via Open-Meteo |
 
+### Dashboard
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| GET | `/dashboard/summary` | Protected | Composite `healthScore`, `streakDays`, `avgScore7d`, `topGoal`, `todayTotals`, and rule-based `nextAction` |
+| GET | `/dashboard/trends?range=7d\|30d` | Protected | Per-day series `[{ date, label, stepsPct, waterPct, goalsPct, healthScore }]` aggregated from WalkEarn + HealthData + Goal |
+| GET | `/dashboard/insights` | Protected | 2-3 `{ icon, severity, title, body }` insights; OpenAI `gpt-3.5-turbo` with strict JSON response, 15-min per-user in-memory cache, rule-based fallback if LLM unavailable |
+
 ### Body Explorer
 
 | Method | Endpoint | Auth | Description |
 | ------ | -------- | ---- | ----------- |
-| GET | `/body-explorer` | Public | Get all body part data |
-| GET | `/body-explorer/:partName` | Public | Get one body part details |
+| GET | `/body-explorer` | Public | Get all body part data; supports `?search=`, `?system=`, `?gender=` query filters |
+| GET | `/body-explorer/:partName` | Public | Get one body part with `system`, `relatedConditions`, `icd10Regions`, `relatedLinks`, `onlyFor` |
+| GET | `/body-explorer/meta/systems` | Public | List distinct systems available in the catalog (for filter UI) |
 
 ### Goals
 
@@ -580,6 +596,65 @@ Content-Type: application/json
 }
 ```
 
+### Dashboard Summary
+
+```http
+GET /api/dashboard/summary
+Authorization: Bearer <token>
+```
+
+Response payload (simplified):
+
+```json
+{
+  "success": true,
+  "data": {
+    "healthScore": 72,
+    "streakDays": 4,
+    "avgScore7d": 68,
+    "topGoal": { "title": "Daily Steps", "pct": 80 },
+    "todayTotals": {
+      "steps": 6200,
+      "stepsGoal": 10000,
+      "stepsPct": 62,
+      "waterIntake": 2.0,
+      "waterPct": 67,
+      "goalsActive": 3,
+      "goalsPct": 55
+    },
+    "nextAction": { "key": "water", "label": "Drink water", "href": null }
+  }
+}
+```
+
+### Dashboard Trends
+
+```http
+GET /api/dashboard/trends?range=7d
+Authorization: Bearer <token>
+```
+
+### Dashboard Insights
+
+```http
+GET /api/dashboard/insights
+Authorization: Bearer <token>
+```
+
+Response payload (LLM mode):
+
+```json
+{
+  "success": true,
+  "source": "llm",
+  "cached": false,
+  "insights": [
+    { "icon": "activity", "severity": "warn", "title": "Pick up your pace", "body": "You're at 42% of today's step goal. A 20-minute walk lifts that into the green zone." },
+    { "icon": "moon", "severity": "info", "title": "Hydration is on track", "body": "You've logged 2 L. One more glass and you're at the daily goal." }
+  ]
+}
+```
+
 ### Create Goal
 
 ```http
@@ -720,6 +795,11 @@ node tests/testPredictApi.js
 
 - ensure `GROQ_API_KEY` is set in `.env` and restart the server
 - free tier limit: 30 req/min — retry after a short wait
+
+**Dashboard Smart Insights show templated text instead of LLM output**
+
+- that is the automatic rule-based fallback; set `OPENAI_API_KEY` in `.env` and restart the server to switch back to LLM mode
+- per-user response is cached in-memory for 15 minutes; restart the server to clear the cache immediately
 
 **Report analysis returns `file-missing`**
 
