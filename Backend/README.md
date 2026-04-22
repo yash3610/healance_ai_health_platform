@@ -50,7 +50,6 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 | OpenAI | 4.x | Optional chatbot enhancement / Groq SDK compatibility |
 | Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
 | OpenAI GPT-3.5-turbo | via `openai` SDK | Dashboard Smart Insights (15-min per-user cache, rule-based fallback) |
-| `@google/generative-ai` | 0.24.x | Optional Gemini fallback |
 | pdf-parse | 2.4.x | PDF text extraction |
 | mammoth | 1.12.x | DOCX text extraction |
 | NIH RxNav | Public API | Drug normalization, class, interaction matching |
@@ -106,7 +105,6 @@ Backend/
 |   +-- textExtractor.js
 |   +-- reportAnalyzer.js
 |   +-- groqClient.js
-|   +-- geminiClient.js
 |   +-- rxNavApi.js
 |   +-- osmOverpass.js
 |   +-- geocode.js

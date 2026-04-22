@@ -114,7 +114,6 @@ healance_ai_health_platform/
 |   |   +-- textExtractor.js
 |   |   +-- reportAnalyzer.js
 |   |   +-- groqClient.js
-|   |   +-- geminiClient.js
 |   |   +-- rxNavApi.js
 |   |   +-- osmOverpass.js
 |   |   +-- geocode.js
