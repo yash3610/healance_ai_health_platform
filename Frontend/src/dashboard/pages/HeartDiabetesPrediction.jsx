@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Droplets, Loader2, Send } from 'lucide-react';
+import { Heart, Droplets, Loader2, Send, Activity, Scale, Lightbulb } from 'lucide-react';
 import { riskService } from '../../services/api';
 import Button from '../../shared/ui/Button';
 import DashReveal from '../../shared/ui/DashReveal';
+import { useAuth } from '../../context/AuthContext';
 
 const initialForm = {
   age: '',
@@ -27,13 +28,59 @@ const getBmiCategory = (bmi) => {
   return 'Obese';
 };
 
+const RiskResultCard = ({ label, icon: Icon, isRisk, riskText, safeText }) => {
+  const gradient = isRisk
+    ? 'linear-gradient(135deg, #fef2f2 0%, #ffffff 55%, #fee2e2 100%)'
+    : 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 55%, #d1fae5 100%)';
+  const badgeClass = isRisk
+    ? 'dash-icon-badge--gradient-rose'
+    : 'dash-icon-badge--gradient-emerald';
+  const statusColor = isRisk ? '#dc2626' : '#059669';
+  return (
+    <div
+      className="rounded-[20px] border border-white/80 p-5 relative overflow-hidden"
+      style={{ background: gradient, boxShadow: '0 10px 28px rgba(2, 6, 23, 0.06)' }}
+    >
+      <div className="flex items-center gap-3 relative z-10">
+        <div className={`dash-icon-badge ${badgeClass}`}>
+          <Icon size={20} className="text-white" />
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wider font-semibold text-[#6a7283]">
+            {label}
+          </p>
+          <p className="text-lg font-heading font-bold mt-0.5" style={{ color: statusColor }}>
+            {isRisk ? riskText : safeText}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const HeartDiabetesPrediction = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [results, setResults] = useState(null);
   const [message, setMessage] = useState('');
+
+  // Auto-fill baseline fields from user's saved medical profile
+  useEffect(() => {
+    if (!user?.profile) return;
+    const p = user.profile;
+    setFormData((prev) => ({
+      ...prev,
+      age: p.age != null ? String(p.age) : prev.age,
+      gender: p.gender === 'female' ? 'Female'
+            : p.gender === 'male' ? 'Male'
+            : prev.gender,
+      height: p.height != null ? String(p.height) : prev.height,
+      weight: p.weight != null ? String(p.weight) : prev.weight,
+    }));
+  }, [user]);
 
   const bmi = useMemo(() => {
     const weight = parseNumber(formData.weight);
@@ -132,11 +179,20 @@ const HeartDiabetesPrediction = () => {
   return (
     <div className="space-y-6">
       <DashReveal>
-      <div className="dash-card-static">
-        <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Heart & Diabetes ML Prediction</h2>
-        <p className="text-sm text-[#5f697a] mt-1">
-          Fill details and get instant risk prediction with BMI and smart suggestions.
-        </p>
+      <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#e74c4c' }}>
+        <div className="flex items-start gap-3">
+          <div className="dash-icon-badge dash-icon-badge--gradient-rose hidden sm:inline-flex">
+            <Heart size={20} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
+              <span className="dash-gradient-text">Heart &amp; Diabetes ML Prediction</span>
+            </h2>
+            <p className="text-sm text-[#5f697a] mt-1">
+              Fill details and get instant risk prediction with BMI and smart suggestions.
+            </p>
+          </div>
+        </div>
 
         <form className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onSubmit={handlePredict}>
           <label className="space-y-1">
@@ -230,10 +286,23 @@ const HeartDiabetesPrediction = () => {
             {errors.cholesterol && <span className="text-xs text-red-600">{errors.cholesterol}</span>}
           </label>
 
-          <div className="rounded-[20px] border border-[#e8eaf9] bg-[#f0f1fc] px-4 py-3 flex flex-col justify-center">
-            <span className="text-xs font-semibold uppercase text-[#506cd7] tracking-wide">Calculated BMI</span>
-            <span className="text-2xl font-heading font-bold text-[#0b1030]">{bmi || '--'}</span>
-            <span className="text-xs text-[#5f697a]">Category: {bmiCategory}</span>
+          <div
+            className="rounded-[20px] border border-white/80 px-4 py-3 flex items-center gap-3"
+            style={{
+              background: 'linear-gradient(135deg, #f5f7ff 0%, #ffffff 55%, #fdf2f5 100%)',
+              boxShadow: '0 6px 20px rgba(80, 108, 215, 0.10)',
+            }}
+          >
+            <div className="dash-icon-badge dash-icon-badge--gradient-violet" style={{ width: 36, height: 36 }}>
+              <Scale size={16} className="text-white" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-semibold uppercase text-[#506cd7] tracking-wider">Calculated BMI</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-heading font-bold text-[#0b1030]">{bmi || '--'}</span>
+                <span className="text-[11px] text-[#5f697a] truncate">{bmiCategory}</span>
+              </div>
+            </div>
           </div>
 
           <div className="lg:col-span-3">
@@ -260,38 +329,33 @@ const HeartDiabetesPrediction = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div
-              className={`rounded-[20px] border p-4 ${
-                results.diabetes === 'Risk' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Droplets size={18} className={results.diabetes === 'Risk' ? 'text-red-600' : 'text-green-600'} />
-                <h3 className="font-bold text-[#0b1030]">Diabetes Risk</h3>
-              </div>
-              <p className={`text-lg font-bold mt-2 ${results.diabetes === 'Risk' ? 'text-red-700' : 'text-green-700'}`}>
-                {results.diabetes === 'Risk' ? '❌ Risk' : '✅ No Risk'}
-              </p>
-            </div>
-
-            <div
-              className={`rounded-[20px] border p-4 ${
-                results.heart === 'Risk' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Heart size={18} className={results.heart === 'Risk' ? 'text-red-600' : 'text-green-600'} />
-                <h3 className="font-bold text-[#0b1030]">Heart Risk</h3>
-              </div>
-              <p className={`text-lg font-bold mt-2 ${results.heart === 'Risk' ? 'text-red-700' : 'text-green-700'}`}>
-                {results.heart === 'Risk' ? '❤️ Risk' : '✅ Safe'}
-              </p>
-            </div>
+            <RiskResultCard
+              label="Diabetes Risk"
+              icon={Droplets}
+              isRisk={results.diabetes === 'Risk'}
+              riskText="Elevated risk"
+              safeText="Within normal range"
+            />
+            <RiskResultCard
+              label="Heart Risk"
+              icon={Heart}
+              isRisk={results.heart === 'Risk'}
+              riskText="Elevated risk"
+              safeText="Within normal range"
+            />
           </div>
 
-          <div className="rounded-[16px] border border-[#e8eaf9] p-4 bg-[#f0f1fc]">
-            <h4 className="font-semibold text-[#0b1030]">Health Suggestions</h4>
-            <ul className="mt-2 text-sm text-[#5f697a] list-disc pl-5 space-y-1">
+          <div
+            className="dash-card dash-card-accent"
+            style={{ '--accent-stripe': '#10b981' }}
+          >
+            <h4 className="font-semibold text-[#0b1030] flex items-center gap-2 mb-3">
+              <span className="dash-icon-badge dash-icon-badge--gradient-emerald" style={{ width: 28, height: 28 }}>
+                <Lightbulb size={12} className="text-white" />
+              </span>
+              Health Suggestions
+            </h4>
+            <ul className="text-sm text-[#5f697a] list-disc pl-5 space-y-1">
               {results.suggestions.map((suggestion) => (
                 <li key={suggestion}>{suggestion}</li>
               ))}

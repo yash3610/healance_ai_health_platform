@@ -5,6 +5,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import runPythonPrediction, { runPythonScript } from '../utils/mlPredictor.js';
 import { normalizeWhatsAppNumber, isValidWhatsAppNumber, sendWhatsAppTextMessage } from '../utils/sendWhatsApp.js';
+import { buildAdaptiveQuestions } from '../utils/adaptiveQuestionGenerator.js';
+import { refinePrediction, applyEmergencyOverrides } from '../utils/predictionRefiner.js';
+import { predictDiseaseWithLLM, catalogEntryToDetails } from '../utils/llmDiseasePredictor.js';
+import { reviewPredictions } from '../utils/llmClinicalReviewer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -362,6 +366,53 @@ export const predictAll = async (req, res) => {
   }
 };
 
+// @desc    Get adaptive follow-up questions for a given symptom set
+// @route   POST /api/predict/adaptive-questions
+// @access  Private
+export const getAdaptiveQuestions = async (req, res) => {
+  try {
+    const rawSymptoms = Array.isArray(req.body?.symptoms) ? req.body.symptoms : [];
+    const symptoms = rawSymptoms
+      .map((s) => String(s || '').trim().toLowerCase())
+      .filter((s) => symptomFeatures.includes(s));
+
+    if (symptoms.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Select at least one valid symptom.',
+      });
+    }
+
+    // Prefer saved profile from the authenticated user so we don't trust
+    // client-injected demographics; fall back to whatever profile the
+    // client passed (useful during onboarding before a profile is saved).
+    const storedProfile = req.user?.profile || {};
+    const clientProfile = req.body?.profile || {};
+    const profile = {
+      age: storedProfile.age ?? clientProfile.age ?? null,
+      gender: storedProfile.gender ?? clientProfile.gender ?? null,
+      medicalConditions: Array.isArray(storedProfile.medicalConditions) && storedProfile.medicalConditions.length
+        ? storedProfile.medicalConditions
+        : (clientProfile.medicalConditions || []),
+      medications: Array.isArray(storedProfile.medications) && storedProfile.medications.length
+        ? storedProfile.medications
+        : (clientProfile.medications || []),
+    };
+
+    const { questions, source, version } = await buildAdaptiveQuestions(symptoms, profile);
+
+    return res.json({
+      success: true,
+      status: 'ok',
+      questions,
+      source,
+      version,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Predict disease from symptoms and return guidance
 // @route   POST /api/predict/symptoms-disease
 // @access  Private
@@ -382,20 +433,148 @@ export const predictSymptomsDisease = async (req, res) => {
       });
     }
 
-    const prediction = await runPythonScript(symptomScriptPath, { features: payloadFeatures });
+    // Accept optional contextual follow-up answers; ignore anything that
+    // isn't a primitive / array to keep the Mixed field sane.
+    const rawAnswers = req.body?.contextualAnswers;
+    const contextualAnswers =
+      rawAnswers && typeof rawAnswers === 'object' && !Array.isArray(rawAnswers)
+        ? rawAnswers
+        : {};
+    const adaptiveQuestionsVersion =
+      typeof req.body?.adaptiveQuestionsVersion === 'string'
+        ? req.body.adaptiveQuestionsVersion
+        : null;
+
+    const selectedSymptomKeys = symptomFeatures.filter((k) => payloadFeatures[k] === 1);
+    const storedProfile = req.user?.profile || {};
+    const profileForLlm = {
+      age: storedProfile.age ?? null,
+      gender: storedProfile.gender ?? null,
+      medicalConditions: storedProfile.medicalConditions || [],
+      medications: storedProfile.medications || [],
+    };
+
+    // ─── Parallel fan-out: ML + LLM predict simultaneously ───
+    // Pass contextualAnswers through to the Python model — the Phase 2
+    // retrained pipeline reads `context` alongside `features` and feeds
+    // both through a ColumnTransformer so fever_temp_f / fever_duration /
+    // recent_food etc meaningfully change the prediction.
+    const [mlSettled, llmSettled] = await Promise.allSettled([
+      runPythonScript(symptomScriptPath, {
+        features: payloadFeatures,
+        context: contextualAnswers,
+      }),
+      predictDiseaseWithLLM({
+        symptoms: selectedSymptomKeys,
+        contextualAnswers,
+        profile: profileForLlm,
+      }),
+    ]);
+
+    const mlPrediction = mlSettled.status === 'fulfilled' ? mlSettled.value : null;
+    const llmCandidates = llmSettled.status === 'fulfilled' && Array.isArray(llmSettled.value)
+      ? llmSettled.value
+      : [];
+
+    // ─── Tier A + Tier B refinement on ML candidates only (unchanged
+    // interaction with the python pipeline — still returns adjusted top-5)
+    let mlCandidates = [];
+    let refinementApplied = false;
+    let refinementSource = 'none';
+    let refinementReasons = [];
+    let mlDetails = {};
+    let mlSelectedSymptoms = selectedSymptomKeys;
+
+    if (mlPrediction) {
+      mlDetails = mlPrediction.details || {};
+      mlSelectedSymptoms = mlPrediction.selectedSymptoms || selectedSymptomKeys;
+      const refined = await refinePrediction(mlPrediction, {
+        contextualAnswers,
+        profile: profileForLlm,
+        symptoms: selectedSymptomKeys,
+      });
+      mlCandidates = refined.topPredictions || [];
+      refinementApplied = refined.refinementApplied;
+      refinementSource = refined.refinementSource;
+      refinementReasons = refined.refinementReasons || [];
+    }
+
+    // If both predictors produced nothing, bail with a 503-equivalent message.
+    if (mlCandidates.length === 0 && llmCandidates.length === 0) {
+      return res.status(503).json({
+        success: false,
+        message: 'Prediction service temporarily unavailable. Please try again shortly.',
+      });
+    }
+
+    // ─── Clinical reviewer merges the two lists and attaches reasoning ───
+    const reviewed = await reviewPredictions({
+      mlCandidates,
+      llmCandidates,
+      symptoms: selectedSymptomKeys,
+      contextualAnswers,
+      profile: profileForLlm,
+    });
+
+    // ─── Emergency overrides — last-resort safety net ───
+    const overrideResult = applyEmergencyOverrides({
+      predictions: reviewed.predictions,
+      contextualAnswers,
+      profile: profileForLlm,
+    });
+
+    const finalTop = overrideResult.predictions;
+
+    if (finalTop.length === 0) {
+      return res.status(503).json({
+        success: false,
+        message: 'Prediction service temporarily unavailable. Please try again shortly.',
+      });
+    }
+
+    // ─── Hydrate UI details from the top prediction's catalog entry when
+    //     available; otherwise fall back to the ML python details (for
+    //     backward compatibility with the 14 originally-trained diseases).
+    const topEntry = finalTop[0].catalogEntry;
+    const details = topEntry ? catalogEntryToDetails(topEntry) : mlDetails;
+
+    // Strip catalogEntry/injected flags from DB + API response.
+    const topForClient = finalTop.map((p) => ({
+      disease: p.disease,
+      confidence: p.confidence,
+      reasoning: p.reasoning || '',
+    }));
+
+    const predictionSource = reviewed.source === 'none' ? 'ml' : reviewed.source;
+    const emergencyOverrideIds = overrideResult.overrides.map((o) => o.rule);
 
     await SymptomPrediction.create({
       user: req.user._id,
-      selectedSymptoms: prediction.selectedSymptoms || [],
-      predictedDisease: prediction.predictedDisease,
-      confidence: typeof prediction.confidence === 'number' ? prediction.confidence : null,
-      topPredictions: Array.isArray(prediction.topPredictions) ? prediction.topPredictions : [],
-      details: prediction.details || {},
+      selectedSymptoms: mlSelectedSymptoms,
+      predictedDisease: finalTop[0].disease,
+      confidence: finalTop[0].confidence,
+      topPredictions: topForClient,
+      details,
+      contextualAnswers,
+      adaptiveQuestionsVersion,
+      refinementApplied,
+      refinementSource,
+      predictionSource,
+      emergencyOverrides: emergencyOverrideIds,
     });
 
     return res.json({
       success: true,
-      ...prediction,
+      selectedSymptoms: mlSelectedSymptoms,
+      predictedDisease: finalTop[0].disease,
+      confidence: finalTop[0].confidence,
+      topPredictions: topForClient,
+      details,
+      refinementApplied,
+      refinementSource,
+      refinementReasons,
+      predictionSource,
+      emergencyOverrides: emergencyOverrideIds,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

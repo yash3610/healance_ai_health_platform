@@ -26,6 +26,25 @@ const goalColors = {
   custom: 'bg-primary-500'
 };
 
+// Gradient classes for the dashboard visual language
+const goalBadgeClasses = {
+  steps: 'dash-icon-badge--gradient-amber',
+  water: 'dash-icon-badge--gradient-cyan',
+  calories: 'dash-icon-badge--gradient-rose',
+  sleep: 'dash-icon-badge--gradient-indigo',
+  weight: 'dash-icon-badge--gradient-emerald',
+  custom: 'dash-icon-badge--gradient-violet',
+};
+
+const goalBarGradients = {
+  steps: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+  water: 'linear-gradient(90deg, #0ea5e9, #22d3ee)',
+  calories: 'linear-gradient(90deg, #e74c4c, #fb7185)',
+  sleep: 'linear-gradient(90deg, #506cd7, #7c8bff)',
+  weight: 'linear-gradient(90deg, #10b981, #34d399)',
+  custom: 'linear-gradient(90deg, #7c3aed, #a78bfa)',
+};
+
 const defaultGoalUnits = {
   steps: 'steps',
   water: 'L',
@@ -37,14 +56,15 @@ const defaultGoalUnits = {
 
 const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
   const Icon = goalIcons[goal.type] || Target;
-  const color = goalColors[goal.type] || 'bg-primary-500';
+  const badgeClass = goalBadgeClasses[goal.type] || 'dash-icon-badge--gradient-indigo';
+  const barGradient = goalBarGradients[goal.type] || 'linear-gradient(90deg, #506cd7, #7c8bff)';
   const progress = Math.min(Math.round((goal.current / goal.target) * 100), 100);
   const remaining = Math.max(goal.target - goal.current, 0);
   const daysLeft = goal.endDate ? Math.ceil((new Date(goal.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 7;
   const dailyNeeded = daysLeft > 0 ? Math.round(remaining / daysLeft) : 0;
 
   return (
-    <div className="dash-card relative group">
+    <div className="dash-card dash-card-glow relative group">
       {/* Action Buttons */}
       <div className="absolute top-2 right-2 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
         <button onClick={() => onEdit(goal)} className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-[#f0f1fc] rounded-lg transition-colors" aria-label="Edit goal">
@@ -56,27 +76,27 @@ const GoalCard = ({ goal, onEdit, onDelete, onLogProgress }) => {
       </div>
 
       <div className="flex justify-between items-start mb-2 sm:mb-4">
-        <div className={`dash-icon-badge ${color}`}>
+        <div className={`dash-icon-badge ${badgeClass}`}>
           <Icon size={20} className="text-white" />
         </div>
-        <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg ${
-          progress >= 100 ? 'bg-green-100 text-green-600' : 
-          progress >= 50 ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'
+        <span className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full ${
+          progress >= 100 ? 'bg-emerald-100 text-emerald-700' :
+          progress >= 50 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
         }`}>
           {progress}%
         </span>
       </div>
-      
-      <h3 className="font-bold text-sm sm:text-base text-[#0b1030] mb-1">{goal.title}</h3>
+
+      <h3 className="font-bold text-sm sm:text-base text-[#0b1030] mb-1 truncate">{goal.title}</h3>
       <div className="flex items-end gap-1 mb-2 sm:mb-3">
         <span className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030]">{goal.current}</span>
         <span className="text-[10px] sm:text-sm text-[#5f697a] mb-0.5 sm:mb-1">/ {goal.target} {goal.unit}</span>
       </div>
 
       <div className="w-full bg-[#f0f1fc] h-1.5 sm:h-2 rounded-full overflow-hidden">
-        <div 
-          className={`h-full rounded-full transition-all duration-500 ${color}`} 
-          style={{ width: `${progress}%` }}
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${progress}%`, background: barGradient }}
         />
       </div>
       
@@ -583,9 +603,18 @@ const ReversePlanner = () => {
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">Reverse Health Planner</h2>
-          <p className="text-sm sm:text-base text-[#5f697a]">Set your goals and let AI guide you backwards to achieve them.</p>
+        <div className="flex items-start gap-3">
+          <div className="dash-icon-badge dash-icon-badge--gradient-emerald hidden sm:inline-flex">
+            <Target size={20} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
+              <span className="dash-gradient-text">Reverse Health Planner</span>
+            </h2>
+            <p className="text-sm sm:text-base text-[#5f697a] mt-1">
+              Set your goals and let AI guide you backwards to achieve them.
+            </p>
+          </div>
         </div>
         <Button className="w-full sm:w-auto" onClick={() => { setSelectedGoal(null); setIsGoalModalOpen(true); }}>
           <Plus size={18} className="mr-2" /> Add Goal
@@ -631,9 +660,9 @@ const ReversePlanner = () => {
       {goals.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Weekly Chart */}
-          <div className="lg:col-span-2 dash-card-static">
+          <div className="lg:col-span-2 dash-card-static dash-card-accent" style={{ '--accent-stripe': '#506cd7' }}>
             <div className="flex items-center gap-2 mb-4 sm:mb-6">
-              <div className="dash-icon-badge bg-[#506cd7]">
+              <div className="dash-icon-badge dash-icon-badge--gradient-indigo">
                 <TrendingUp size={20} className="text-white" />
               </div>
               <h3 className="dash-heading text-sm sm:text-base">Weekly Goal Completion</h3>
@@ -649,52 +678,74 @@ const ReversePlanner = () => {
                     contentStyle={{ borderRadius: '16px', border: '1px solid rgba(80, 108, 215, 0.12)', boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}
                     formatter={(value) => [`${value}%`, 'Progress']}
                   />
-                  <Bar dataKey="progress" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
+                  <Bar dataKey="progress" fill="url(#plannerBarGrad)" radius={[6, 6, 0, 0]} barSize={40} />
+                  <defs>
+                    <linearGradient id="plannerBarGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#506cd7" />
+                      <stop offset="100%" stopColor="#0ea5e9" />
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* AI Suggestions */}
-          <div className="dash-card-static">
+          <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#f59e0b' }}>
             <div className="flex items-center gap-2 mb-4">
-              <div className="dash-icon-badge bg-amber-500">
+              <div className="dash-icon-badge dash-icon-badge--gradient-amber">
                 <Sparkles size={20} className="text-white" />
               </div>
               <h3 className="dash-heading text-sm sm:text-base">AI Suggestions</h3>
             </div>
-            <div className="space-y-3 sm:space-y-4">
-              {suggestions.map((suggestion, index) => (
-                <div key={index} className="flex gap-3">
-                  <div className="mt-1">
-                    <CheckCircle size={16} className={
-                      suggestion.priority === 'high' ? 'text-red-500' :
-                      suggestion.priority === 'medium' ? 'text-amber-500' : 'text-green-500'
-                    } />
+            <div className="space-y-3">
+              {suggestions.map((suggestion, index) => {
+                const priorityStyle = suggestion.priority === 'high'
+                  ? { badge: 'bg-rose-100 text-rose-700', icon: 'text-rose-500', label: 'High' }
+                  : suggestion.priority === 'medium'
+                  ? { badge: 'bg-amber-100 text-amber-700', icon: 'text-amber-500', label: 'Medium' }
+                  : { badge: 'bg-emerald-100 text-emerald-700', icon: 'text-emerald-500', label: 'Low' };
+                return (
+                  <div key={index} className="flex gap-3 p-2.5 rounded-lg hover:bg-slate-50/70 transition-colors">
+                    <div className="mt-0.5 flex-shrink-0">
+                      <CheckCircle size={16} className={priorityStyle.icon} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${priorityStyle.badge}`}>
+                          {priorityStyle.label}
+                        </span>
+                      </div>
+                      <p className="text-sm text-[#5f697a] leading-snug">{suggestion.text}</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-[#5f697a]">{suggestion.text}</p>
-                </div>
-              ))}
-              
+                );
+              })}
+
               {suggestions.length === 0 && (
                 <p className="text-sm text-[#5f697a] text-center py-4">
                   Complete some progress to get personalized suggestions!
                 </p>
               )}
             </div>
-            
+
             {/* Estimated Completion */}
             {estimatedCompletion && (
               <div className="mt-6 pt-6 border-t border-[#e8eaf9]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar size={14} className="text-[#5f697a]" />
+                  <span className="dash-icon-badge dash-icon-badge--gradient-indigo" style={{ width: 28, height: 28 }}>
+                    <Calendar size={13} className="text-white" />
+                  </span>
                   <span className="text-sm text-[#5f697a]">Estimated Completion</span>
                 </div>
-                <span className="text-lg font-heading font-bold text-[#506cd7]">{estimatedCompletion.date}</span>
-                <div className="w-full bg-[#f0f1fc] h-2 rounded-full mt-3">
-                  <div 
-                    className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${estimatedCompletion.progress}%` }}
+                <span className="text-lg font-heading font-bold dash-gradient-text">{estimatedCompletion.date}</span>
+                <div className="w-full bg-[#f0f1fc] h-2 rounded-full mt-3 overflow-hidden">
+                  <div
+                    className="h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${estimatedCompletion.progress}%`,
+                      background: 'linear-gradient(90deg, #506cd7, #0ea5e9)',
+                    }}
                   />
                 </div>
                 <p className="text-xs text-[#5f697a] mt-2">

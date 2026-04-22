@@ -190,6 +190,19 @@ export const healthService = {
     const response = await api.get('/health-data/latest');
     return response.data;
   },
+
+  // Upload a medical report file (PDF/image/docx)
+  uploadReport: async (file, meta = {}) => {
+    const formData = new FormData();
+    formData.append('report', file);
+    if (meta.title) formData.append('title', meta.title);
+    if (meta.type) formData.append('type', meta.type);
+
+    const response = await api.post('/health-data/reports', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 // ==================== BLOG SERVICES ====================
@@ -261,6 +274,11 @@ export const riskService = {
     return response.data;
   },
 
+  getAdaptiveQuestions: async (payload) => {
+    const response = await api.post('/predict/adaptive-questions', payload);
+    return response.data;
+  },
+
   getSymptomsPredictionHistory: async (options = 5) => {
     const params = typeof options === 'number' ? { limit: options } : options;
     const response = await api.get('/predict/symptoms-history', { params });
@@ -302,6 +320,39 @@ export const chatbotService = {
   // Delete session
   deleteSession: async (sessionId) => {
     const response = await api.delete(`/chatbot/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Analyze an uploaded medical report with Gemini.
+  // `reportId` comes from healthService.uploadReport().
+  analyzeReport: async (reportId) => {
+    const response = await api.post(`/chatbot/analyze-report/${reportId}`);
+    return response.data;
+  },
+
+  // Explain a single medication — returns FDA drug label info + class + interaction matches
+  // against the user's current medications.
+  explainMedicine: async ({ name, userMedications = [] }) => {
+    const response = await api.post('/chatbot/explain-medicine', { name, userMedications });
+    return response.data;
+  },
+
+  // Find nearby doctors (seeded partners + OSM fallback). Pass lat/lon when
+  // geolocation is granted, or city when the user enters one manually.
+  getNearbyDoctors: async ({ specialty, lat, lon, city, radius }) => {
+    const response = await api.post('/chatbot/nearby-doctors', {
+      specialty,
+      lat,
+      lon,
+      city,
+      radius,
+    });
+    return response.data;
+  },
+
+  // Resolve a city name to lat/lon (used when geolocation is denied).
+  geocode: async (city) => {
+    const response = await api.post('/chatbot/geocode', { city });
     return response.data;
   },
 };
@@ -349,6 +400,12 @@ export const goalService = {
 // ==================== WALK & EARN SERVICES ====================
 
 export const walkEarnService = {
+  // Summary including 7-day weeklyData, coins, today's steps
+  getSummary: async () => {
+    const response = await api.get('/walk-earn/summary');
+    return response.data;
+  },
+
   // Get rewards catalog
   getRewards: async () => {
     const response = await api.get('/walk-earn/rewards');
@@ -412,6 +469,50 @@ export const contactService = {
   // Get my tickets
   getMyTickets: async () => {
     const response = await api.get('/contact/tickets');
+    return response.data;
+  },
+};
+
+// ==================== BODY EXPLORER SERVICES ====================
+
+export const bodyExplorerService = {
+  // List all body parts, with optional fuzzy search / system filter / gender
+  listParts: async (params = {}) => {
+    const response = await api.get('/body-explorer', { params });
+    return response.data;
+  },
+
+  // Fetch a single body part by name (e.g. "Heart")
+  getPart: async (partName) => {
+    const response = await api.get(`/body-explorer/${encodeURIComponent(partName)}`);
+    return response.data;
+  },
+
+  // Meta: distinct systems available in the catalog (for filter UI)
+  listSystems: async () => {
+    const response = await api.get('/body-explorer/meta/systems');
+    return response.data;
+  },
+};
+
+// ==================== DASHBOARD SERVICES ====================
+
+export const dashboardService = {
+  // Composite summary: healthScore, streak, today totals, next action
+  getSummary: async () => {
+    const response = await api.get('/dashboard/summary');
+    return response.data;
+  },
+
+  // Per-day series for the trends chart. range = '7d' | '30d'
+  getTrends: async (range = '7d') => {
+    const response = await api.get('/dashboard/trends', { params: { range } });
+    return response.data;
+  },
+
+  // LLM-backed insights (with rule-based fallback server-side)
+  getInsights: async () => {
+    const response = await api.get('/dashboard/insights');
     return response.data;
   },
 };

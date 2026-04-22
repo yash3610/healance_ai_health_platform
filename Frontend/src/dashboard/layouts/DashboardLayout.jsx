@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
-import { UploadCloud, Menu, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
-import Button from '../../shared/ui/Button';
+import OnboardingModal from '../components/OnboardingModal';
+import { Menu, Bell, X, Check, Clock, Target, Heart, Loader2 } from 'lucide-react';
 import ConfirmDialog from '../../shared/ui/ConfirmDialog';
 import { useAuth } from '../../context/AuthContext';
 import { ToastProvider } from '../../context/ToastContext';
 import axios from 'axios';
+
+const ONBOARDING_SKIP_KEY = 'healance_onboarding_skipped';
 import { API_URL } from '../../constants/config';
 
 // Page config for dynamic titles
@@ -161,6 +163,25 @@ const DashboardLayout = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding modal for users with incomplete medical profile
+  useEffect(() => {
+    if (!user) return;
+    const p = user.profile || {};
+    const isIncomplete = !p.age || !p.gender || !p.height || !p.weight || !p.bloodGroup;
+    const wasSkipped = sessionStorage.getItem(ONBOARDING_SKIP_KEY) === 'true';
+    if (isIncomplete && !wasSkipped) {
+      const timer = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(timer);
+    }
+    setShowOnboarding(false);
+  }, [user]);
+
+  const handleSkipOnboarding = () => {
+    sessionStorage.setItem(ONBOARDING_SKIP_KEY, 'true');
+    setShowOnboarding(false);
+  };
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -285,9 +306,6 @@ const DashboardLayout = () => {
                   </span>
                 )}
               </button>
-              <Button size="sm">
-                <UploadCloud size={16} className="mr-2" /> Upload Report
-              </Button>
             </div>
           </header>
 
@@ -317,6 +335,13 @@ const DashboardLayout = () => {
           onMarkAllRead={markAllAsRead}
           onClearAll={clearAllNotifications}
           isLoading={isNotificationLoading}
+        />
+
+        {/* Onboarding Modal — shows for new users with incomplete profile */}
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onSkip={handleSkipOnboarding}
         />
       </main>
     </div>

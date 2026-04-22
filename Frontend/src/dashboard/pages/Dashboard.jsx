@@ -1,56 +1,100 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
-import {
-  Activity, Heart, TrendingUp, AlertCircle, Brain, Footprints, Droplets, Target, Calendar,
-  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle, CloudSun
+  Heart, TrendingUp, Footprints, Droplets, Target, CloudSun,
+  Bell, BellRing, X, Plus, Minus, Volume2, CheckCircle,
+  Brain, ArrowRight,
 } from 'lucide-react';
 import Button from '../../shared/ui/Button';
-import { SkeletonCard, SkeletonChart, SkeletonSchedule, SkeletonRiskCard } from '../../shared/ui/Skeleton';
-import EmptyState from '../../shared/ui/EmptyState';
+import {
+  SkeletonCard, SkeletonChart, SkeletonRiskCard,
+  SkeletonHero, SkeletonQuickActions,
+} from '../../shared/ui/Skeleton';
 import DashReveal from '../../shared/ui/DashReveal';
+import Sparkline from '../../shared/ui/Sparkline';
 import axios from 'axios';
 import { useHealthData } from '../../context/HealthDataContext';
+import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../constants/config';
-import { riskService } from '../../services/api';
+import { riskService, dashboardService, walkEarnService } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
-const data = [
-  { name: 'Mon', score: 65, heart: 72 },
-  { name: 'Tue', score: 70, heart: 75 },
-  { name: 'Wed', score: 68, heart: 71 },
-  { name: 'Thu', score: 74, heart: 78 },
-  { name: 'Fri', score: 78, heart: 74 },
-  { name: 'Sat', score: 85, heart: 70 },
-  { name: 'Sun', score: 82, heart: 72 },
-];
+// New upgrade components
+import HealthScoreHero from '../components/dashboard/HealthScoreHero';
+import QuickActionsBar from '../components/dashboard/QuickActionsBar';
+import WeeklyTrendsChart from '../components/dashboard/WeeklyTrendsChart';
+import TodayFocusCard from '../components/dashboard/TodayFocusCard';
+import SmartInsightsCard from '../components/dashboard/SmartInsightsCard';
+import RecentPredictionsCard from '../components/dashboard/RecentPredictionsCard';
 
-const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAction, actionLabel }) => (
-  <div className="dash-card h-full">
-    <div className="flex justify-between items-start mb-3 sm:mb-4">
+// ------------------------------------------------------------------
+// Enhanced stat card — supports sparkline, mini progress bars, activity chip
+// ------------------------------------------------------------------
+const EnhancedStatCard = ({
+  title, value, unit, icon: Icon, iconClass, subtext, sparklineData,
+  progressBars, activityChip, trendPct, onAction, actionLabel,
+}) => (
+  <div className="dash-card dash-card-glow h-full !p-4 sm:!p-5">
+    <div className="flex justify-between items-start mb-2 sm:mb-4 gap-2">
       <div className="min-w-0 flex-1">
-        <p className="text-xs sm:text-sm font-medium text-[#5f697a] truncate">{title}</p>
-        <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030] mt-1">
-          {value} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">{unit}</span>
+        <p className="text-[11px] sm:text-sm font-medium text-[#5f697a] truncate">{title}</p>
+        <h3 className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030] mt-0.5 sm:mt-1 truncate">
+          {value} <span className="text-[10px] sm:text-sm font-normal text-[#6a7283]">{unit}</span>
         </h3>
       </div>
-      <div className={`dash-icon-badge ${color}`}>
-        <Icon size={20} className="text-white" />
+      <div className={`dash-icon-badge ${iconClass} flex-shrink-0`} style={{ width: 36, height: 36 }}>
+        <Icon size={16} className="text-white" />
       </div>
     </div>
-    {subtext ? (
-      <div className="text-xs sm:text-sm text-[#5f697a]">
-        {subtext}
-      </div>
-    ) : (
-      <div className="flex items-center text-xs sm:text-sm">
-        <span className="text-green-500 font-medium flex items-center">
-          <TrendingUp size={14} className="mr-1" /> {change}
-        </span>
-        <span className="text-[#6a7283] ml-2">vs last week</span>
+
+    {sparklineData && sparklineData.length > 0 && (
+      <div className="mb-2 flex items-end justify-between gap-2">
+        <Sparkline data={sparklineData} width={70} height={22} />
+        {typeof trendPct === 'number' && (
+          <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-emerald-600 flex-shrink-0">
+            <TrendingUp size={10} />
+            +{Math.abs(trendPct)}%
+          </span>
+        )}
       </div>
     )}
+
+    {progressBars && progressBars.length > 0 && (
+      <div className="space-y-2 mb-2">
+        {progressBars.map((bar, i) => (
+          <div key={i}>
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] mb-1 gap-2">
+              <span className="text-[#0b1030] font-medium truncate flex-1 min-w-0">{bar.label}</span>
+              <span className="text-[#6a7283] font-semibold flex-shrink-0">{bar.pct}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[#f0f1fc] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${bar.pct}%`,
+                  background: bar.gradient || 'linear-gradient(90deg, #10b981, #34d399)',
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {activityChip && (
+      <div className="flex items-center gap-1.5 text-xs text-[#5f697a] mt-1">
+        <span
+          className="inline-block w-1.5 h-1.5 rounded-full"
+          style={{ background: activityChip.color }}
+        />
+        <span className="truncate">{activityChip.text}</span>
+      </div>
+    )}
+
+    {subtext && !activityChip && !progressBars && (
+      <div className="text-xs sm:text-sm text-[#5f697a]">{subtext}</div>
+    )}
+
     {onAction && (
       <button
         onClick={onAction}
@@ -62,95 +106,93 @@ const StatCard = ({ title, value, unit, change, icon: Icon, color, subtext, onAc
   </div>
 );
 
-// Water Tracker Component
+// ------------------------------------------------------------------
+// Water tracker (kept — just re-styled to match new badge system)
+// ------------------------------------------------------------------
 const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
   const { waterIntake, addWater, removeWater, updateGoalProgress, activeGoals } = useHealthData();
-  const glasses = Math.floor(waterIntake * 4); // 1L = 4 glasses (250ml each)
-  const target = 12; // 3L = 12 glasses
+  const glasses = Math.floor(waterIntake * 4);
+  const target = 12;
   const remaining = Math.max(target - glasses, 0);
+  const pct = Math.min(100, Math.round((waterIntake / 3) * 100));
 
-  // Find water goal to get actual ID
-  const waterGoal = activeGoals.find(g => g.type === 'water');
+  const waterGoal = activeGoals.find((g) => g.type === 'water');
 
   const handleAddGlass = async () => {
     const newValue = Math.min(waterIntake + 0.25, 3);
     addWater();
-    
-    // Update backend if water goal exists
-    if (waterGoal) {
-      await updateGoalProgress('water', newValue);
-    }
+    if (waterGoal) await updateGoalProgress('water', newValue);
   };
-
   const handleRemoveGlass = async () => {
     const newValue = Math.max(waterIntake - 0.25, 0);
     removeWater();
-    
-    // Update backend if water goal exists
-    if (waterGoal) {
-      await updateGoalProgress('water', newValue);
-    }
+    if (waterGoal) await updateGoalProgress('water', newValue);
   };
 
   return (
-    <div className="dash-card">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-2">
-          <div className="dash-icon-badge bg-blue-500">
-            <Droplets size={20} className="text-white" />
+    <div className="dash-card dash-card-glow !p-4 sm:!p-5">
+      <div className="flex justify-between items-start mb-3 gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="dash-icon-badge dash-icon-badge--gradient-cyan flex-shrink-0" style={{ width: 36, height: 36 }}>
+            <Droplets size={16} className="text-white" />
           </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-[#5f697a]">Water Intake</p>
-            <h3 className="text-xl sm:text-2xl font-heading font-bold text-[#0b1030]">
-              {waterIntake.toFixed(1)} <span className="text-xs sm:text-sm font-normal text-[#6a7283]">/ 3 L</span>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-sm font-medium text-[#5f697a] truncate">Water Intake</p>
+            <h3 className="text-lg sm:text-2xl font-heading font-bold text-[#0b1030]">
+              {waterIntake.toFixed(1)} <span className="text-[10px] sm:text-sm font-normal text-[#6a7283]">/ 3 L</span>
             </h3>
           </div>
         </div>
         <button
           onClick={onSetReminder}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
             reminderActive
               ? 'bg-blue-100 text-blue-600'
               : 'bg-[#f0f1fc] hover:bg-[#e8eaf9] text-[#5f697a]'
           }`}
           title={reminderActive ? 'Reminder Active' : 'Set Water Reminder'}
         >
-          {reminderActive ? <BellRing size={18} /> : <Bell size={18} />}
+          {reminderActive ? <BellRing size={16} /> : <Bell size={16} />}
         </button>
       </div>
 
-      {/* Glass Visualization */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Glass viz with gradient fills — responsive cell count per row */}
+      <div className="grid grid-cols-6 gap-1 sm:gap-1.5 mb-2 sm:mb-3">
         {Array.from({ length: target }).map((_, i) => (
           <div
             key={i}
-            className={`w-6 h-8 rounded-md transition-all ${
-              i < glasses ? 'bg-blue-500' : 'bg-[#f0f1fc]'
-            }`}
+            className="h-5 sm:h-7 rounded-md transition-all"
+            style={{
+              background:
+                i < glasses
+                  ? 'linear-gradient(180deg, #0ea5e9, #22d3ee)'
+                  : '#f0f1fc',
+              boxShadow: i < glasses ? '0 2px 6px rgba(14, 165, 233, 0.25)' : 'none',
+            }}
           />
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-[#5f697a]">
-          {remaining > 0 ? `${remaining} glasses remaining` : '🎉 Goal reached!'}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] sm:text-xs text-[#5f697a] truncate">
+          {remaining > 0 ? `${remaining} left · ${pct}%` : '🎉 Goal reached!'}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           <button
             onClick={handleRemoveGlass}
             disabled={waterIntake <= 0}
-            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
+            className="p-1.5 sm:p-2 min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] disabled:opacity-50 transition-colors"
             aria-label="Remove one glass of water"
           >
-            <Minus size={16} className="text-[#5f697a]" />
+            <Minus size={12} className="text-[#5f697a]" />
           </button>
           <button
             onClick={handleAddGlass}
             disabled={waterIntake >= 3}
-            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            className="p-1.5 sm:p-2 min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg bg-blue-100 hover:bg-blue-200 disabled:opacity-50 transition-colors"
             aria-label="Add one glass of water"
           >
-            <Plus size={16} className="text-blue-600" />
+            <Plus size={12} className="text-blue-600" />
           </button>
         </div>
       </div>
@@ -165,12 +207,12 @@ const WaterTracker = ({ onSetReminder, reminderActive, reminderInterval }) => {
   );
 };
 
-// Water Reminder Modal
+// ------------------------------------------------------------------
+// Water Reminder Modal (unchanged)
+// ------------------------------------------------------------------
 const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
   const [interval, setInterval] = useState(currentInterval || 30);
-
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b1030]/50 backdrop-blur-sm">
       <div className="bg-white rounded-[20px] w-full max-w-sm p-6" style={{ boxShadow: '0 22px 38px rgba(11, 16, 48, 0.11)' }}>
@@ -182,33 +224,22 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
             <X size={20} className="text-[#5f697a]" />
           </button>
         </div>
-
         <p className="text-sm text-[#5f697a] mb-4">
           Set a reminder to drink water at regular intervals throughout the day.
         </p>
-
         <div className="mb-6">
           <label className="block text-sm font-medium text-[#0b1030] mb-2">Remind me every</label>
-          <div className="flex items-center gap-3">
-            <select
-              value={interval}
-              onChange={(e) => setInterval(Number(e.target.value))}
-              className="dash-input flex-1"
-            >
-              <option value={15}>15 minutes</option>
-              <option value={30}>30 minutes</option>
-              <option value={45}>45 minutes</option>
-              <option value={60}>1 hour</option>
-              <option value={90}>1.5 hours</option>
-              <option value={120}>2 hours</option>
-            </select>
-          </div>
+          <select value={interval} onChange={(e) => setInterval(Number(e.target.value))} className="dash-input">
+            <option value={15}>15 minutes</option>
+            <option value={30}>30 minutes</option>
+            <option value={45}>45 minutes</option>
+            <option value={60}>1 hour</option>
+            <option value={90}>1.5 hours</option>
+            <option value={120}>2 hours</option>
+          </select>
         </div>
-
         <div className="flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
           <Button className="flex-1" onClick={() => onSave(interval)}>
             <Bell size={16} className="mr-2" /> Set Reminder
           </Button>
@@ -218,134 +249,73 @@ const WaterReminderModal = ({ isOpen, onClose, onSave, currentInterval }) => {
   );
 };
 
-const SymptomsPredictionHistory = ({ predictions }) => {
-  const visiblePredictions = (predictions || []).slice(0, 2);
-
-  if (!visiblePredictions.length) {
-    return (
-      <div className="dash-card">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="dash-icon-badge bg-indigo-500">
-            <Brain size={20} className="text-white" />
-          </div>
-          <h3 className="dash-heading text-sm sm:text-base">Symptoms Prediction History</h3>
-        </div>
-        <p className="text-sm text-[#5f697a]">
-          No symptoms predictions yet. Run a prediction from the Symptoms Disease page.
-        </p>
-      </div>
-    );
-  }
-
+// ------------------------------------------------------------------
+// Latest symptoms prediction card
+// ------------------------------------------------------------------
+const LatestSymptomsCard = ({ latest }) => {
+  const navigate = useNavigate();
   return (
-    <div className="dash-card">
-      <div className="flex items-center gap-2 mb-4 sm:mb-6">
-        <div className="dash-icon-badge bg-indigo-500">
-          <Brain size={20} className="text-white" />
+    <div
+      className="dash-card dash-card-accent"
+      style={{ '--accent-stripe': '#7c3aed' }}
+    >
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="dash-icon-badge dash-icon-badge--gradient-violet">
+            <Brain size={18} className="text-white" />
+          </div>
+          <h3 className="dash-heading text-sm sm:text-base">Latest Symptoms Prediction</h3>
         </div>
-        <h3 className="dash-heading text-sm sm:text-base">Symptoms Prediction History</h3>
+        {latest && typeof latest.confidence === 'number' && (
+          <span className="dash-chip">
+            <CheckCircle size={10} /> {Math.round(latest.confidence * 100)}% confidence
+          </span>
+        )}
       </div>
 
-      <div className="space-y-3">
-        {visiblePredictions.map((item) => (
-          <div key={item._id} className="rounded-xl border border-[#e8eaf9] p-3 bg-[#f8f9ff]">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div>
-                <p className="text-sm font-bold text-[#0b1030]">{item.predictedDisease}</p>
-                <p className="text-xs text-[#5f697a]">
-                  Confidence: {typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}
-                </p>
-              </div>
-              <p className="text-xs text-[#6a7283]">
-                {new Date(item.createdAt).toLocaleString('en-IN', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-            </div>
-            <p className="text-xs text-[#5f697a] mt-2">
-              Symptoms: {(item.selectedSymptoms || []).slice(0, 5).join(', ') || 'Not available'}
-            </p>
+      {latest ? (
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 p-3 bg-[#f0f1fc] rounded-xl">
+            <span className="text-xs sm:text-sm text-[#5f697a]">Predicted Disease</span>
+            <span className="font-bold text-[#0b1030] text-sm sm:text-base truncate">{latest.predictedDisease || 'N/A'}</span>
           </div>
-        ))}
-      </div>
+          <div className="flex justify-between items-center gap-2 p-3 bg-[#f0f1fc] rounded-xl">
+            <span className="text-xs sm:text-sm text-[#5f697a]">Selected Symptoms</span>
+            <span className="font-bold text-[#0b1030]">{(latest.selectedSymptoms || []).length}</span>
+          </div>
+          <p className="text-sm text-[#5f697a] pt-1 line-clamp-3">
+            {latest.details?.description || 'Latest symptoms prediction is available in your history.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard/prediction-history')}
+            className="w-full flex items-center justify-center gap-1 text-xs font-semibold text-[#506cd7] hover:text-[#4753bf] py-2 rounded-lg bg-[#f0f1fc] hover:bg-[#e8eaf9] transition-colors"
+          >
+            View full details <ArrowRight size={12} />
+          </button>
+        </div>
+      ) : (
+        <div className="py-4">
+          <p className="text-sm text-[#5f697a] mb-4">
+            No symptoms prediction yet. Run your first check and track your history over time.
+          </p>
+          <Button size="sm" onClick={() => navigate('/dashboard/risk-prediction')}>
+            Run first check
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
-const HeartDiabetesPredictionHistory = ({ predictions }) => {
-  if (!predictions.length) {
-    return (
-      <div className="dash-card">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="dash-icon-badge bg-rose-500">
-            <Heart size={20} className="text-white" />
-          </div>
-          <h3 className="dash-heading text-sm sm:text-base">Heart & Diabetes History</h3>
-        </div>
-        <p className="text-sm text-[#5f697a]">
-          No Heart/Diabetes predictions yet. Run a prediction from Heart & Diabetes page.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="dash-card">
-      <div className="flex items-center gap-2 mb-4 sm:mb-6">
-        <div className="dash-icon-badge bg-rose-500">
-          <Heart size={20} className="text-white" />
-        </div>
-        <h3 className="dash-heading text-sm sm:text-base">Heart & Diabetes History</h3>
-      </div>
-
-      <div className="space-y-3">
-        {predictions.map((item) => (
-          <div key={item._id} className="rounded-xl border border-[#e8eaf9] p-3 bg-[#fff7f7]">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs text-[#6a7283]">
-                {new Date(item.createdAt).toLocaleString('en-IN', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-              <span className="text-xs font-medium px-2 py-1 rounded-full bg-[#f0f1fc] text-[#506cd7]">
-                {(item.results?.overallRisk || 'low').toUpperCase()}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <div className="rounded-lg bg-white p-2 border border-[#f0f1fc]">
-                <p className="text-[11px] text-[#6a7283]">Heart Risk</p>
-                <p className="text-sm font-bold text-[#0b1030]">
-                  {typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'}
-                </p>
-              </div>
-              <div className="rounded-lg bg-white p-2 border border-[#f0f1fc]">
-                <p className="text-[11px] text-[#6a7283]">Diabetes Risk</p>
-                <p className="text-sm font-bold text-[#0b1030]">
-                  {typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {item.results?.summary && (
-              <p className="text-xs text-[#5f697a] mt-2 line-clamp-2">{item.results.summary}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
+// ------------------------------------------------------------------
+// Dashboard page
+// ------------------------------------------------------------------
 const Dashboard = () => {
-  const { dailySteps, stepsGoal, goalsCount, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
-  
+  const { dailySteps, stepsGoal, goalsCount, activeGoals, waterIntake, fetchHealthData, isInitialLoad } = useHealthData();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [waterReminderActive, setWaterReminderActive] = useState(false);
   const [waterReminderInterval, setWaterReminderInterval] = useState(30);
   const [isWaterReminderModalOpen, setIsWaterReminderModalOpen] = useState(false);
@@ -354,431 +324,307 @@ const Dashboard = () => {
     temperature: '--',
     condition: 'Loading weather...',
     location: 'Mumbai',
+    activity: null,
   });
   const [symptomPredictions, setSymptomPredictions] = useState([]);
   const [heartDiabetesPredictions, setHeartDiabetesPredictions] = useState([]);
+  const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [walkWeekly, setWalkWeekly] = useState([]);
   const latestSymptomPrediction = symptomPredictions[0] || null;
 
-  // Calculate steps progress
   const stepsProgress = Math.round((dailySteps / stepsGoal) * 100);
   const stepsFormatted = dailySteps.toLocaleString();
   const stepsGoalFormatted = (stepsGoal / 1000).toFixed(0) + 'k';
 
-  // Request notification permission
+  // Build goal mini-bars for the Active Goals stat card
+  const goalBars = useMemo(() => {
+    const typeGradients = {
+      water: 'linear-gradient(90deg, #0ea5e9, #22d3ee)',
+      steps: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+      sleep: 'linear-gradient(90deg, #506cd7, #7c8bff)',
+      weight: 'linear-gradient(90deg, #e74c4c, #fb7185)',
+      custom: 'linear-gradient(90deg, #10b981, #34d399)',
+    };
+    return (activeGoals || [])
+      .filter((g) => !g.isCompleted)
+      .slice(0, 2)
+      .map((g) => ({
+        label: g.title,
+        pct: g.target > 0 ? Math.min(Math.round((g.current / g.target) * 100), 100) : 0,
+        gradient: typeGradients[g.type] || typeGradients.custom,
+      }));
+  }, [activeGoals]);
+
+  // Steps sparkline data from walk-earn
+  const stepsSparkline = useMemo(() => {
+    if (!walkWeekly || walkWeekly.length === 0) return [];
+    return walkWeekly.slice(-7).map((d) => d.steps || 0);
+  }, [walkWeekly]);
+
+  // Weather activity chip color
+  const weatherChip = useMemo(() => {
+    if (!weatherSummary.activity) return null;
+    const suitabilityColors = {
+      good: '#10b981',
+      neutral: '#f59e0b',
+      bad: '#e74c4c',
+    };
+    return {
+      text: weatherSummary.activity.name || weatherSummary.condition,
+      color: suitabilityColors[weatherSummary.activity.suitability] || '#0ea5e9',
+    };
+  }, [weatherSummary]);
+
+  // -------- Notifications helpers --------
   const requestNotificationPermission = async () => {
     if ('Notification' in window && Notification.permission === 'default') {
       await Notification.requestPermission();
     }
   };
-
-  // Show browser notification
   const showBrowserNotification = useCallback((title, body) => {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, {
-        body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        vibrate: [200, 100, 200]
-      });
+      new Notification(title, { body, icon: '/favicon.ico', badge: '/favicon.ico', vibrate: [200, 100, 200] });
     }
   }, []);
-
-  // Create notification
   const createNotification = async (title, message, type = 'reminder') => {
     try {
-      await axios.post(`${API_URL}/notifications`, 
-        { title, message, type },
-        { withCredentials: true }
-      );
-    } catch (err) {
-      console.error('Failed to create notification');
-    }
+      await axios.post(`${API_URL}/notifications`, { title, message, type }, { withCredentials: true });
+    } catch (err) { /* silent */ }
   };
 
+  // -------- Data fetches --------
   const fetchWeatherSummary = useCallback(async () => {
     try {
       const { data } = await axios.get(`${API_URL}/forecast?city=mumbai`, { withCredentials: true });
-
       const forecast = data?.forecast;
       if (!forecast) return;
-
       setWeatherSummary({
         temperature: String(forecast.temperature ?? '--'),
         condition: forecast.condition || 'Clear',
         location: forecast.location || 'Mumbai',
+        activity: Array.isArray(forecast.activities) && forecast.activities.length > 0
+          ? forecast.activities[0]
+          : null,
       });
     } catch (err) {
       setWeatherSummary({
         temperature: '--',
         condition: 'Weather unavailable',
         location: 'Mumbai',
+        activity: null,
       });
     }
   }, []);
 
   const fetchSymptomsPredictionHistory = useCallback(async () => {
     try {
-      const response = await riskService.getSymptomsPredictionHistory(2);
+      const response = await riskService.getSymptomsPredictionHistory(6);
       if (response.success) {
-        setSymptomPredictions((response.predictions || []).slice(0, 2));
+        setSymptomPredictions((response.predictions || []).slice(0, 6));
       }
-    } catch (err) {
-      setSymptomPredictions([]);
-    }
+    } catch { setSymptomPredictions([]); }
   }, []);
 
   const fetchHeartDiabetesPredictionHistory = useCallback(async () => {
     try {
       const response = await riskService.getRiskHistory();
       if (response.success) {
-        const filtered = (response.predictions || []).filter((item) => (
-          typeof item?.results?.heartDiseaseRisk === 'number' || typeof item?.results?.diabetesRisk === 'number'
-        ));
-        setHeartDiabetesPredictions(filtered.slice(0, 2));
+        const filtered = (response.predictions || []).filter((item) =>
+          typeof item?.results?.heartDiseaseRisk === 'number' ||
+          typeof item?.results?.diabetesRisk === 'number'
+        );
+        setHeartDiabetesPredictions(filtered.slice(0, 6));
       }
-    } catch (err) {
-      setHeartDiabetesPredictions([]);
-    }
+    } catch { setHeartDiabetesPredictions([]); }
   }, []);
 
-  // Start water reminder
-  const startWaterReminder = (intervalMinutes) => {
-    // Clear existing timer
-    if (waterReminderTimerId) {
-      clearInterval(waterReminderTimerId);
-    }
+  const fetchDashboardSummary = useCallback(async () => {
+    try {
+      const response = await dashboardService.getSummary();
+      if (response?.success) setDashboardSummary(response.data);
+    } catch { setDashboardSummary(null); }
+  }, []);
 
+  const fetchWalkSummary = useCallback(async () => {
+    try {
+      const response = await walkEarnService.getSummary();
+      if (response?.weeklyData) setWalkWeekly(response.weeklyData);
+    } catch { setWalkWeekly([]); }
+  }, []);
+
+  // -------- Water reminder lifecycle (kept from original) --------
+  const startWaterReminder = (intervalMinutes) => {
+    if (waterReminderTimerId) clearInterval(waterReminderTimerId);
     setWaterReminderInterval(intervalMinutes);
     setWaterReminderActive(true);
     setIsWaterReminderModalOpen(false);
-
-    // Create initial notification in DB
-    createNotification(
-      '💧 Water Reminder Set',
-      `You'll be reminded to drink water every ${intervalMinutes} minutes`,
-      'reminder'
-    );
-
-    // Set up interval for reminders
+    createNotification('💧 Water Reminder Set', `You'll be reminded every ${intervalMinutes} minutes`, 'reminder');
     const timerId = setInterval(() => {
-      createNotification(
-        '💧 Time to Hydrate!',
-        'Drink a glass of water to stay healthy and focused.',
-        'reminder'
-      );
+      createNotification('💧 Time to Hydrate!', 'Drink a glass of water to stay healthy and focused.', 'reminder');
       showBrowserNotification('💧 Water Reminder', 'Time to drink water!');
     }, intervalMinutes * 60 * 1000);
-
     setWaterReminderTimerId(timerId);
-
-    // Store in localStorage
     localStorage.setItem('waterReminderActive', 'true');
     localStorage.setItem('waterReminderInterval', String(intervalMinutes));
   };
-
-  // Stop water reminder
   const stopWaterReminder = () => {
-    if (waterReminderTimerId) {
-      clearInterval(waterReminderTimerId);
-    }
+    if (waterReminderTimerId) clearInterval(waterReminderTimerId);
     setWaterReminderActive(false);
     setWaterReminderTimerId(null);
     localStorage.removeItem('waterReminderActive');
     localStorage.removeItem('waterReminderInterval');
   };
 
-  // Handle water tracker update with notification
+  // -------- Water milestone notifications --------
   useEffect(() => {
     const glasses = Math.floor(waterIntake * 4);
-    const milestones = [4, 8, 12]; // 1L, 2L, 3L
-    
-    milestones.forEach(milestone => {
-      if (glasses === milestone) {
-        const liters = milestone / 4;
-        createNotification(
-          '🎉 Water Goal Progress!',
-          `Great job! You've reached ${liters}L of water intake today.`,
-          'achievement'
-        );
+    const milestones = [4, 8, 12];
+    milestones.forEach((m) => {
+      if (glasses === m) {
+        const liters = m / 4;
+        createNotification('🎉 Water Goal Progress!', `Great job! You've reached ${liters}L of water intake today.`, 'achievement');
         showBrowserNotification('🎉 Water Goal', `You've drunk ${liters}L today!`);
       }
     });
   }, [waterIntake]);
 
-  // Initialize on mount
+  // -------- Init --------
   useEffect(() => {
     requestNotificationPermission();
     fetchHealthData();
     fetchWeatherSummary();
     fetchSymptomsPredictionHistory();
     fetchHeartDiabetesPredictionHistory();
+    fetchDashboardSummary();
+    fetchWalkSummary();
 
-    // Restore water reminder state
-    const savedReminderActive = localStorage.getItem('waterReminderActive');
+    const savedActive = localStorage.getItem('waterReminderActive');
     const savedInterval = localStorage.getItem('waterReminderInterval');
-    if (savedReminderActive === 'true' && savedInterval) {
+    if (savedActive === 'true' && savedInterval) {
       startWaterReminder(Number(savedInterval));
     }
-
-    // Cleanup on unmount
-    return () => {
-      if (waterReminderTimerId) {
-        clearInterval(waterReminderTimerId);
-      }
-    };
+    return () => { if (waterReminderTimerId) clearInterval(waterReminderTimerId); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // =============================================================
+  // Render
+  // =============================================================
+
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Stats Grid */}
-      {isInitialLoad ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
-        </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* 1. Hero */}
+      {isInitialLoad || !dashboardSummary ? (
+        <SkeletonHero />
       ) : (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {[
-          <StatCard
-            key="steps"
-            title="Daily Steps"
-            value={stepsFormatted}
-            unit={`/ ${stepsGoalFormatted}`}
-            change="+12%"
-            icon={Footprints}
-            color="bg-orange-500"
-            subtext={`${stepsProgress}% of daily goal`}
-          />,
-          <WaterTracker
-            key="water"
-            onSetReminder={() => waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true)}
-            reminderActive={waterReminderActive}
-            reminderInterval={waterReminderInterval}
-          />,
-          <StatCard
-            key="goals"
-            title="Active Goals"
-            value={goalsCount.toString()}
-            unit="ongoing"
-            icon={Target}
-            color="bg-purple-500"
-            subtext="Track your progress"
-          />,
-          <StatCard
-            key="weather"
-            title="Weather"
-            value={weatherSummary.temperature}
-            unit="°C"
-            icon={CloudSun}
-            color="bg-cyan-500"
-            subtext={`${weatherSummary.condition} • ${weatherSummary.location}`}
-          />
-        ].map((card, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.08 }}
-          >
-            {card}
-          </motion.div>
-        ))}
-      </div>
-      )}
-
-      {isInitialLoad ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          <SkeletonChart />
-          <SkeletonSchedule />
-        </div>
-      ) : (
-      <DashReveal delay={0.1} className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 dash-card-static">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-            <h3 className="dash-heading text-sm sm:text-base">Weekly Health Trends</h3>
-            <select className="text-sm border-none bg-[#f0f1fc] rounded-lg px-3 py-1 text-[#5f697a] focus:ring-0">
-              <option>Last 7 Days</option>
-              <option>Last Month</option>
-            </select>
-          </div>
-          <div className="h-60 sm:h-80">
-            <ResponsiveContainer width="100%" height="100%" minHeight={240}>
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8'}} />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    return (
-                      <div className="bg-white px-4 py-3 rounded-2xl border border-[#e8eaf9]" style={{ boxShadow: '0 10px 35px rgba(2, 6, 23, 0.08)' }}>
-                        <p className="text-xs font-bold text-[#0b1030] mb-1">{label}</p>
-                        {payload.map((entry, i) => (
-                          <p key={i} className="text-sm text-[#5f697a]">
-                            <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: entry.color }} />
-                            Health Score: <span className="font-bold text-[#0b1030]">{entry.value}</span>
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                <Area type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Health Calendar & Reminders */}
-        <div className="dash-card-static flex flex-col">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <div className="dash-icon-badge bg-[#506cd7]">
-              <Calendar size={20} className="text-white" />
-            </div>
-            <h3 className="dash-heading text-sm sm:text-base">Today's Schedule</h3>
-          </div>
-
-          <div className="space-y-4 flex-1">
-            <div className="flex items-start gap-3 pb-4 border-b border-[#f0f1fc]">
-              <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-[#6a7283]">08:00</span>
-                <span className="text-xs text-[#6a7283]">AM</span>
-              </div>
-              <div className="bg-green-50 p-3 rounded-xl w-full border-l-4 border-green-500">
-                <h4 className="text-sm font-bold text-[#0b1030]">Morning Medication</h4>
-                <p className="text-xs text-[#5f697a]">Vitamin D & Calcium</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 pb-4 border-b border-[#f0f1fc]">
-              <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-[#6a7283]">05:30</span>
-                <span className="text-xs text-[#6a7283]">PM</span>
-              </div>
-              <div className="bg-blue-50 p-3 rounded-xl w-full border-l-4 border-blue-500">
-                <h4 className="text-sm font-bold text-[#0b1030]">Evening Walk</h4>
-                <p className="text-xs text-[#5f697a]">Goal: 30 minutes</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="flex flex-col items-center min-w-[3rem]">
-                <span className="text-xs font-bold text-[#6a7283]">09:00</span>
-                <span className="text-xs text-[#6a7283]">PM</span>
-              </div>
-              <div className="bg-purple-50 p-3 rounded-xl w-full border-l-4 border-purple-500">
-                <h4 className="text-sm font-bold text-[#0b1030]">Sleep Routine</h4>
-                <p className="text-xs text-[#5f697a]">No screen time</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashReveal>
-      )}
-
-      {/* Risk Summary & Insights */}
-      {isInitialLoad ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-          <SkeletonRiskCard />
-          <SkeletonRiskCard />
-        </div>
-      ) : (
-      <DashReveal delay={0.2} className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8"
-      >
-        <div className="dash-card">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-            <div className="flex items-center gap-2">
-              <div className="dash-icon-badge bg-indigo-500">
-                <Brain size={20} className="text-white" />
-              </div>
-              <h3 className="dash-heading text-sm sm:text-base">Latest Symptoms Prediction</h3>
-            </div>
-            {latestSymptomPrediction ? (
-              <span className="text-xs font-medium px-2 py-1 bg-[#f0f1fc] text-[#506cd7] rounded-full inline-flex items-center gap-1">
-                <CheckCircle size={12} />
-                {typeof latestSymptomPrediction.confidence === 'number'
-                  ? `${Math.round(latestSymptomPrediction.confidence * 100)}% confidence`
-                  : 'Prediction Ready'}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="space-y-4">
-            {latestSymptomPrediction ? (
-              <>
-                <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-                  <span className="text-sm text-[#5f697a]">Predicted Disease</span>
-                  <span className="font-bold text-[#0b1030]">{latestSymptomPrediction.predictedDisease || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-[#f0f1fc] rounded-xl">
-                  <span className="text-sm text-[#5f697a]">Selected Symptoms</span>
-                  <span className="font-bold text-[#0b1030]">{(latestSymptomPrediction.selectedSymptoms || []).length}</span>
-                </div>
-                <div className="mt-4 pt-4 border-t border-[#e8eaf9]">
-                  <p className="text-sm text-[#5f697a]">
-                    {latestSymptomPrediction.details?.description || 'Latest symptoms prediction is available in your history.'}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-[#5f697a]">
-                No symptoms prediction yet. Go to Symptoms Disease page and run a prediction.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="dash-card">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <div className="dash-icon-badge bg-[#506cd7]">
-              <Brain size={20} className="text-white" />
-            </div>
-            <h3 className="dash-heading text-sm sm:text-base">AI Insights</h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 p-1.5 rounded-full mt-0.5">
-                  <Activity size={14} className="text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#0b1030]">Activity Recommendation</h4>
-                  <p className="text-xs text-[#5f697a] mt-1">Try to increase your daily steps by 2000 to improve cardiovascular health.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
-              <div className="flex items-start gap-3">
-                <div className="bg-orange-100 p-1.5 rounded-full mt-0.5">
-                  <AlertCircle size={14} className="text-orange-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#0b1030]">Sleep Pattern</h4>
-                  <p className="text-xs text-[#5f697a] mt-1">Your average sleep duration is 6h 20m. Aim for 7-8 hours.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashReveal>
-      )}
-
-      {!isInitialLoad && (
-        <DashReveal delay={0.25} className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-          <HeartDiabetesPredictionHistory predictions={heartDiabetesPredictions} />
-          <SymptomsPredictionHistory predictions={symptomPredictions} />
+        <DashReveal delay={0}>
+          <HealthScoreHero summary={dashboardSummary} userName={user?.name} />
         </DashReveal>
       )}
 
-      {/* Water Reminder Modal */}
+      {/* 2. Quick Actions */}
+      {isInitialLoad ? (
+        <SkeletonQuickActions />
+      ) : (
+        <DashReveal delay={0.06}>
+          <QuickActionsBar />
+        </DashReveal>
+      )}
+
+      {/* 3. Stat Row */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
+          {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6">
+          {[
+            <EnhancedStatCard
+              key="steps"
+              title="Daily Steps"
+              value={stepsFormatted}
+              unit={`/ ${stepsGoalFormatted}`}
+              icon={Footprints}
+              iconClass="dash-icon-badge--gradient-amber"
+              subtext={`${stepsProgress}% of daily goal`}
+              sparklineData={stepsSparkline}
+              trendPct={stepsSparkline.length >= 2 ? estimateTrendPct(stepsSparkline) : null}
+            />,
+            <WaterTracker
+              key="water"
+              onSetReminder={() => (waterReminderActive ? stopWaterReminder() : setIsWaterReminderModalOpen(true))}
+              reminderActive={waterReminderActive}
+              reminderInterval={waterReminderInterval}
+            />,
+            <EnhancedStatCard
+              key="goals"
+              title="Active Goals"
+              value={goalsCount.toString()}
+              unit="ongoing"
+              icon={Target}
+              iconClass="dash-icon-badge--gradient-emerald"
+              subtext={goalBars.length === 0 ? 'Track your progress' : undefined}
+              progressBars={goalBars}
+              onAction={goalsCount === 0 ? () => navigate('/dashboard/reverse-planner') : undefined}
+              actionLabel={goalsCount === 0 ? 'Add a goal' : undefined}
+            />,
+            <EnhancedStatCard
+              key="weather"
+              title="Weather"
+              value={weatherSummary.temperature}
+              unit="°C"
+              icon={CloudSun}
+              iconClass="dash-icon-badge--gradient-indigo"
+              subtext={`${weatherSummary.condition} · ${weatherSummary.location}`}
+              activityChip={weatherChip}
+            />,
+          ].map((card, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.08 }}>
+              {card}
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* 4 + 5. Trends Chart + Today's Focus */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+          <SkeletonChart />
+          <SkeletonRiskCard />
+        </div>
+      ) : (
+        <DashReveal delay={0.12} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+          <div className="lg:col-span-2">
+            <WeeklyTrendsChart />
+          </div>
+          <TodayFocusCard />
+        </DashReveal>
+      )}
+
+      {/* 6 + 7. Latest Symptoms + Smart Insights */}
+      {isInitialLoad ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
+          <SkeletonRiskCard />
+          <SkeletonRiskCard />
+        </div>
+      ) : (
+        <DashReveal delay={0.18} className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
+          <LatestSymptomsCard latest={latestSymptomPrediction} />
+          <SmartInsightsCard />
+        </DashReveal>
+      )}
+
+      {/* 8. Recent Activity (unified) */}
+      {!isInitialLoad && (
+        <DashReveal delay={0.24}>
+          <RecentPredictionsCard
+            symptomPredictions={symptomPredictions}
+            riskPredictions={heartDiabetesPredictions}
+          />
+        </DashReveal>
+      )}
+
+      {/* Modal */}
       <WaterReminderModal
         isOpen={isWaterReminderModalOpen}
         onClose={() => setIsWaterReminderModalOpen(false)}
@@ -787,6 +633,17 @@ const Dashboard = () => {
       />
     </div>
   );
+};
+
+const estimateTrendPct = (arr) => {
+  if (!arr || arr.length < 2) return null;
+  const first = arr.slice(0, Math.max(1, Math.floor(arr.length / 2)));
+  const last = arr.slice(Math.floor(arr.length / 2));
+  const avg = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const a = avg(first);
+  const b = avg(last);
+  if (!a) return null;
+  return Math.round(((b - a) / a) * 100);
 };
 
 export default Dashboard;

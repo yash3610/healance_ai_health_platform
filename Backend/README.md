@@ -6,8 +6,11 @@
 ![Mongoose](https://img.shields.io/badge/Mongoose-8.x-880000?style=for-the-badge&logo=mongoose&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-FFB300?style=for-the-badge&logo=jsonwebtokens&logoColor=black)
 ![openFDA](https://img.shields.io/badge/openFDA-Integrated-0A66C2?style=for-the-badge)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=for-the-badge)
+![RxNav](https://img.shields.io/badge/RxNav-NIH-1E6091?style=for-the-badge)
+![OpenStreetMap](https://img.shields.io/badge/OpenStreetMap-Overpass-7EBC6F?style=for-the-badge&logo=openstreetmap&logoColor=white)
 
-Backend API for Healance AI, built with Express and MongoDB. It powers authentication, health tracking, AI chatbots, risk prediction, goals, walk-and-earn, notifications, blogs, and support workflows.
+Backend API for Healance AI, built with Express and MongoDB. It powers authentication, health tracking, AI chatbots, the AI Personal Health Assistant (report analysis, medicine enrichment, nearby specialists), risk prediction, goals, walk-and-earn, notifications, blogs, and support workflows.
 
 ---
 
@@ -16,13 +19,18 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 - JWT auth with secure HTTP-only cookie support
 - Role-based access (`user`, `admin`)
 - Health data tracking and dashboard stats APIs
+- Dashboard aggregator: composite health score, streak counter, next-action picker, multi-metric trends series, and LLM-backed Smart Insights with in-memory cache and rule-based fallback
 - AI health assistant and medicine information chatbot
+- AI Personal Health Assistant: PDF/DOCX report analysis (Groq Llama 3.3), medicine explanation with drug-drug interaction checks (openFDA + NIH RxNav), nearby specialist lookup (seeded doctors + OpenStreetMap Overpass)
 - Risk analysis and recommendation APIs
+- Python ML integration for heart/diabetes and symptom-disease predictions
+- Body Explorer catalog: 34 parts across 12 systems with search, system filter, gender filter, and systems-meta endpoint
 - Goal management with progress logging
 - Walk-and-earn points and rewards redemption
 - Notification center and reminder APIs
 - Blog and bookmark APIs
 - Contact form and support ticket system with file attachments
+- SMS and WhatsApp OTP workflows
 
 ---
 
@@ -37,7 +45,17 @@ Backend API for Healance AI, built with Express and MongoDB. It powers authentic
 | JWT | 9.x | Authentication |
 | bcryptjs | 2.4.x | Password hashing |
 | Multer | 1.4.x | Upload handling |
-| Nodemailer | 6.9.x | Emails |
+| Nodemailer | 8.0.x | Emails |
+| Twilio | 5.5.x | SMS and WhatsApp messaging |
+| OpenAI | 4.x | Optional chatbot enhancement / Groq SDK compatibility |
+| Groq (Llama 3.3 70B) | via `openai` SDK | Report analysis LLM (free tier) |
+| OpenAI GPT-3.5-turbo | via `openai` SDK | Dashboard Smart Insights (15-min per-user cache, rule-based fallback) |
+| `@google/generative-ai` | 0.24.x | Optional Gemini fallback |
+| pdf-parse | 2.4.x | PDF text extraction |
+| mammoth | 1.12.x | DOCX text extraction |
+| NIH RxNav | Public API | Drug normalization, class, interaction matching |
+| OpenStreetMap Overpass | Public API | Nearby healthcare places |
+| Open-Meteo Geocoding | Public API | City -> coordinates |
 | Helmet | 7.x | Security headers |
 | express-rate-limit | 7.x | API rate limiting |
 
@@ -54,6 +72,8 @@ Backend/
 |   +-- healthController.js
 |   +-- riskController.js
 |   +-- chatbotController.js
+|   +-- dashboardController.js    (summary, trends, insights; LLM + cache + fallback)
+|   +-- bodyExplorerController.js (34 parts / 12 systems catalog + systems meta)
 |   +-- ...
 +-- middleware/
 |   +-- authMiddleware.js
@@ -62,20 +82,34 @@ Backend/
 +-- models/
 |   +-- User.js
 |   +-- HealthData.js
+|   +-- MedicalReport.js
 |   +-- RiskPrediction.js
 |   +-- ChatSession.js
+|   +-- Doctor.js
 |   +-- ...
 +-- routes/
 |   +-- authRoutes.js
 |   +-- healthRoutes.js
 |   +-- riskRoutes.js
+|   +-- chatbotRoutes.js
+|   +-- dashboardRoutes.js
+|   +-- bodyExplorerRoutes.js
 |   +-- ...
 +-- seeds/
 |   +-- seedData.js
+|   +-- seedDoctors.js
 +-- tests/
 |   +-- testFdaApi.js
 +-- utils/
 |   +-- fdaApi.js
+|   +-- fdaTextCleaner.js
+|   +-- textExtractor.js
+|   +-- reportAnalyzer.js
+|   +-- groqClient.js
+|   +-- geminiClient.js
+|   +-- rxNavApi.js
+|   +-- osmOverpass.js
+|   +-- geocode.js
 |   +-- generateToken.js
 |   +-- sendEmail.js
 +-- .env.example
@@ -141,9 +175,11 @@ From `Backend/.env.example`:
 | `JWT_REFRESH_SECRET` | No | `your_refresh_secret` | Refresh token signing secret (falls back to `JWT_SECRET`) |
 | `JWT_REFRESH_EXPIRE` | No | `30d` | Refresh token expiry |
 | `CLIENT_URL` | Yes | `http://localhost:5173` | CORS allowed frontend origin |
-| `OPENAI_API_KEY` | No | `sk-...` | AI chatbot enhancement |
+| `OPENAI_API_KEY` | No (Yes for dashboard Smart Insights) | `sk-...` | Powers `/dashboard/insights` LLM generator (falls back to rule-based tips when missing) and optional chatbot enhancement |
+| `GROQ_API_KEY` | No (Yes for report analysis) | `gsk_...` | Groq Llama 3.3 70B for `/chatbot/analyze-report` (free tier at console.groq.com/keys) |
+| `GEMINI_API_KEY` | No | `AIzaSy...` | Optional Gemini fallback LLM (aistudio.google.com/app/apikey) |
 | `FDA_API_KEY` | No | empty | Reserved (openFDA is public) |
-| `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Weather-based forecast |
+| `WEATHER_API_KEY` | No | `your_openweathermap_api_key` | Optional OpenWeather key (fallback to Open-Meteo) |
 | `OPENWEATHER_API_KEY` | No | empty | Alternate weather key variable name |
 | `WEATHER_API_BASE_URL` | No | `https://api.openweathermap.org/data/2.5` | Weather API base URL |
 | `WEATHER_UNITS` | No | `metric` | Units for weather temperature/speed |
@@ -152,8 +188,18 @@ From `Backend/.env.example`:
 | `EMAIL_USER` | No | `your-email@gmail.com` | SMTP user |
 | `EMAIL_PASS` | No | `your-app-password` | SMTP password/app password |
 | `ADMIN_EMAIL` | No | `agroreach01@gmail.com` | Admin alert email |
+| `WHATSAPP_ACCESS_TOKEN` | No | `your-whatsapp-access-token` | WhatsApp Cloud API access token |
+| `WHATSAPP_PHONE_NUMBER_ID` | No | `your-whatsapp-phone-number-id` | WhatsApp sender phone number ID |
+| `TWILIO_ACCOUNT_SID` | No | `your_twilio_account_sid` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | No | `your_twilio_auth_token` | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | No | `+12345678900` | Twilio sender number |
+| `PYTHON_BIN` | No | `python` (Windows) / `python3` (Unix) | Python executable path override for ML scripts |
 | `MAX_FILE_SIZE` | No | `10485760` | Upload size limit in bytes |
 | `UPLOAD_PATH` | No | `./uploads` | Upload path reference |
+
+---
+
+Forecast note: OpenWeather variables are optional. If unavailable, forecast endpoints automatically use Open-Meteo weather, air quality, and pollen services.
 
 ---
 
@@ -258,13 +304,26 @@ Base URL: `http://localhost:5000/api`
 | GET | `/chatbot/sessions` | Protected | Get chat sessions (`?botType=health|medicine`) |
 | GET | `/chatbot/sessions/:sessionId` | Protected | Get one session with messages |
 | DELETE | `/chatbot/sessions/:sessionId` | Protected | Delete one chat session |
+| POST | `/chatbot/analyze-report/:reportId` | Protected | Extract text + run Groq structured analysis on an uploaded report |
+| POST | `/chatbot/explain-medicine` | Protected | Enrich a drug with openFDA label + RxNav class + interaction check vs `userMedications` |
+| POST | `/chatbot/nearby-doctors` | Protected | `$geoNear` seeded doctors; OSM Overpass fallback when under the threshold |
+| POST | `/chatbot/geocode` | Protected | Resolve a city name to `{lat, lon, name}` via Open-Meteo |
+
+### Dashboard
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| GET | `/dashboard/summary` | Protected | Composite `healthScore`, `streakDays`, `avgScore7d`, `topGoal`, `todayTotals`, and rule-based `nextAction` |
+| GET | `/dashboard/trends?range=7d\|30d` | Protected | Per-day series `[{ date, label, stepsPct, waterPct, goalsPct, healthScore }]` aggregated from WalkEarn + HealthData + Goal |
+| GET | `/dashboard/insights` | Protected | 2-3 `{ icon, severity, title, body }` insights; OpenAI `gpt-3.5-turbo` with strict JSON response, 15-min per-user in-memory cache, rule-based fallback if LLM unavailable |
 
 ### Body Explorer
 
 | Method | Endpoint | Auth | Description |
 | ------ | -------- | ---- | ----------- |
-| GET | `/body-explorer` | Public | Get all body part data |
-| GET | `/body-explorer/:partName` | Public | Get one body part details |
+| GET | `/body-explorer` | Public | Get all body part data; supports `?search=`, `?system=`, `?gender=` query filters |
+| GET | `/body-explorer/:partName` | Public | Get one body part with `system`, `relatedConditions`, `icd10Regions`, `relatedLinks`, `onlyFor` |
+| GET | `/body-explorer/meta/systems` | Public | List distinct systems available in the catalog (for filter UI) |
 
 ### Goals
 
@@ -286,6 +345,8 @@ Base URL: `http://localhost:5000/api`
 | GET | `/walk-earn/rewards` | Protected | List rewards and `canRedeem` flag |
 | POST | `/walk-earn/redeem/:rewardId` | Protected | Redeem reward |
 | GET | `/walk-earn/redemptions` | Protected | Redemption history |
+
+Alias support: `/walkearn/*` is also mounted for backward compatibility.
 
 ### Forecast
 
@@ -331,6 +392,36 @@ Base URL: `http://localhost:5000/api`
 | POST | `/notifications/activity` | Protected | Create activity notification |
 | PUT | `/notifications/:id/read` | Protected | Mark one notification as read |
 | DELETE | `/notifications/:id` | Protected | Delete one notification |
+
+### Predict (ML)
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/predict/diabetes` | Protected | Diabetes risk prediction |
+| POST | `/predict/heart` | Protected | Heart risk prediction |
+| POST | `/predict/all` | Protected | Combined heart + diabetes prediction |
+| POST | `/predict/symptoms-disease` | Protected | Symptom-to-disease prediction |
+| GET | `/predict/symptoms-history` | Protected | Symptom prediction history |
+| POST | `/predict/share-whatsapp` | Protected | Share heart/diabetes prediction on WhatsApp |
+| POST | `/predict/share-symptoms-whatsapp` | Protected | Share symptom prediction on WhatsApp |
+
+### SMS
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/sms/send` | Public | Send SMS |
+| POST | `/sms/test` | Public | Send test SMS |
+| POST | `/sms/send-login-otp` | Public | Send login OTP via SMS |
+| POST | `/sms/verify-login-otp` | Public | Verify login OTP via SMS |
+
+### WhatsApp
+
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| POST | `/whatsapp/send-login-otp` | Public | Send login OTP via WhatsApp |
+| POST | `/whatsapp/verify-login-otp` | Public | Verify login OTP via WhatsApp |
+| POST | `/whatsapp/send-signup-otp` | Public | Send signup OTP via WhatsApp |
+| POST | `/whatsapp/verify-signup-otp` | Public | Verify signup OTP via WhatsApp |
 
 ---
 
@@ -433,6 +524,137 @@ Content-Type: application/json
 }
 ```
 
+### Analyze Uploaded Report
+
+```http
+POST /api/chatbot/analyze-report/:reportId
+Authorization: Bearer <token>
+```
+
+Response payload (simplified):
+
+```json
+{
+  "success": true,
+  "status": "ok",
+  "analysis": {
+    "reportType": "blood_test",
+    "summary": "Overall values within reference range except LDL cholesterol.",
+    "keyFindings": [{ "label": "LDL", "value": "142 mg/dL", "status": "high" }],
+    "flags": ["Elevated LDL cholesterol"],
+    "recommendedActions": ["Reduce saturated fat", "Re-test in 3 months"],
+    "suggestedMedications": [{ "name": "Atorvastatin" }],
+    "suggestedSpecialists": ["cardiologist"]
+  },
+  "disclaimer": "Not a medical diagnosis. Consult a healthcare professional."
+}
+```
+
+### Explain Medicine
+
+```http
+POST /api/chatbot/explain-medicine
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "atorvastatin",
+  "userMedications": ["warfarin"]
+}
+```
+
+### Nearby Doctors
+
+```http
+POST /api/chatbot/nearby-doctors
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "specialty": "cardiologist",
+  "lat": 19.076,
+  "lon": 72.8777,
+  "radius": 5000
+}
+```
+
+### Geocode a City
+
+```http
+POST /api/chatbot/geocode
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "city": "Mumbai"
+}
+```
+
+### Dashboard Summary
+
+```http
+GET /api/dashboard/summary
+Authorization: Bearer <token>
+```
+
+Response payload (simplified):
+
+```json
+{
+  "success": true,
+  "data": {
+    "healthScore": 72,
+    "streakDays": 4,
+    "avgScore7d": 68,
+    "topGoal": { "title": "Daily Steps", "pct": 80 },
+    "todayTotals": {
+      "steps": 6200,
+      "stepsGoal": 10000,
+      "stepsPct": 62,
+      "waterIntake": 2.0,
+      "waterPct": 67,
+      "goalsActive": 3,
+      "goalsPct": 55
+    },
+    "nextAction": { "key": "water", "label": "Drink water", "href": null }
+  }
+}
+```
+
+### Dashboard Trends
+
+```http
+GET /api/dashboard/trends?range=7d
+Authorization: Bearer <token>
+```
+
+### Dashboard Insights
+
+```http
+GET /api/dashboard/insights
+Authorization: Bearer <token>
+```
+
+Response payload (LLM mode):
+
+```json
+{
+  "success": true,
+  "source": "llm",
+  "cached": false,
+  "insights": [
+    { "icon": "activity", "severity": "warn", "title": "Pick up your pace", "body": "You're at 42% of today's step goal. A 20-minute walk lifts that into the green zone." },
+    { "icon": "moon", "severity": "info", "title": "Hydration is on track", "body": "You've logged 2 L. One more glass and you're at the daily goal." }
+  ]
+}
+```
+
 ### Create Goal
 
 ```http
@@ -504,10 +726,34 @@ This seeds:
 - rewards
 - sample goals
 
+### Seed Doctor Directory
+
+```bash
+node seeds/seedDoctors.js
+```
+
+Seeds ~25 curated specialists across Mumbai, Delhi, Bengaluru, Pune, Chennai, and Hyderabad with 2dsphere-indexed locations. Idempotent — safe to re-run.
+
 ### Test Medicine API Integration
 
 ```bash
 node tests/testFdaApi.js --detailed aspirin
+```
+
+### Test Prediction APIs
+
+```bash
+# Optional when backend runs on 5000 (script fallback is 5001)
+# PowerShell: $env:API_BASE_URL="http://localhost:5000/api"
+# Unix/macOS: export API_BASE_URL="http://localhost:5000/api"
+
+# PowerShell
+$env:HEALANCE_TOKEN="your_jwt_token"
+node tests/testPredictApi.js
+
+# Unix/macOS
+export HEALANCE_TOKEN="your_jwt_token"
+node tests/testPredictApi.js
 ```
 
 ---
@@ -518,6 +764,7 @@ node tests/testFdaApi.js --detailed aspirin
 | ------ | ----------- |
 | `npm start` | Run production server |
 | `npm run dev` | Run development server with nodemon |
+| `npm run dev:clean` | Free port 5001 and restart dev server |
 | `npm run seed` | Seed initial demo data |
 
 ---
@@ -543,6 +790,25 @@ node tests/testFdaApi.js --detailed aspirin
 
 - check `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`
 - use app password if using Gmail SMTP
+
+**Report analysis returns `ai-unavailable`**
+
+- ensure `GROQ_API_KEY` is set in `.env` and restart the server
+- free tier limit: 30 req/min — retry after a short wait
+
+**Dashboard Smart Insights show templated text instead of LLM output**
+
+- that is the automatic rule-based fallback; set `OPENAI_API_KEY` in `.env` and restart the server to switch back to LLM mode
+- per-user response is cached in-memory for 15 minutes; restart the server to clear the cache immediately
+
+**Report analysis returns `file-missing`**
+
+- the server resolves report paths relative to `Backend/uploads/`; verify the file exists and the `MedicalReport.filePath` field matches
+
+**Nearby doctors returns empty results**
+
+- run `node seeds/seedDoctors.js` to populate the `Doctor` collection
+- OSM Overpass is rate-limited (~1 req/sec) — brief outages are expected
 
 ---
 

@@ -1,6 +1,40 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Brain, CalendarClock, ChevronRight, Heart, ListChecks } from 'lucide-react';
+import { Activity, Brain, CalendarClock, ChevronRight, Heart, ListChecks, Loader2, FileDown } from 'lucide-react';
 import { riskService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import Button from '../../shared/ui/Button';
+
+// Lazy-load the PDF library + report components only when the user clicks Generate.
+// Keeps the main bundle lean and ensures zero initial-load breakage.
+const generatePdfBlob = async ({ heartPrediction, symptomsPrediction, user }) => {
+  const [{ pdf }, ReportModule] = await Promise.all([
+    import('@react-pdf/renderer'),
+    import('../components/reports/ReportDocument'),
+  ]);
+  const ReportDocument = ReportModule.default;
+  const { getReportFilename } = ReportModule;
+  const blob = await pdf(
+    <ReportDocument
+      heartPrediction={heartPrediction}
+      symptomsPrediction={symptomsPrediction}
+      user={user}
+    />
+  ).toBlob();
+  return { blob, filename: getReportFilename(user) };
+};
+
+const triggerDownload = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Defer revoke so the download has time to start
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -14,15 +48,32 @@ const formatDate = (value) => {
 };
 
 const Badge = ({ children, tone = 'default' }) => {
-  const toneMap = {
-    default: 'bg-[#f0f1fc] text-[#506cd7]',
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-amber-100 text-amber-700',
-    danger: 'bg-red-100 text-red-700',
+  const toneStyles = {
+    default: {
+      background: 'linear-gradient(135deg, rgba(80, 108, 215, 0.12), rgba(14, 165, 233, 0.12))',
+      color: '#506cd7',
+    },
+    success: {
+      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.15))',
+      color: '#047857',
+    },
+    warning: {
+      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 191, 36, 0.15))',
+      color: '#b45309',
+    },
+    danger: {
+      background: 'linear-gradient(135deg, rgba(231, 76, 76, 0.15), rgba(251, 113, 133, 0.15))',
+      color: '#b91c1c',
+    },
   };
 
+  const style = toneStyles[tone] || toneStyles.default;
+
   return (
-    <span className={`text-xs font-medium px-2 py-1 rounded-full ${toneMap[tone] || toneMap.default}`}>
+    <span
+      className="text-xs font-bold px-2.5 py-1 rounded-full"
+      style={style}
+    >
       {children}
     </span>
   );
@@ -65,7 +116,7 @@ const HistoryList = ({ items, selectedId, onSelect, type }) => {
   }
 
   return (
-    <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+    <div className="space-y-2 max-h-[560px] overflow-y-auto scrollbar-hide pr-1">
       {items.map((item) => {
         const isActive = selectedId === item._id;
         const title = type === 'heart'
@@ -76,25 +127,36 @@ const HistoryList = ({ items, selectedId, onSelect, type }) => {
           ? `Heart ${typeof item.results?.heartDiseaseRisk === 'number' ? `${item.results.heartDiseaseRisk}%` : 'N/A'} • Diabetes ${typeof item.results?.diabetesRisk === 'number' ? `${item.results.diabetesRisk}%` : 'N/A'}`
           : `Confidence ${typeof item.confidence === 'number' ? `${Math.round(item.confidence * 100)}%` : 'N/A'}`;
 
+        const iconClass = type === 'heart'
+          ? 'dash-icon-badge--gradient-rose'
+          : 'dash-icon-badge--gradient-indigo';
+        const Icon = type === 'heart' ? Heart : Brain;
+
         return (
           <button
             key={item._id}
             type="button"
             onClick={() => onSelect(item)}
-            className={`w-full text-left rounded-xl border p-3 transition-colors ${
+            className={`group w-full text-left rounded-xl border p-3 transition-all ${
               isActive
-                ? 'border-[#506cd7] bg-[#f3f5ff]'
-                : 'border-[#e8eaf9] bg-white hover:bg-[#f9faff]'
+                ? 'border-[#506cd7] bg-[#f3f5ff] shadow-sm'
+                : 'border-[#e8eaf9] bg-white hover:bg-[#f9faff] hover:border-[#506cd7]/30'
             }`}
           >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-[#0b1030]">{title}</p>
-                <p className="text-xs text-[#5f697a] mt-1">{subline}</p>
+            <div className="flex items-start gap-2.5">
+              <div className={`dash-icon-badge ${iconClass} flex-shrink-0`} style={{ width: 32, height: 32 }}>
+                <Icon size={14} className="text-white" />
               </div>
-              <ChevronRight size={16} className="text-[#9aa3b2] mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#0b1030] truncate">{title}</p>
+                <p className="text-xs text-[#5f697a] mt-0.5">{subline}</p>
+                <p className="text-[10px] text-[#9aa3b2] mt-1.5">{formatDate(item.createdAt)}</p>
+              </div>
+              <ChevronRight
+                size={16}
+                className="text-[#9aa3b2] mt-2 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+              />
             </div>
-            <p className="text-xs text-[#6a7283] mt-2">{formatDate(item.createdAt)}</p>
           </button>
         );
       })}
@@ -247,12 +309,50 @@ const SymptomsDetail = ({ item }) => {
 };
 
 const PredictionHistory = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('heart');
   const [loading, setLoading] = useState(true);
   const [heartPredictions, setHeartPredictions] = useState([]);
   const [symptomPredictions, setSymptomPredictions] = useState([]);
   const [selectedHeart, setSelectedHeart] = useState(null);
   const [selectedSymptom, setSelectedSymptom] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateReport = async () => {
+    if (isGenerating) return;
+    // Prefer the currently selected prediction of each type; fall back to latest (index 0)
+    const heartPrediction = selectedHeart || heartPredictions[0] || null;
+    const symptomsPrediction = selectedSymptom || symptomPredictions[0] || null;
+    if (!heartPrediction && !symptomsPrediction) {
+      toast({
+        title: 'No data to report',
+        description: 'Create a prediction first to generate a report.',
+        variant: 'info',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { blob, filename } = await generatePdfBlob({
+        heartPrediction,
+        symptomsPrediction,
+        user,
+      });
+      triggerDownload(blob, filename);
+      toast({ title: 'Report downloaded', variant: 'success' });
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast({
+        title: 'Could not generate report',
+        description: 'Please try again in a moment.',
+        variant: 'error',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAllHistory = async () => {
@@ -298,32 +398,61 @@ const PredictionHistory = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="dash-card">
-        <div className="flex items-center gap-2 mb-3">
-          <CalendarClock size={20} className="text-[#506cd7]" />
-          <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">Prediction History</h2>
+      <div className="dash-card dash-card-accent" style={{ '--accent-stripe': '#506cd7' }}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0 flex-1 flex items-start gap-3">
+            <div className="dash-icon-badge dash-icon-badge--gradient-indigo hidden sm:inline-flex">
+              <CalendarClock size={20} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-[#0b1030]">
+                <span className="dash-gradient-text">Prediction History</span>
+              </h2>
+              <p className="text-sm text-[#5f697a] mt-1">
+                View all saved predictions and tap any record to see complete details.
+                Generate a combined PDF covering both heart &amp; diabetes and symptoms analysis below.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleGenerateReport}
+            disabled={isGenerating || (!heartPredictions.length && !symptomPredictions.length)}
+            className="flex-shrink-0"
+          >
+            {isGenerating ? (
+              <><Loader2 size={14} className="mr-2 animate-spin" /> Generating…</>
+            ) : (
+              <><FileDown size={14} className="mr-2" /> Generate Complete Report</>
+            )}
+          </Button>
         </div>
-        <p className="text-sm text-[#5f697a]">View all saved predictions and tap any record to see complete details.</p>
       </div>
 
       <div className="dash-card">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex p-0.5 bg-[#f0f1fc] rounded-xl w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('heart')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'heart' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'heart'
+                ? 'bg-white text-[#506cd7] shadow-sm'
+                : 'text-[#5f697a] hover:text-[#0b1030]'
             }`}
           >
+            <Heart size={14} className={activeTab === 'heart' ? 'text-rose-500' : 'text-[#6a7283]'} />
             Heart & Diabetes ({heartPredictions.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('symptoms')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === 'symptoms' ? 'bg-[#506cd7] text-white' : 'bg-[#f0f1fc] text-[#5f697a] hover:bg-[#e6e9fb]'
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'symptoms'
+                ? 'bg-white text-[#506cd7] shadow-sm'
+                : 'text-[#5f697a] hover:text-[#0b1030]'
             }`}
           >
+            <Brain size={14} className={activeTab === 'symptoms' ? 'text-indigo-500' : 'text-[#6a7283]'} />
             Symptoms Disease ({symptomPredictions.length})
           </button>
         </div>
@@ -336,7 +465,7 @@ const PredictionHistory = () => {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           <div className="xl:col-span-1">
-            <div className="dash-card h-full">
+            <div className="dash-card h-auto">
               <h3 className="dash-heading text-sm sm:text-base mb-3">All Records</h3>
               <HistoryList
                 items={currentList}

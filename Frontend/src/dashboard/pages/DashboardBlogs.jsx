@@ -132,16 +132,30 @@ const DashboardBlogs = () => {
               />
             </div>
           ) : filteredPosts.map(post => (
-            <div key={post.id} className="dash-card overflow-hidden group flex flex-col h-full !p-0">
+            <div key={post.id} className="dash-card dash-card-glow overflow-hidden group flex flex-col h-full !p-0">
               <div className="relative h-40 sm:h-48 overflow-hidden">
                 <img
                   src={post.image}
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <span className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold text-[#0b1030]">
+                <span
+                  className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, #506cd7 0%, #0ea5e9 100%)',
+                    boxShadow: '0 4px 12px rgba(80, 108, 215, 0.28)',
+                  }}
+                >
                   {post.category}
                 </span>
+                {post.isPopular && (
+                  <span
+                    className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                    style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' }}
+                  >
+                    Trending
+                  </span>
+                )}
               </div>
               <div className="p-4 sm:p-5 flex-1 flex flex-col">
                 <h3 className="text-base sm:text-lg font-bold text-[#0b1030] mb-2 line-clamp-2 group-hover:text-[#506cd7] transition-colors">
@@ -165,9 +179,9 @@ const DashboardBlogs = () => {
 
         {/* Right Sidebar */}
         <div className="space-y-4 sm:space-y-6">
-          <div className="dash-card-static">
+          <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#f59e0b' }}>
             <div className="flex items-center gap-2 mb-4">
-              <div className="dash-icon-badge bg-[#506cd7]">
+              <div className="dash-icon-badge dash-icon-badge--gradient-amber">
                 <TrendingUp size={20} className="text-white" />
               </div>
               <h3 className="dash-heading text-sm sm:text-base">Trending Now</h3>
@@ -189,13 +203,24 @@ const DashboardBlogs = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-[20px] text-white shadow-lg">
-            <Bookmark className="text-primary-400 mb-4" size={24} />
-            <h3 className="font-heading font-bold text-lg mb-2">Saved Articles</h3>
-            <p className="text-slate-400 text-sm mb-4">You haven't saved any articles yet. Bookmark posts to read them later.</p>
-            <Button size="sm" variant="outline" className="w-full border-slate-600 hover:bg-slate-800">
-              View Bookmarks
-            </Button>
+          <div
+            className="p-6 rounded-[20px] text-white relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #506cd7 0%, #4753bf 50%, #0ea5e9 100%)',
+              boxShadow: '0 14px 40px rgba(80, 108, 215, 0.35)',
+            }}
+          >
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="relative z-10">
+              <div className="dash-icon-badge bg-white/20 backdrop-blur mb-4">
+                <Bookmark size={20} className="text-white" />
+              </div>
+              <h3 className="font-heading font-bold text-lg mb-2">Saved Articles</h3>
+              <p className="text-white/80 text-sm mb-4">You haven't saved any articles yet. Bookmark posts to read them later.</p>
+              <Button size="sm" variant="outline" className="w-full !text-white !border-white/40 hover:!bg-white/10">
+                View Bookmarks
+              </Button>
+            </div>
           </div>
         </div>
       </DashReveal>

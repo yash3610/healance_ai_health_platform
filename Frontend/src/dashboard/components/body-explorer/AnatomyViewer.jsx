@@ -47,7 +47,7 @@ const ModelErrorOverlay = () => (
   </div>
 );
 
-function Scene({ gender, activeLayer, selectedPart, onPartClick, onHover, onControlsReady, showLabels, onLabelAnchorsComputed }) {
+function Scene({ gender, activeSystem, selectedPart, onPartClick, onHover, onControlsReady, showLabels, onLabelAnchorsComputed }) {
   const orbitRef = useRef();
   const idleTimer = useRef(null);
   const [autoRotate, setAutoRotate] = useState(true);
@@ -120,7 +120,7 @@ function Scene({ gender, activeLayer, selectedPart, onPartClick, onHover, onCont
 
       <AnatomyModel
         gender={gender}
-        activeLayer={activeLayer}
+        activeSystem={activeSystem}
         selectedPart={selectedPart}
         onPartClick={onPartClick}
         onHover={onHover}
@@ -139,12 +139,23 @@ function Scene({ gender, activeLayer, selectedPart, onPartClick, onHover, onCont
   );
 }
 
-const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer, onLayerChange }) => {
+const AnatomyViewer = ({
+  gender,
+  selectedPart,
+  onPartClick,
+  onHover,
+  activeSystem,
+  onSystemChange,
+  catalog,
+  catalogLoading,
+  onPartSelect,
+}) => {
   const controlsRef = useRef(null);
   const showLabels = false;
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasSceneError, setHasSceneError] = useState(false);
   const containerRef = useRef();
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleHover = useCallback((bodyPartKey) => {
     onHover?.(bodyPartKey);
@@ -210,8 +221,53 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
     controlsRef.current = controls;
   }, []);
 
+  // Keyboard rotate/zoom/reset — only fires when the viewer container has
+  // focus, so typing in search doesn't move the camera. Arrow keys rotate,
+  // +/- zoom, R resets. Layer switching (1-4) is handled at page level so
+  // it works globally.
+  const handleKeyDown = useCallback((e) => {
+    if (!controlsRef.current) return;
+    const controls = controlsRef.current;
+    const camera = controls.object;
+    const rotateStep = Math.PI / 24;
+    const zoomStep = 0.35;
+
+    // Rotate by temporarily scripting the orbit controls' angle.
+    const rotate = (azim, polar) => {
+      const offset = new THREE.Vector3().copy(camera.position).sub(controls.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      spherical.theta += azim;
+      spherical.phi = Math.max(controls.minPolarAngle, Math.min(controls.maxPolarAngle, spherical.phi + polar));
+      const newOffset = new THREE.Vector3().setFromSpherical(spherical);
+      camera.position.copy(controls.target).add(newOffset);
+      controls.update();
+    };
+    const zoom = (delta) => {
+      const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
+      camera.position.addScaledVector(dir, delta);
+      controls.update();
+    };
+
+    if (e.key === 'ArrowLeft') { e.preventDefault(); rotate(-rotateStep, 0); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); rotate(rotateStep, 0); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); rotate(0, -rotateStep); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); rotate(0, rotateStep); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoom(zoomStep); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoom(-zoomStep); }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleResetCamera(); }
+  }, [handleResetCamera]);
+
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div
+      ref={containerRef}
+      className="absolute inset-0"
+      role="application"
+      aria-label="Interactive 3D anatomy viewer. Use arrow keys to rotate, plus or minus to zoom, R to reset view. Press 1 to 4 to switch layers."
+      tabIndex={0}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      onKeyDown={handleKeyDown}
+    >
       {/* Loading overlay shown until model renders */}
       {!isLoaded && !hasSceneError && <LoadingOverlay />}
       {hasSceneError && <ModelErrorOverlay />}
@@ -226,7 +282,7 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
         }}
         frameloop="always"
         style={{ touchAction: 'none' }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.1;
@@ -242,7 +298,7 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
           <Suspense fallback={null}>
             <Scene
               gender={gender}
-              activeLayer={activeLayer}
+              activeSystem={activeSystem}
               selectedPart={selectedPart}
               onPartClick={onPartClick}
               onHover={handleHover}
@@ -257,8 +313,14 @@ const AnatomyViewer = ({ gender, selectedPart, onPartClick, onHover, activeLayer
         </SceneErrorBoundary>
       </Canvas>
 
-      {/* Layer panel (left side) */}
-      <LayerPanel activeLayer={activeLayer} onLayerChange={onLayerChange} />
+      {/* System filter panel (left side) */}
+      <LayerPanel
+        activeSystem={activeSystem}
+        onSystemChange={onSystemChange}
+        catalog={catalog}
+        catalogLoading={catalogLoading}
+        onPartSelect={onPartSelect}
+      />
 
       {/* Bottom toolbar */}
       <ViewerControls

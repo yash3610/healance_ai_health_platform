@@ -153,22 +153,33 @@ const Forecast = () => {
       <DashReveal>
       <div className="dash-card-static">
         <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
-          <MapPin size={18} className="text-[#506cd7]" /> Quick Location Select
+          <span className="dash-icon-badge dash-icon-badge--gradient-indigo" style={{ width: 30, height: 30 }}>
+            <MapPin size={14} className="text-white" />
+          </span>
+          Quick Location Select
         </h3>
         <div className="flex flex-wrap gap-2">
-          {['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai', 'Hyderabad', 'Kolkata'].map((city) => (
-            <button
-              key={city}
-              onClick={() => handleCityChange(city)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                location.city === city
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-[#f0f1fc] text-[#0b1030] hover:bg-[#e8eaf9]'
-              }`}
-            >
-              {city}
-            </button>
-          ))}
+          {['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai', 'Hyderabad', 'Kolkata'].map((city) => {
+            const active = location.city === city;
+            return (
+              <button
+                key={city}
+                onClick={() => handleCityChange(city)}
+                aria-pressed={active}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  active
+                    ? 'text-white shadow-md'
+                    : 'bg-[#f0f1fc] text-[#0b1030] hover:bg-[#e8eaf9]'
+                }`}
+                style={active ? {
+                  background: 'linear-gradient(135deg, #506cd7 0%, #0ea5e9 100%)',
+                  boxShadow: '0 6px 18px rgba(80, 108, 215, 0.30)',
+                } : undefined}
+              >
+                {city}
+              </button>
+            );
+          })}
         </div>
       </div>
       </DashReveal>
@@ -249,9 +260,12 @@ const Forecast = () => {
 
       {/* Weekly Forecast */}
       {weeklyForecast.length > 0 && (
-        <div className="dash-card-static">
+        <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#0ea5e9' }}>
           <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
-            <TrendingUp size={18} className="text-[#506cd7]" /> 7-Day Forecast
+            <span className="dash-icon-badge dash-icon-badge--gradient-cyan" style={{ width: 30, height: 30 }}>
+              <TrendingUp size={14} className="text-white" />
+            </span>
+            7-Day Forecast
           </h3>
           <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {weeklyForecast.map((day, index) => {
@@ -259,9 +273,15 @@ const Forecast = () => {
               return (
                 <div
                   key={index}
-                  className={`text-center p-2 sm:p-3 rounded-xl transition-all ${
-                    day.isToday ? 'bg-[#f0f1fc] border-2 border-[#506cd7]' : 'bg-[#f0f1fc]/50 hover:bg-[#f0f1fc]'
-                  }`}
+                  className="text-center p-2 sm:p-3 rounded-xl transition-all hover:-translate-y-0.5 border"
+                  style={day.isToday ? {
+                    background: 'linear-gradient(135deg, #f5f7ff 0%, #ffffff 55%, #e0f2fe 100%)',
+                    borderColor: '#506cd7',
+                    boxShadow: '0 6px 18px rgba(80, 108, 215, 0.18)',
+                  } : {
+                    background: '#f8f9ff',
+                    borderColor: 'transparent',
+                  }}
                 >
                   <p className={`text-xs sm:text-sm font-semibold ${day.isToday ? 'text-[#506cd7]' : 'text-[#5f697a]'}`}>
                     {day.day}
@@ -282,9 +302,12 @@ const Forecast = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Activity Suitability */}
-        <div className="dash-card-static">
+        <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#10b981' }}>
           <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
-            <Activity size={18} className="text-green-500" /> Activity Suitability
+            <span className="dash-icon-badge dash-icon-badge--gradient-emerald" style={{ width: 30, height: 30 }}>
+              <Activity size={14} className="text-white" />
+            </span>
+            Activity Suitability
           </h3>
           <div className="space-y-3 sm:space-y-4">
             {(forecast?.activities || []).map((activity, index) => {
@@ -320,14 +343,20 @@ const Forecast = () => {
         </div>
 
         {/* Health Tips */}
-        <div className="dash-card-static">
+        <div className="dash-card-static dash-card-accent" style={{ '--accent-stripe': '#e74c4c' }}>
           <h3 className="dash-heading mb-4 text-sm sm:text-base flex items-center gap-2">
-            <Heart size={18} className="text-red-500" /> Health Tips for Today
+            <span className="dash-icon-badge dash-icon-badge--gradient-rose" style={{ width: 30, height: 30 }}>
+              <Heart size={14} className="text-white" />
+            </span>
+            Health Tips for Today
           </h3>
           <div className="space-y-3">
             {(forecast?.healthTips || []).map((tip, index) => (
-              <div key={index} className="flex gap-3 p-3 bg-[#f0f1fc] rounded-xl">
-                <div className="w-6 h-6 rounded-full bg-[#f0f1fc] text-[#506cd7] flex items-center justify-center flex-shrink-0 text-sm font-bold border border-[#e8eaf9]">
+              <div key={index} className="flex gap-3 p-3 rounded-xl bg-white border border-[#e8eaf9] hover:border-[#506cd7]/30 transition-colors">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                  style={{ background: 'linear-gradient(135deg, #506cd7 0%, #0ea5e9 100%)' }}
+                >
                   {index + 1}
                 </div>
                 <p className="text-sm text-[#5f697a]">{tip}</p>
