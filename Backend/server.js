@@ -66,12 +66,26 @@ app.use(cors({
 }));
 
 // Rate limiting
-const limiter = rateLimit({
+// Keep a lenient global cap so normal app polling/refresh traffic does not get blocked.
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: Number(process.env.API_RATE_LIMIT_MAX || 1200),
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { message: 'Too many requests, please try again later.' },
 });
-app.use('/api/', limiter);
+
+// Keep stricter limits on abuse-prone auth endpoints.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX || 60),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many authentication requests, please try again later.' },
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth', authLimiter);
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));

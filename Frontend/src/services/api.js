@@ -12,6 +12,20 @@ export const api = axios.create({
 
 let refreshRequest = null;
 
+const RATE_LIMIT_MAX_RETRIES = 2;
+const RATE_LIMIT_DEFAULT_DELAY_MS = 1200;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getRetryDelayMs = (error) => {
+  const retryAfter = error?.response?.headers?.['retry-after'];
+  const asNumber = Number(retryAfter);
+  if (Number.isFinite(asNumber) && asNumber > 0) {
+    return Math.min(asNumber * 1000, 10000);
+  }
+  return RATE_LIMIT_DEFAULT_DELAY_MS;
+};
+
 const refreshAccessToken = async () => {
   if (!refreshRequest) {
     refreshRequest = api.post('/auth/refresh').finally(() => {
@@ -47,10 +61,16 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle rate limiting
+    // Handle temporary rate limiting by retrying the same request with a small backoff.
     if (status === 429) {
+      const retryCount = originalRequest._rateLimitRetryCount || 0;
+      if (retryCount < RATE_LIMIT_MAX_RETRIES) {
+        originalRequest._rateLimitRetryCount = retryCount + 1;
+        await sleep(getRetryDelayMs(error));
+        return api(originalRequest);
+      }
+
       console.error('Too many requests. Please wait a moment before trying again.');
-      // You can dispatch a toast notification here
     }
     
     return Promise.reject(error);

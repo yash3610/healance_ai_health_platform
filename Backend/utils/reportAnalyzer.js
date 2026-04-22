@@ -91,11 +91,47 @@ export async function analyzeReportById(reportId, userId) {
         disclaimer: DISCLAIMER,
       };
     }
+    if (extraction.reason === 'unsupported-type') {
+      return {
+        status: 'unsupported',
+        reason: 'file-type-not-supported',
+        message:
+          'This file format is not supported for AI analysis yet. Please upload PDF or DOCX.',
+        disclaimer: DISCLAIMER,
+      };
+    }
     if (extraction.reason === 'empty-text') {
       return {
         status: 'empty',
         message:
           'I uploaded your report, but I could not extract readable text from it. You can still ask me questions about it.',
+        disclaimer: DISCLAIMER,
+      };
+    }
+    if (extraction.reason === 'pdf-password-protected') {
+      return {
+        status: 'unsupported',
+        reason: 'pdf-password-protected',
+        message:
+          'This PDF appears password-protected or encrypted. Please upload an unlocked copy for analysis.',
+        disclaimer: DISCLAIMER,
+      };
+    }
+    if (extraction.reason === 'corrupted-file') {
+      return {
+        status: 'unsupported',
+        reason: 'corrupted-file',
+        message:
+          'This file appears corrupted or unreadable. Please re-export the report as PDF/DOCX and upload again.',
+        disclaimer: DISCLAIMER,
+      };
+    }
+    if (extraction.reason === 'pdf-runtime-error') {
+      return {
+        status: 'error',
+        reason: 'pdf-runtime-error',
+        message:
+          'PDF extraction service is temporarily unavailable. Please try again in a moment.',
         disclaimer: DISCLAIMER,
       };
     }

@@ -6,6 +6,9 @@
 
 import fs from 'fs';
 import path from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Dynamic-import inside the function so test suites that don't touch
 // extraction don't have to resolve pdf-parse (it eagerly reads a sample
@@ -25,6 +28,7 @@ export async function extractText(filePath, mimetype = '') {
   const isPdf = mime.includes('pdf') || ext === '.pdf';
   const isDocx =
     mime.includes('officedocument.wordprocessingml') || ext === '.docx';
+  const isLegacyDoc = mime.includes('msword') || ext === '.doc';
   const isImage =
     mime.startsWith('image/') ||
     ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext);
@@ -37,19 +41,20 @@ export async function extractText(filePath, mimetype = '') {
     };
   }
 
+  if (isLegacyDoc) {
+    return {
+      ok: false,
+      reason: 'unsupported-type',
+      text: '',
+    };
+  }
+
   try {
     if (isPdf) {
-      // pdf-parse v2 API: new PDFParse({ data: buffer }).getText()
-      const { PDFParse } = await import('pdf-parse');
+      // Use CJS require from ESM so pdf-parse initializes in normal module mode.
+      const pdfParse = require('pdf-parse');
       const dataBuffer = fs.readFileSync(absolutePath);
-      const parser = new PDFParse({ data: dataBuffer });
-      let result;
-      try {
-        result = await parser.getText();
-      } finally {
-        // Release the underlying PDF.js document to free memory
-        try { await parser.destroy(); } catch { /* ignore */ }
-      }
+      const result = await pdfParse(dataBuffer);
       const text = (result?.text || '').trim();
       if (text.length < 20) {
         return { ok: false, reason: 'empty-text', text: '' };
@@ -69,8 +74,27 @@ export async function extractText(filePath, mimetype = '') {
 
     return { ok: false, reason: 'unsupported-type', text: '' };
   } catch (err) {
+    const message = String(err?.message || '').toLowerCase();
+    let reason = 'extraction-error';
+
+    if (message.includes('password') || message.includes('encrypted')) {
+      reason = 'pdf-password-protected';
+    } else if (
+      message.includes('invalid pdf') ||
+      message.includes('malformed') ||
+      message.includes('unexpected eof')
+    ) {
+      reason = 'corrupted-file';
+    } else if (
+      message.includes('dommatrix') ||
+      message.includes('canvas') ||
+      message.includes('pdfjs')
+    ) {
+      reason = 'pdf-runtime-error';
+    }
+
     console.error('[textExtractor] extraction failed:', err.message);
     if (err.stack) console.error(err.stack);
-    return { ok: false, reason: 'extraction-error', text: '', error: err.message };
+    return { ok: false, reason, text: '', error: err.message };
   }
 }
